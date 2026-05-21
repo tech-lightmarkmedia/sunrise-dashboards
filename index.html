@@ -36,6 +36,7 @@
   --sunrise:#9a3412;  --sunrise-bg:#fef3ec;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 html,body{background:var(--bg);color:var(--text)}
 body{font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
 
@@ -44,6 +45,7 @@ header.top{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;a
 .hdr{display:flex;align-items:center;gap:14px}
 .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:17px;color:#fff;letter-spacing:-.5px}
 header.top h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;letter-spacing:.1px}
+header.top .version{font-size:10px;color:#9e9789;font-weight:500;letter-spacing:.4px;padding:3px 9px;border:1px solid #3a352e;border-radius:10px;background:rgba(245,243,239,.04);font-feature-settings:"tnum"}
 header.top .built-by{font-size:11px;color:#9e9789;font-style:italic}
 header.top .built-by b{color:#c4b6a2;font-weight:500;font-style:normal}
 
@@ -61,11 +63,12 @@ main{max-width:1200px;margin:0 auto;padding:48px 28px 80px}
 /* Funnel ribbon — tiny visual chip showing where each dashboard sits in the
    marketing→sales→capital journey. Sits below the lede. */
 .funnel-ribbon{display:flex;gap:6px;margin-top:24px;font-size:11px;flex-wrap:wrap;align-items:center}
-.fr-chip{padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-weight:500;letter-spacing:.2px;white-space:nowrap}
-.fr-sep{color:var(--text3);font-size:14px;margin:0 -2px}
+.fr-chip{padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-weight:500;letter-spacing:.2px;white-space:nowrap;text-decoration:none;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.fr-chip:hover{background:var(--text);color:#f5f3ef;border-color:var(--text);transform:translateY(-1px)}
+.fr-sep{color:var(--text3);font-size:14px;margin:0 -2px;user-select:none}
 
 /* ─── Dashboard rows ──────────────────────────────────────────────────── */
-.row{display:grid;grid-template-columns:520px 1fr;gap:42px;align-items:center;padding:36px 0;border-top:1px solid var(--border)}
+.row{display:grid;grid-template-columns:520px 1fr;gap:42px;align-items:center;padding:36px 0;border-top:1px solid var(--border);scroll-margin-top:20px}
 .row:first-of-type{border-top:none;padding-top:8px}
 
 .mock-wrap{position:relative}
@@ -130,6 +133,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
   <div class="hdr">
     <div class="logo">S</div>
     <h1>Sunrise Capital — Dashboards</h1>
+    <span class="version">v1</span>
   </div>
   <div class="built-by">Built by <b>Lightmark Media</b></div>
 </header>
@@ -146,17 +150,19 @@ footer.bot .meta{font-size:11px;color:#76705f}
       with consistent definitions, live HubSpot data, and drill-downs at every cell.
     </p>
     <div class="funnel-ribbon">
-      <span class="fr-chip">Ad Spend</span>
+      <a class="fr-chip" href="#ad">Ad Spend</a>
       <span class="fr-sep">›</span>
-      <span class="fr-chip">Video Engagement</span>
+      <a class="fr-chip" href="#wistia">Video Engagement</a>
       <span class="fr-sep">›</span>
-      <span class="fr-chip">Leads</span>
+      <a class="fr-chip" href="#lead">Leads</a>
       <span class="fr-sep">›</span>
-      <span class="fr-chip">Setter Activity</span>
+      <a class="fr-chip" href="#setter">Setter Activity</a>
       <span class="fr-sep">›</span>
-      <span class="fr-chip">Closer Activity</span>
+      <a class="fr-chip" href="#closer">Closer Activity</a>
       <span class="fr-sep">›</span>
-      <span class="fr-chip">Funded Capital</span>
+      <a class="fr-chip" href="#conv">Conversion</a>
+      <span class="fr-sep">›</span>
+      <a class="fr-chip" href="#sunrise">Funded Capital</a>
     </div>
   </section>
 
@@ -897,7 +903,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
   </section>
 
   <!-- ═══ 6. CONVERSION DASHBOARD ══════════════════════════════════════ -->
-  <section class="row" data-d="conv">
+  <section class="row" data-d="conv" id="conv">
     <div class="mock-wrap">
       <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
         <rect width="520" height="32" fill="#1a1814"/>
@@ -1005,7 +1011,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
   </section>
 
   <!-- ═══ 7. SUNRISE INVESTMENT DASHBOARD ══════════════════════════════ -->
-  <section class="row" data-d="sunrise">
+  <section class="row" data-d="sunrise" id="sunrise">
     <div class="mock-wrap">
       <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
         <rect width="520" height="32" fill="#1a1814"/>
