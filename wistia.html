@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Wistia Video Performance Dashboard (v2)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#c44a1e;--accent-bg:#fdf3ee;
+  --plays:#1d4ed8;--plays-bg:#eff6ff;
+  --hours:#6d28d9;--hours-bg:#f5f3ff;
+  --loads:#0891b2;--loads-bg:#ecfeff;
+  --rate:#65a30d;--rate-bg:#f7fee7;
+  --green:#065f46;--red:#991b1b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+.logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:white}
+header h1{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+#ts{font-size:11px;color:#9e9789}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select,input[type=date],input[type=number]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+input[type=number]{width:64px;cursor:text}
+select:focus,input[type=date]:focus,input[type=number]:focus{outline:none;border-color:var(--accent)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px;font-weight:500}
+.sl{color:var(--text3)}.sd{color:var(--accent)}.so{color:var(--green)}.se{color:var(--red)}
+
+#help-btn{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text2);background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;margin-left:8px}
+#help-btn:hover{background:var(--surface2);color:var(--text)}
+
+/* Project picker — collapsible panel under the toolbar */
+#projects-panel{background:#fffdf8;border-bottom:1px solid var(--border);padding:0 28px;max-height:0;overflow:hidden;transition:max-height 0.25s ease,padding 0.25s ease}
+#projects-panel.on{max-height:380px;padding:14px 28px;overflow-y:auto}
+.proj-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.proj-head h3{font-family:'DM Serif Display',serif;font-size:14px;font-weight:400}
+.proj-actions{display:flex;gap:8px}
+.proj-actions button{font-size:11px;color:var(--accent);background:transparent;border:1px solid var(--border);border-radius:5px;padding:3px 8px;cursor:pointer}
+.proj-actions button:hover{background:var(--accent-bg)}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px 14px}
+.proj-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0}
+.proj-row input[type=checkbox]{cursor:pointer}
+.proj-row label{cursor:pointer;display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.proj-row .pcount{color:var(--text3);font-size:10px;font-variant-numeric:tabular-nums}
+
+#dash{padding:24px 28px;display:none;max-width:1300px;margin:0 auto}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi .lab{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);margin-bottom:6px}
+.kpi .val{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;color:var(--text);line-height:1.1}
+.kpi .sub{font-size:11px;color:var(--text3);margin-top:4px}
+.kpi.plays{background:var(--plays-bg);border-color:#cdd6f3}
+.kpi.plays .val{color:var(--plays)}
+.kpi.hours{background:var(--hours-bg);border-color:#d8cdf3}
+.kpi.hours .val{color:var(--hours)}
+.kpi.loads{background:var(--loads-bg);border-color:#bae6fd}
+.kpi.loads .val{color:var(--loads)}
+.kpi.rate{background:var(--rate-bg);border-color:#d9f99d}
+.kpi.rate .val{color:var(--rate)}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.table-head h2{font-family:'DM Serif Display',serif;font-size:15px;font-weight:400}
+.table-head .meta{font-size:11px;color:var(--text2)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:10px 16px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);background:#fafaf6;border-bottom:1px solid var(--border);user-select:none}
+thead th.num{text-align:right}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{background:#f0eee6;color:var(--text)}
+thead th.sortable .arrow{display:inline-block;margin-left:4px;font-size:9px;color:var(--text3);opacity:0.4}
+thead th.sortable.active{color:var(--text)}
+thead th.sortable.active .arrow{color:var(--accent);opacity:1}
+/* Filter row sits under the column-header row. The Video filter input lives
+   here; other columns just get an empty cell. Keep the row visually quieter
+   than the header itself so it reads as a sub-control, not a separator. */
+thead tr.filter-row th{padding:6px 16px;background:#fafaf6;border-bottom:1px solid var(--border);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px}
+thead tr.filter-row input.flt{font-family:'DM Sans',sans-serif;font-size:11px;border:1px solid var(--border);border-radius:5px;padding:4px 8px;background:white;color:var(--text);width:100%;max-width:240px}
+thead tr.filter-row input.flt:focus{outline:none;border-color:var(--accent)}
+thead tr.filter-row input.flt::placeholder{color:var(--text3);font-style:italic}
+tbody td{padding:10px 16px;border-bottom:1px solid #ebe9e2}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody td.proj{color:var(--text2);font-size:11px}
+tbody tr:hover{background:#fafaf6}
+tfoot td{padding:10px 16px;font-weight:600;background:var(--surface2);border-top:2px solid var(--border)}
+tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+#empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+
+/* Loading overlay */
+#ov{position:fixed;inset:0;background:rgba(245,243,239,0.92);display:flex;align-items:center;justify-content:center;z-index:100}
+#ov.off{display:none}
+.ld{text-align:center}
+.ld .sp{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld .lm{font-size:13px;color:var(--text2);font-weight:500}
+.ld .ls{font-size:11px;color:var(--text3);margin-top:6px;max-width:400px}
+.ld .lp{font-size:11px;color:var(--text3);margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* Help drawer */
+#guide{position:fixed;top:0;right:0;width:480px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#guide.on{transform:translateX(0)}
+#guide h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:6px}
+#guide h3{font-family:'DM Serif Display',serif;font-size:14px;font-weight:400;margin-top:18px;margin-bottom:6px;color:var(--accent)}
+#guide p{font-size:12px;line-height:1.55;color:var(--text);margin-bottom:8px}
+#guide code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px}
+#guide-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+#guide-close:hover{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo">S</div>
+    <h1>Wistia Video Performance Dashboard <span class="vpill">v2</span></h1>
+  </div>
+  <div id="ts">—</div>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label>Range</label>
+    <select id="r">
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12" selected>Last 12 months</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="cdates" id="cd">
+      <input type="date" id="cf">
+      <span>→</span>
+      <input type="date" id="ct">
+    </div>
+  </div>
+  <div class="fg">
+    <label>Top</label>
+    <input type="number" id="topn" min="1" max="200" value="10">
+  </div>
+  <div class="fg">
+    <label>Sort by</label>
+    <select id="metric">
+      <option value="plays" selected>Plays</option>
+      <option value="hours">Hours Watched</option>
+      <option value="loads">Loads</option>
+      <option value="rate">Play Rate</option>
+    </select>
+  </div>
+  <button id="proj-toggle" onclick="document.getElementById('projects-panel').classList.toggle('on')" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text);background:white;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer">Projects</button>
+  <button id="btn" onclick="load()">Refresh</button>
+  <span id="st" class="sl">Ready</span>
+  <button id="help-btn" onclick="document.getElementById('guide').classList.add('on')">Guide</button>
+</div>
+
+<div id="projects-panel">
+  <div class="proj-head">
+    <h3>Projects to include</h3>
+    <div class="proj-actions">
+      <button onclick="selectAllProjects(true)">Select all</button>
+      <button onclick="selectAllProjects(false)">Clear all</button>
+      <button onclick="resetProjectsToDefault()">Reset to default</button>
+    </div>
+  </div>
+  <div class="proj-grid" id="proj-grid"></div>
+</div>
+
+<div id="dash">
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lab">Period</div>
+      <div class="val" id="kp-period" style="font-size:16px">—</div>
+      <div class="sub" id="kp-period-sub">—</div>
+    </div>
+    <div class="kpi plays">
+      <div class="lab">Total Plays</div>
+      <div class="val" id="kp-plays">—</div>
+      <div class="sub" id="kp-plays-sub">—</div>
+    </div>
+    <div class="kpi hours">
+      <div class="lab">Hours Watched</div>
+      <div class="val" id="kp-hours">—</div>
+      <div class="sub" id="kp-hours-sub">avg minutes per play</div>
+    </div>
+    <div class="kpi loads">
+      <div class="lab">Total Loads</div>
+      <div class="val" id="kp-loads">—</div>
+      <div class="sub">page impressions</div>
+    </div>
+    <div class="kpi rate">
+      <div class="lab">Play Rate</div>
+      <div class="val" id="kp-rate">—</div>
+      <div class="sub">plays per load</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head">
+      <h2 id="th-title">Top Videos by Plays</h2>
+      <div class="meta" id="rowct">—</div>
+    </div>
+    <div id="empty" style="display:none">No video activity in this range across selected projects.</div>
+    <table id="tbl" style="display:none">
+      <thead>
+        <tr>
+          <th class="sortable" data-sort="name" onclick="setSort('name')">Video<span class="arrow"></span></th>
+          <th class="sortable" data-sort="project_name" onclick="setSort('project_name')">Project<span class="arrow"></span></th>
+          <th class="num sortable active" data-sort="plays" onclick="setSort('plays')">Plays<span class="arrow">▼</span></th>
+          <th class="num sortable" data-sort="hours" onclick="setSort('hours')">Hours Watched<span class="arrow"></span></th>
+          <th class="num sortable" data-sort="loads" onclick="setSort('loads')">Loads<span class="arrow"></span></th>
+          <th class="num sortable" data-sort="rate" onclick="setSort('rate')">Play Rate<span class="arrow"></span></th>
+        </tr>
+        <tr class="filter-row">
+          <th><input type="text" class="flt" id="flt-name" placeholder="Filter by video name…" autocomplete="off"></th>
+          <th colspan="5"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Total (selected)</td>
+          <td class="num" id="ft-plays">—</td>
+          <td class="num" id="ft-hours">—</td>
+          <td class="num" id="ft-loads">—</td>
+          <td class="num" id="ft-rate">—</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+<div id="ov">
+  <div class="ld">
+    <div class="sp"></div>
+    <div class="lm" id="lm">Initializing…</div>
+    <div class="ls" id="ls"></div>
+    <div class="lp" id="lp"></div>
+  </div>
+</div>
+
+<div id="guide">
+  <button id="guide-close" onclick="document.getElementById('guide').classList.remove('on')">×</button>
+  <h2>Wistia Video Performance Dashboard</h2>
+  <p>Reports the top video performers across selected Wistia projects in a chosen date range. Use it to see which videos are getting watched and which aren't.</p>
+
+  <h3>Metrics</h3>
+  <p><strong>Plays</strong> — number of times the video was actually played (clicked the play button) in the date range. Most useful single metric.</p>
+  <p><strong>Hours Watched</strong> — total time spent watching across all plays. A video with many short plays scores low; a video with a few full-length plays scores higher. Reflects depth of engagement.</p>
+  <p><strong>Loads</strong> — number of times the page containing the video loaded. Reflects reach (how often the video appeared in front of someone) regardless of whether they clicked play.</p>
+  <p><strong>Play Rate</strong> — plays divided by loads, expressed as a percentage. Reflects how compelling the video is to viewers who land on its page. Higher = better hook.</p>
+
+  <h3>What's NOT shown (and why)</h3>
+  <p>Wistia's lifetime stats endpoint exposes <code>averagePercentWatched</code> and <code>percentOfVisitorsClickingPlay</code>, but those are not date-rangeable through the API. The date-ranged endpoint (<code>/by_date.json</code>) only returns load_count, play_count, and hours_watched. So this dashboard cannot show "average % watched in March" — only lifetime engagement %.</p>
+
+  <h3>Project picker</h3>
+  <p>Click "Projects" in the toolbar to choose which Wistia projects to include. By default, two projects are pre-selected: <strong>Fund 5</strong> and <strong>Private Podcasts Audio &amp; Fund Updates</strong> — the most relevant for current investor reporting.</p>
+  <p>Each project shows its total media count next to the name. Selecting more projects means more API calls and a slower load — Wistia's stats endpoint takes one video at a time. Plan for ~150ms per video. With all 28 projects (~460 videos), expect a 1-2 minute load.</p>
+
+  <h3>Sort behavior</h3>
+  <p>Click any column header to sort by it. Click again to flip direction. The four metric columns (Plays, Hours Watched, Loads, Play Rate) start at descending; the Video and Project columns start at ascending (alphabetical).</p>
+  <p>The "Sort by" dropdown in the toolbar mirrors the metric columns only — it doesn't show "Video Name" or "Project" because those aren't ranking metrics. Clicking a metric column updates the dropdown; clicking a string column leaves the dropdown alone.</p>
+  <p>Switching sort never re-fetches data — it's instant. Switching the date range or the project selection DOES re-fetch.</p>
+
+  <h3>Name filter</h3>
+  <p>Type a string in the "Filter by video name" box at the top of the table. Case-insensitive substring match — typing <code>fund</code> matches "Fund 5 Webinar" and "fund updates" both. Filters as you type, no submit needed.</p>
+  <p>The filter applies to both the table AND the KPI/footer totals, so the numbers always match what's visible. The row count above the table tells you how many videos match (e.g. "Top 10 of 12 (filtered from 115)").</p>
+  <p>Top N applies AFTER the filter — so "filter for fund, Top 10" gives the top 10 fund-matching videos by the active sort.</p>
+
+  <h3>Limitations</h3>
+  <p><strong>Custom range requires a button click.</strong> Other range presets auto-refresh.</p>
+  <p><strong>No cache.</strong> Every load fetches live from Wistia. If something feels slow, that's why.</p>
+  <p><strong>Project allowlist is hardcoded.</strong> If a new Sunrise project gets added in Wistia, it won't appear in the picker until the dashboard is updated. The current allowlist is documented in the source code as <code>PROJECTS</code>.</p>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────
+// Worker URL: peeled off the main hubspot-proxy worker and onto its own
+// dedicated subdomain (api-wistia.sunrisecapitalinvestors.com → dedicated
+// Wistia-only Cloudflare Worker). Same /wistia-api/* route shape so the
+// rest of the code is unchanged from v2.
+const WORKER_URL='https://api-wistia.sunrisecapitalinvestors.com/wistia-api';
+const HS_DELAY_MS=150;
+
+// Hardcoded allowlist of Sunrise-relevant Wistia projects. Update this list
+// when new Sunrise projects are added in Wistia. Each entry: hashedId, name,
+// mediaCount (rough — refreshed only on dashboard release), defaultChecked.
+// Default-checked projects are pre-selected on first load; users can toggle
+// others via the Projects panel.
+const PROJECTS=[
+  {h:'rp79x9fhco',n:'Fund 5',c:19,d:true},
+  {h:'hzlc47wvbl',n:'Private Podcasts Audio & Fund Updates',c:96,d:true},
+  {h:'1rbx5i9114',n:'Sunrise Capital Investors',c:131,d:false},
+  {h:'d3laxn8afu',n:'Sunrise Academy',c:7,d:false},
+  {h:'6p59s3vwu8',n:'SCI G&I Fund IV',c:7,d:false},
+  {h:'rlrnee7ihs',n:'G&I Fund 4 support videos',c:35,d:false},
+  {h:'v8cpom0lk8',n:'Fund 4 Webinar',c:14,d:false},
+  {h:'fe4jwsufdo',n:'Fund 4 Videos - BTR',c:4,d:false},
+  {h:'zfodfswvpd',n:'Fund 3 Webinars',c:9,d:false},
+  {h:'cm5a70xkcv',n:'Fund 3 Update Video',c:2,d:false},
+  {h:'bn4oo6ipgj',n:'Fund Updates/Town Halls',c:4,d:false},
+  {h:'s2erh53bv0',n:'Fund of Funds',c:2,d:false},
+  {h:'cvzzc6tlyt',n:'2025 Jan Investor Meeting in Tampa',c:13,d:false},
+  {h:'tj65zsy5cu',n:'Investor Summit 2026',c:9,d:false},
+  {h:'7573yii9y0',n:'Wednesday Webinar',c:14,d:false},
+  {h:'81awzosaml',n:'Annual Company Event',c:9,d:false},
+  {h:'122uoyyjge',n:'Sunrise Community Testimonials',c:5,d:false},
+  {h:'n7hsvz8a6s',n:'Testimonials',c:23,d:false},
+  {h:'c2yhzeitxc',n:'LWS 2023 All segments',c:13,d:false},
+  {h:'5o7k5bya4m',n:'LWS 2024 All Sessions',c:7,d:false},
+  {h:'1r9e2jkfx3',n:'Legacy Wealth Summit Promo',c:11,d:false},
+  {h:'tg3hmoo5tr',n:'Best Ever Virtual Conference',c:8,d:false},
+  {h:'5nrgzo1t99',n:'Case Study Videos',c:4,d:false},
+  {h:'nirkuhufjq',n:'Edited CTA videos',c:7,d:false},
+  {h:'x58u3s1nna',n:'Message From Our Founder',c:1,d:false},
+  {h:'grfxcxgdu7',n:'Promotional Events',c:1,d:false},
+  {h:'t9563i5ktl',n:'Property Photos',c:1,d:false},
+  {h:'onvygmldbo',n:'Nautica Watch Page',c:4,d:false},
+];
+
+// ── State ────────────────────────────────────────────────────────────────
+// VIDEOS: array of {hashed_id, name, project_name, plays, hours, loads, rate}
+// Aggregated already from per-day stats over the active range.
+let VIDEOS=[];
+
+// Sort state — all six columns are sortable. Default plays-desc.
+let SORT_KEY='plays';
+let SORT_DIR='desc';
+
+// Set of project hashedIds currently checked. Initialized from PROJECTS defaults.
+let SELECTED_PROJECTS=new Set(PROJECTS.filter(p=>p.d).map(p=>p.h));
+
+// Name filter — case-insensitive substring match against video name.
+// Empty string means no filtering. Filters BOTH the table view AND the
+// KPI/footer totals so the numbers always match what's visible.
+let NAME_FILTER='';
+
+// Last-rendered range info, kept around so the filter input handler can
+// re-render KPIs without needing the date args plumbed through every call.
+let LAST_RANGE={label:'—', from:new Date(), to:new Date()};
+
+// ── Date helpers ─────────────────────────────────────────────────────────
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+function endOfDay(d){const x=new Date(d);x.setHours(23,59,59,999);return x}
+function startOfWeek(d){const x=startOfDay(d);const day=x.getDay();x.setDate(x.getDate()-((day+6)%7));return x}
+function startOfMonth(d){return new Date(d.getFullYear(), d.getMonth(), 1)}
+function startOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(), q*3, 1)}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+
+function resolveRange(key){
+  const now=new Date();
+  let from, to, label='';
+  if(key==='this_week'){from=startOfWeek(now); to=now; label='This Week'}
+  else if(key==='last_week'){const sow=startOfWeek(now); from=addDays(sow,-7); to=endOfDay(addDays(sow,-1)); label='Last Week'}
+  else if(key==='this_month'){from=startOfMonth(now); to=now; label='This Month'}
+  else if(key==='last_month'){const som=startOfMonth(now); from=startOfMonth(addDays(som,-1)); to=endOfDay(addDays(som,-1)); label='Last Month'}
+  else if(key==='this_quarter'){from=startOfQuarter(now); to=now; label='This Quarter'}
+  else if(key==='last_quarter'){const soq=startOfQuarter(now); from=startOfQuarter(addDays(soq,-1)); to=endOfDay(addDays(soq,-1)); label='Last Quarter'}
+  else if(key==='this_year'){from=new Date(now.getFullYear(),0,1); to=now; label='This Year'}
+  else if(key==='last_year'){from=new Date(now.getFullYear()-1,0,1); to=new Date(now.getFullYear()-1,11,31,23,59,59,999); label='Last Year'}
+  else if(key==='last_12'){to=now; from=addDays(now,-365); label='Last 12 months'}
+  else if(key==='custom'){
+    const f=document.getElementById('cf').value;
+    const t=document.getElementById('ct').value;
+    from=f?startOfDay(new Date(f)):addDays(now,-30);
+    to=t?endOfDay(new Date(t)):now;
+    label='Custom';
+  }
+  return {from, to, label};
+}
+
+function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+
+// Wistia's by_date endpoint expects YYYY-MM-DD format.
+function fmtIsoDay(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// ── Wistia fetch ─────────────────────────────────────────────────────────
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+async function api(path){
+  const url=(WORKER_URL+path).replace(/([^:])\/{2,}/g,'$1/');
+  const backoffs=[1000,3000,8000];
+  for(let attempt=0; attempt<=backoffs.length; attempt++){
+    const r=await fetch(url);
+    if(r.status===429 && attempt<backoffs.length){
+      await sleep(backoffs[attempt]);
+      continue;
+    }
+    if(!r.ok){
+      const txt=await r.text().catch(()=>'');
+      throw new Error(`Wistia ${r.status}: ${txt.slice(0,200)}`);
+    }
+    return await r.json();
+  }
+  throw new Error('rate-limited after retries');
+}
+
+// List all media in a single project. Wistia paginates with per_page (max 100)
+// and page params. Most Sunrise projects fit on one page; the bigger ones
+// (Sunrise Capital Investors at 131, Private Podcasts at 96) need 1-2 pages.
+async function fetchProjectMedia(projectHashedId, projectName){
+  let all=[];
+  let page=1;
+  while(true){
+    const data=await api(`/v1/medias.json?project_id=${projectHashedId}&per_page=100&page=${page}`);
+    if(!Array.isArray(data) || data.length===0) break;
+    // We only need a few fields; strip the rest to keep memory small.
+    // Wistia returns archived videos too — skip those.
+    for(const m of data){
+      if(m.archived) continue;
+      all.push({
+        hashed_id: m.hashed_id,
+        name: m.name,
+        duration: m.duration,
+        project_name: projectName,
+      });
+    }
+    if(data.length<100) break;
+    page++;
+    await sleep(HS_DELAY_MS);
+    if(page>10) break; // safety bound
+  }
+  return all;
+}
+
+// Fetch per-day stats for a single video over a date range. Wistia returns
+// one row per day in range; we sum the columns to get range totals.
+// Returns {plays, hours, loads} aggregated.
+async function fetchVideoStats(hashedId, fromIso, toIso){
+  const data=await api(`/v1/stats/medias/${hashedId}/by_date.json?start_date=${fromIso}&end_date=${toIso}`);
+  if(!Array.isArray(data)) return {plays:0, hours:0, loads:0};
+  let plays=0, hours=0, loads=0;
+  for(const row of data){
+    plays += (row.play_count||0);
+    hours += (row.hours_watched||0);
+    loads += (row.load_count||0);
+  }
+  return {plays, hours, loads};
+}
+
+// ── Status messaging ─────────────────────────────────────────────────────
+function setStatus(msg, cls='sl'){
+  const el=document.getElementById('st');
+  el.textContent=msg;
+  el.className=cls;
+}
+function setLoadingMsg(msg, sub=''){
+  document.getElementById('lm').textContent=msg;
+  document.getElementById('ls').textContent=sub;
+}
+function setLoadingProgress(p){
+  document.getElementById('lp').textContent=p||'';
+}
+
+// ── Project picker UI ────────────────────────────────────────────────────
+function renderProjectPicker(){
+  const grid=document.getElementById('proj-grid');
+  grid.innerHTML='';
+  // Sort by media count desc so the heavy hitters appear first.
+  const sorted=[...PROJECTS].sort((a,b)=>b.c-a.c);
+  for(const p of sorted){
+    const row=document.createElement('div');
+    row.className='proj-row';
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.id=`proj-${p.h}`;
+    cb.checked=SELECTED_PROJECTS.has(p.h);
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) SELECTED_PROJECTS.add(p.h);
+      else SELECTED_PROJECTS.delete(p.h);
+      // No auto-refresh on individual project toggle — too easy to thrash.
+      // User clicks Refresh when ready.
+    });
+    const lbl=document.createElement('label');
+    lbl.htmlFor=cb.id;
+    const nm=document.createElement('span');
+    nm.textContent=p.n;
+    nm.style.flex='1';
+    nm.style.overflow='hidden';
+    nm.style.textOverflow='ellipsis';
+    nm.style.whiteSpace='nowrap';
+    const ct=document.createElement('span');
+    ct.className='pcount';
+    ct.textContent=p.c;
+    lbl.appendChild(nm);
+    lbl.appendChild(ct);
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    grid.appendChild(row);
+  }
+}
+
+function selectAllProjects(checked){
+  if(checked){
+    SELECTED_PROJECTS=new Set(PROJECTS.map(p=>p.h));
+  } else {
+    SELECTED_PROJECTS=new Set();
+  }
+  // Update checkbox states
+  for(const p of PROJECTS){
+    const cb=document.getElementById(`proj-${p.h}`);
+    if(cb) cb.checked=SELECTED_PROJECTS.has(p.h);
+  }
+}
+
+function resetProjectsToDefault(){
+  SELECTED_PROJECTS=new Set(PROJECTS.filter(p=>p.d).map(p=>p.h));
+  for(const p of PROJECTS){
+    const cb=document.getElementById(`proj-${p.h}`);
+    if(cb) cb.checked=SELECTED_PROJECTS.has(p.h);
+  }
+}
+
+// ── Sort & render ────────────────────────────────────────────────────────
+function sortVideos(videos){
+  const out=[...videos];
+  // String sort for name/project_name (case-insensitive locale compare),
+  // numeric subtraction for the four metric columns.
+  const isStringKey = SORT_KEY==='name' || SORT_KEY==='project_name';
+  out.sort((a,b)=>{
+    if(isStringKey){
+      const av=(a[SORT_KEY]||'').toLowerCase();
+      const bv=(b[SORT_KEY]||'').toLowerCase();
+      const cmp=av.localeCompare(bv);
+      return SORT_DIR==='desc' ? -cmp : cmp;
+    }
+    const av=a[SORT_KEY], bv=b[SORT_KEY];
+    return SORT_DIR==='desc' ? bv-av : av-bv;
+  });
+  return out;
+}
+
+function setSort(key){
+  if(SORT_KEY===key){
+    SORT_DIR = SORT_DIR==='desc' ? 'asc' : 'desc';
+  } else {
+    SORT_KEY = key;
+    // Default direction depends on column type. For numeric metrics, "more
+    // is better" so desc first feels natural. For string columns, alphabetical
+    // (asc) is the natural starting point.
+    SORT_DIR = (key==='name' || key==='project_name') ? 'asc' : 'desc';
+  }
+  document.querySelectorAll('thead th.sortable').forEach(th=>{
+    const isActive = th.dataset.sort === SORT_KEY;
+    th.classList.toggle('active', isActive);
+    const arrow = th.querySelector('.arrow');
+    if(arrow){
+      arrow.textContent = isActive ? (SORT_DIR==='desc' ? '▼' : '▲') : '';
+    }
+  });
+  // Sync the metric dropdown only if the active sort is one of its options.
+  // String-column sorts (name/project_name) leave the dropdown showing the
+  // last metric — clicking a metric again would reactivate it.
+  const metricEl=document.getElementById('metric');
+  const metricKeys=['plays','hours','loads','rate'];
+  if(metricKeys.includes(SORT_KEY)){
+    metricEl.value=SORT_KEY;
+  }
+  updateTableTitle();
+  renderTableBody();
+}
+
+function updateTableTitle(){
+  const labels={
+    plays:'Plays', hours:'Hours Watched', loads:'Loads', rate:'Play Rate',
+    name:'Video Name', project_name:'Project'
+  };
+  document.getElementById('th-title').textContent=`Top Videos by ${labels[SORT_KEY]}`;
+}
+
+function fmtPct(n){
+  if(!isFinite(n) || n===0) return '0%';
+  return `${(n*100).toFixed(1)}%`;
+}
+function fmtHours(h){
+  if(h<1) return `${(h*60).toFixed(1)} min`;
+  return `${h.toFixed(1)} hr`;
+}
+
+// Apply the active name filter. Case-insensitive substring on video name.
+// Empty filter returns all videos. Used by both renderTableBody and
+// renderKPIs so the totals always reconcile with the visible rows.
+function getFilteredVideos(){
+  if(!NAME_FILTER) return VIDEOS;
+  const q=NAME_FILTER.toLowerCase();
+  return VIDEOS.filter(v => (v.name||'').toLowerCase().includes(q));
+}
+
+function renderTableBody(){
+  const topN=parseInt(document.getElementById('topn').value, 10) || 10;
+  // Filter first (Q4=A: filter then take top N), then sort, then slice.
+  const filtered=getFilteredVideos();
+  const sorted=sortVideos(filtered);
+  const rows=sorted.slice(0, topN);
+
+  // Footer totals are computed from the FILTERED set so they match what's
+  // visible. If the filter is empty, this is the full set.
+  let tPlays=0, tHours=0, tLoads=0;
+  for(const v of filtered){
+    tPlays += v.plays; tHours += v.hours; tLoads += v.loads;
+  }
+  const tRate = tLoads > 0 ? tPlays/tLoads : 0;
+
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  if(rows.length===0){
+    document.getElementById('tbl').style.display='none';
+    document.getElementById('empty').style.display='block';
+    document.getElementById('empty').textContent = NAME_FILTER
+      ? `No videos match "${NAME_FILTER}".`
+      : 'No video activity in this range across selected projects.';
+    document.getElementById('rowct').textContent='0 videos';
+  } else {
+    document.getElementById('tbl').style.display='table';
+    document.getElementById('empty').style.display='none';
+    for(const v of rows){
+      const tr=document.createElement('tr');
+      const nameTd=document.createElement('td');
+      nameTd.textContent=v.name;
+      nameTd.title=v.name;
+      tr.appendChild(nameTd);
+
+      const projTd=document.createElement('td');
+      projTd.className='proj';
+      projTd.textContent=v.project_name;
+      tr.appendChild(projTd);
+
+      const playsTd=document.createElement('td');
+      playsTd.className='num';
+      playsTd.textContent=v.plays.toLocaleString();
+      tr.appendChild(playsTd);
+
+      const hoursTd=document.createElement('td');
+      hoursTd.className='num';
+      hoursTd.textContent=fmtHours(v.hours);
+      tr.appendChild(hoursTd);
+
+      const loadsTd=document.createElement('td');
+      loadsTd.className='num';
+      loadsTd.textContent=v.loads.toLocaleString();
+      tr.appendChild(loadsTd);
+
+      const rateTd=document.createElement('td');
+      rateTd.className='num';
+      rateTd.textContent=fmtPct(v.rate);
+      tr.appendChild(rateTd);
+
+      tbody.appendChild(tr);
+    }
+    // Row count communicates filter status so the user can see what's being
+    // hidden vs not. "Top N of M videos" or "Top N of M (filtered from K)".
+    const countLabel = NAME_FILTER
+      ? `Top ${rows.length} of ${filtered.length} (filtered from ${VIDEOS.length})`
+      : `Top ${rows.length} of ${VIDEOS.length} videos`;
+    document.getElementById('rowct').textContent=countLabel;
+  }
+
+  // Footer reflects filtered totals (matches what's visible)
+  document.getElementById('ft-plays').textContent=tPlays.toLocaleString();
+  document.getElementById('ft-hours').textContent=fmtHours(tHours);
+  document.getElementById('ft-loads').textContent=tLoads.toLocaleString();
+  document.getElementById('ft-rate').textContent=fmtPct(tRate);
+}
+
+function renderKPIs(rangeLabel, fromDate, toDate){
+  // KPIs reflect the FILTERED set (Q3: filter applies to KPIs and table).
+  // If no filter, this is the full set.
+  const filtered=getFilteredVideos();
+  let tPlays=0, tHours=0, tLoads=0;
+  for(const v of filtered){
+    tPlays += v.plays; tHours += v.hours; tLoads += v.loads;
+  }
+  const rate = tLoads > 0 ? tPlays/tLoads : 0;
+  const avgMin = tPlays > 0 ? (tHours*60/tPlays) : 0;
+
+  document.getElementById('kp-period').textContent=rangeLabel;
+  document.getElementById('kp-period-sub').textContent=`${fmtDate(fromDate)} – ${fmtDate(toDate)}`;
+  document.getElementById('kp-plays').textContent=tPlays.toLocaleString();
+  // "across N videos" uses the filtered count, with a parenthetical when filter is active.
+  const countSub = NAME_FILTER
+    ? `across ${filtered.length} matching videos`
+    : `across ${filtered.length} videos`;
+  document.getElementById('kp-plays-sub').textContent=countSub;
+  document.getElementById('kp-hours').textContent=fmtHours(tHours);
+  document.getElementById('kp-hours-sub').textContent=`avg ${avgMin.toFixed(1)} min/play`;
+  document.getElementById('kp-loads').textContent=tLoads.toLocaleString();
+  document.getElementById('kp-rate').textContent=fmtPct(rate);
+}
+
+function render(rangeLabel, fromDate, toDate){
+  LAST_RANGE = {label:rangeLabel, from:fromDate, to:toDate};
+  renderKPIs(rangeLabel, fromDate, toDate);
+  updateTableTitle();
+  renderTableBody();
+}
+
+// Re-render KPIs + table using the last known range. Used by the filter
+// input handler — filtering doesn't change the date range, but the filtered
+// totals need to update.
+function rerenderFromFilter(){
+  if(VIDEOS.length===0) return; // first load hasn't completed yet
+  renderKPIs(LAST_RANGE.label, LAST_RANGE.from, LAST_RANGE.to);
+  renderTableBody();
+}
+
+// ── Main load ────────────────────────────────────────────────────────────
+async function load(){
+  if(SELECTED_PROJECTS.size===0){
+    setStatus('Pick at least one project','se');
+    document.getElementById('projects-panel').classList.add('on');
+    return;
+  }
+
+  document.getElementById('btn').disabled=true;
+  document.getElementById('ov').classList.remove('off');
+  setStatus('Loading…','sl');
+  setLoadingProgress('');
+
+  const key=document.getElementById('r').value;
+  const range=resolveRange(key);
+  const fromIso=fmtIsoDay(range.from);
+  const toIso=fmtIsoDay(range.to);
+
+  const selectedProjects = PROJECTS.filter(p=>SELECTED_PROJECTS.has(p.h));
+
+  try{
+    // ── Phase 1: fetch the media list for each selected project ──────────
+    setLoadingMsg(`Fetching video lists from ${selectedProjects.length} project${selectedProjects.length===1?'':'s'}…`,
+                  `${fmtDate(range.from)} – ${fmtDate(range.to)}`);
+    let allVideos=[];
+    for(let i=0; i<selectedProjects.length; i++){
+      const p=selectedProjects[i];
+      setLoadingProgress(`Project ${i+1} of ${selectedProjects.length}: ${p.n}`);
+      try {
+        const vids=await fetchProjectMedia(p.h, p.n);
+        allVideos=allVideos.concat(vids);
+      } catch(e){
+        console.warn(`Project ${p.n} fetch failed:`, e.message);
+      }
+      await sleep(HS_DELAY_MS);
+    }
+
+    if(allVideos.length===0){
+      VIDEOS=[];
+      setLoadingMsg('No videos found in selected projects');
+      render(range.label, range.from, range.to);
+    } else {
+      // ── Phase 2: fetch stats per video for the date range ──────────────
+      setLoadingMsg(`Fetching stats for ${allVideos.length} videos…`,
+                    `Wistia returns one video at a time — this is the slow part`);
+      const out=[];
+      for(let i=0; i<allVideos.length; i++){
+        const v=allVideos[i];
+        setLoadingProgress(`Video ${i+1} of ${allVideos.length}: ${v.name}`);
+        try {
+          const s=await fetchVideoStats(v.hashed_id, fromIso, toIso);
+          // Skip videos with no activity in range — keeps the table relevant.
+          // If the user expected a video to appear, they'll spot it absent and
+          // can widen the range.
+          if(s.plays>0 || s.hours>0 || s.loads>0){
+            out.push({
+              hashed_id: v.hashed_id,
+              name: v.name,
+              project_name: v.project_name,
+              plays: s.plays,
+              hours: s.hours,
+              loads: s.loads,
+              rate: s.loads>0 ? s.plays/s.loads : 0,
+            });
+          }
+        } catch(e){
+          console.warn(`Stats fetch failed for ${v.name}:`, e.message);
+        }
+        await sleep(HS_DELAY_MS);
+      }
+      VIDEOS=out;
+
+      setLoadingMsg('Rendering…');
+      render(range.label, range.from, range.to);
+    }
+
+    document.getElementById('ts').textContent='Updated '+new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    document.getElementById('dash').style.display='block';
+    document.getElementById('ov').classList.add('off');
+    setStatus(`${VIDEOS.length} videos with activity`, 'so');
+
+  } catch(e){
+    console.error('Load failed:', e);
+    setStatus(`Load failed: ${e.message}`, 'se');
+    setLoadingMsg('Failed', e.message);
+  } finally {
+    document.getElementById('btn').disabled=false;
+  }
+}
+
+// ── UI wiring ────────────────────────────────────────────────────────────
+// Range dropdown: auto-fire for presets, require button click for custom
+document.getElementById('r').addEventListener('change', e=>{
+  const isCustom = e.target.value === 'custom';
+  document.getElementById('cd').classList.toggle('on', isCustom);
+  if(!isCustom){
+    load();
+  }
+});
+
+// Top N: doesn't require re-fetch, just re-renders the table body
+document.getElementById('topn').addEventListener('change', ()=>{
+  if(VIDEOS.length>0){
+    updateTableTitle();
+    renderTableBody();
+  }
+});
+
+// Metric dropdown: mirrors the sort state — same effect as clicking the column
+document.getElementById('metric').addEventListener('change', e=>{
+  const newKey=e.target.value;
+  if(SORT_KEY!==newKey){
+    SORT_KEY=newKey;
+    SORT_DIR='desc';
+    document.querySelectorAll('thead th.sortable').forEach(th=>{
+      const isActive = th.dataset.sort === SORT_KEY;
+      th.classList.toggle('active', isActive);
+      const arrow = th.querySelector('.arrow');
+      if(arrow) arrow.textContent = isActive ? '▼' : '';
+    });
+    if(VIDEOS.length>0){
+      updateTableTitle();
+      renderTableBody();
+    }
+  }
+});
+
+// Name filter — instant filter as the user types. Doesn't re-fetch, just
+// re-renders KPIs + table from the in-memory video set. Trim is applied so
+// trailing spaces don't accidentally hide everything.
+document.getElementById('flt-name').addEventListener('input', e=>{
+  NAME_FILTER = e.target.value.trim();
+  rerenderFromFilter();
+});
+
+// Project picker — render once at load
+renderProjectPicker();
+
+// Auto-run on first load
+window.addEventListener('DOMContentLoaded', load);
+</script>
+
+</body>
+</html>
