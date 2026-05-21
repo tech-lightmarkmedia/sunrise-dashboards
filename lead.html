@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Lead Tracking Dashboard v20</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --dcb:#1d4ed8;--dcb-bg:#eff6ff;
+  --inv:#6d28d9;--inv-bg:#f5f3ff;
+  --green:#065f46;--green-bg:#ecfdf5;--red:#991b1b;
+  --src-meta:#1877f2;--src-google:#ea4335;--src-linkedin:#0a66c2;
+  --src-organic:#15803d;--src-direct:#92400e;--src-referral:#7c2d12;
+  --src-email:#a16207;--src-other:#78716c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+.logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:white}
+header h1{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+#ts{font-size:11px;color:#9e9789}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+select:focus{outline:none;border-color:var(--dcb)}
+input[type=date]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text)}
+input[type=date]:focus{outline:none;border-color:var(--dcb)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+
+.seg{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:white}
+.seg button{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 10px;border:none;background:transparent;color:var(--text2);cursor:pointer;border-right:1px solid var(--border)}
+.seg button:last-child{border-right:none}
+.seg button.active{background:var(--text);color:white}
+.seg button:hover:not(.active){background:var(--surface2)}
+
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px}
+.sl{color:var(--text3)}.sd{color:var(--dcb)}.so{color:var(--green);font-weight:500}.se{color:var(--red);font-weight:500}
+
+#ov{display:none;position:fixed;inset:0;background:rgba(245,243,239,.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--dcb);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lm{font-size:13px;color:var(--text2)}
+
+#dash{padding:20px 28px 48px}
+
+.fpills{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fpill{background:var(--inv-bg);color:var(--inv);border:1px solid #c4b5fd;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500}
+
+/* Unmatched-investments banner */
+.ub{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:0;margin-bottom:18px;overflow:hidden}
+.ub-summary{display:flex;align-items:center;gap:14px;padding:12px 16px}
+.ub-icon{font-size:18px;color:#92400e;flex-shrink:0}
+.ub-text{flex:1;min-width:0}
+.ub-headline{font-size:13px;font-weight:600;color:#78350f;line-height:1.3}
+.ub-sub{font-size:11px;color:#92400e;margin-top:3px;line-height:1.4}
+.ub-toggle{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:#78350f;background:#fcd34d;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.ub-toggle:hover{background:#fbbf24}
+.ub-list{border-top:1px solid #fcd34d;background:white;max-height:340px;overflow-y:auto}
+.ub-list table{width:100%;border-collapse:collapse;font-size:11px}
+.ub-list thead th{text-align:left;padding:7px 12px;border-bottom:1px solid var(--surface2);font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:600;background:#fef9eb;position:sticky;top:0}
+.ub-list thead th.num{text-align:right}
+.ub-list tbody td{padding:6px 12px;border-bottom:1px solid var(--surface2);color:var(--text2)}
+.ub-list tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+.ub-list-footer{padding:9px 16px;font-size:10px;color:var(--text3);background:#fef9eb;border-top:1px solid var(--surface2)}
+
+.krow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.kl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);font-weight:600;margin-bottom:6px}
+.kv{font-family:'DM Serif Display',serif;font-size:28px;line-height:1}
+.ks{font-size:11px;color:var(--text3);margin-top:4px}
+
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+.panel-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+.panel-h h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;line-height:1.2;flex:1;min-width:0}
+.panel-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-controls select{font-size:11px;padding:4px 7px}
+.panel-sub{font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.4;font-style:italic}
+.panel-sub code{font-family:'Consolas',monospace;background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:10.5px;font-style:normal}
+
+.funnel{display:flex;flex-direction:column;gap:8px}
+.fstage{display:grid;grid-template-columns:130px 1fr 60px;align-items:center;gap:10px}
+.fstage-label{font-size:11px;font-weight:500;color:var(--text);text-align:right}
+.fstage-bar{position:relative;height:28px;background:var(--surface2);border-radius:5px;overflow:hidden;display:flex}
+.fstage-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:500;cursor:pointer;transition:opacity .15s;border-right:1px solid rgba(255,255,255,.2)}
+.fstage-seg:last-child{border-right:none}
+.fstage-seg:hover{opacity:.8}
+.fstage-seg.tiny{font-size:0}
+.fstage-count{font-family:'DM Serif Display',serif;font-size:18px;text-align:left;color:var(--text)}
+
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:20px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);cursor:pointer;user-select:none}
+.legend-item.dim{opacity:.35}
+.legend-dot{width:11px;height:11px;border-radius:3px}
+
+.bdown{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:20px}
+.bdown-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:14px;flex-wrap:wrap}
+.bdown-h h3{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400}
+.bdown-h-controls{display:flex;align-items:center;gap:6px}
+.bdown-h-controls label{font-size:11px;color:var(--text2);font-weight:500}
+.bdown table{width:100%;border-collapse:collapse;font-size:12px}
+.bdown thead th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);font-weight:600}
+.bdown thead th.num{text-align:right}
+.bdown tbody td{padding:8px 6px;border-bottom:1px solid var(--surface2)}
+.bdown tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bdown tbody tr:last-child td{border-bottom:none}
+.bdown tbody tr.total td{font-weight:600;border-top:2px solid var(--border);background:var(--surface2)}
+
+.tip{position:fixed;background:var(--text);color:white;padding:6px 10px;border-radius:5px;font-size:11px;pointer-events:none;z-index:1000;display:none}
+.tip.on{display:block}
+
+/* ── Drill-down panel (slide-in from right) ──────────────── */
+.dd-backdrop{position:fixed;inset:0;background:rgba(26,24,20,.32);z-index:90;opacity:0;pointer-events:none;transition:opacity .18s ease}
+.dd-backdrop.open{opacity:1;pointer-events:auto}
+.dd-panel{position:fixed;top:0;right:0;bottom:0;width:min(640px,92vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.dd-panel.open{transform:translateX(0)}
+.dd-header{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface)}
+.dd-header-text{flex:1;min-width:0}
+.dd-title{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.25;color:var(--text)}
+.dd-sub{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4}
+.dd-close{flex-shrink:0;background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.dd-close:hover{background:var(--surface2);color:var(--text)}
+.dd-body{flex:1;overflow-y:auto;padding:6px 0}
+
+/* Breakdown zone (top ~30% of panel) */
+.dd-breakdown-wrap{display:flex;flex-direction:column;height:30%;min-height:180px;border-bottom:2px solid var(--border);background:#fafaf6}
+.dd-breakdown-controls{display:flex;align-items:center;gap:10px;padding:10px 22px;border-bottom:1px solid var(--surface2);font-size:11px;color:var(--text2);flex-shrink:0}
+.dd-breakdown-controls label{font-weight:500;color:var(--text2)}
+.dd-breakdown-controls select{font-family:'DM Sans',sans-serif;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:white;color:var(--text);cursor:pointer}
+.dd-filter-state{margin-left:auto;font-size:10px;color:var(--text2);font-style:italic}
+.dd-filter-state .clear-btn{font-style:normal;font-weight:500;color:var(--dcb);cursor:pointer;text-decoration:underline;margin-left:6px}
+.dd-breakdown-body{flex:1;overflow-y:auto}
+.dd-bd-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:7px 22px;border-bottom:1px solid var(--surface2);align-items:center;cursor:pointer;font-size:12px}
+.dd-bd-row:hover{background:white}
+.dd-bd-row.selected{background:var(--dcb-bg);font-weight:500}
+.dd-bd-name{color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-bd-count{color:var(--text2);font-variant-numeric:tabular-nums;font-size:11px}
+.dd-bd-amount{color:var(--text);font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;min-width:70px;text-align:right}
+.dd-bd-empty{padding:16px 22px;text-align:center;color:var(--text3);font-size:11px;font-style:italic}
+
+/* Records zone (bottom ~70% of panel) */
+.dd-records-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.dd-records-header{padding:8px 22px 4px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--surface);flex-shrink:0}
+.dd-empty{padding:32px 22px;text-align:center;color:var(--text3);font-size:12px;font-style:italic}
+.dd-row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 22px;border-bottom:1px solid var(--surface2);align-items:start}
+.dd-row:hover{background:var(--surface2)}
+.dd-row-main{min-width:0}
+.dd-row-name{font-size:13px;font-weight:500;color:var(--text);text-decoration:none;display:inline-block;line-height:1.3}
+.dd-row-name:hover{color:var(--dcb);text-decoration:underline}
+.dd-row-name.no-link{color:var(--text);cursor:default}
+.dd-row-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+.dd-row-tags{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dd-tag{font-size:10px;font-weight:500;letter-spacing:.04em;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.dd-tag.amount{background:var(--dcb-bg);color:var(--dcb);border:1px solid #bfdbfe}
+.dd-tag.type-new{background:var(--green-bg);color:var(--green);border:1px solid #a7f3d0}
+.dd-tag.type-repeat{background:var(--inv-bg);color:var(--inv);border:1px solid #c4b5fd}
+.dd-tag.type-bolt{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.dd-tag.unmatched{background:#f3f4f6;color:#4b5563;border:1px solid #d1d5db}
+.dd-footer{padding:12px 22px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);background:#fef9eb}
+
+/* Make funnel segments and KPI cards visibly clickable */
+.fstage-seg{cursor:pointer}
+.fstage-count.clickable{cursor:pointer}
+.fstage-count.clickable:hover{text-decoration:underline;text-decoration-color:rgba(0,0,0,.22);text-underline-offset:3px}
+.kpi.clickable{cursor:pointer}
+.kpi.clickable:hover{box-shadow:0 0 0 2px var(--dcb-bg) inset}
+.bdown tbody td.clickable{cursor:pointer}
+.bdown tbody td.clickable:hover{text-decoration:underline;text-decoration-color:rgba(0,0,0,.22);text-underline-offset:3px}
+
+/* ── Guide panel (slide-in from right, same family as drill-down) ─── */
+.guide-panel{position:fixed;top:0;right:0;bottom:0;width:min(720px,94vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.guide-panel.open{transform:translateX(0)}
+.guide-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface)}
+.guide-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text)}
+.guide-close{flex-shrink:0;background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.guide-close:hover{background:var(--surface2);color:var(--text)}
+.guide-body{flex:1;overflow-y:auto;padding:22px 28px 48px;line-height:1.55;color:var(--text)}
+.guide-body h2{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);margin:28px 0 8px;border-bottom:1px solid var(--border);padding-bottom:6px;letter-spacing:.01em}
+.guide-body h2:first-child{margin-top:0}
+.guide-body h3{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);margin:18px 0 5px;font-weight:600;letter-spacing:.02em}
+.guide-body p{font-size:13px;color:var(--text2);margin:0 0 10px;line-height:1.55}
+.guide-body p strong{color:var(--text);font-weight:600}
+.guide-body ul{margin:6px 0 12px 20px;padding:0;font-size:13px;color:var(--text2);line-height:1.55}
+.guide-body ul li{margin-bottom:5px}
+.guide-body code{font-family:'SF Mono','Monaco',Consolas,monospace;font-size:12px;background:var(--surface2);padding:1px 6px;border-radius:4px;color:var(--text)}
+.guide-body .pill-inline{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;margin:0 2px;vertical-align:1px}
+.guide-body .pill-inline.attr{background:var(--inv-bg);color:var(--inv);border:1px solid #ddd6fe}
+.guide-body .pill-inline.cohort{background:var(--dcb-bg);color:var(--dcb);border:1px solid #bfdbfe}
+.guide-body .pill-inline.activity{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.guide-body .callout{background:var(--surface2);border-left:3px solid var(--dcb);padding:10px 14px;margin:14px 0;border-radius:0 6px 6px 0;font-size:12px;color:var(--text2)}
+.guide-body .callout strong{color:var(--text)}
+
+/* Header Guide button */
+.help-btn{background:rgba(255,255,255,.08);color:#f5f3ef;border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:background .14s ease}
+.help-btn:hover{background:rgba(255,255,255,.16)}
+.hdr-right{display:flex;align-items:center;gap:14px}
+
+footer.notes{font-size:11px;color:var(--text3);line-height:1.5;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+footer.notes b{color:var(--text2)}
+footer.notes code{font-family:'Consolas',monospace;background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:10.5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo">S</div>
+    <h1>Sunrise Capital — Lead Tracking</h1>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v20</span>
+  </div>
+  <div class="hdr-right">
+    <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
+    <div id="ts">—</div>
+  </div>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label>Range:</label>
+    <select id="rng">
+      <option value="30">Last 30 days</option>
+      <option value="90" selected>Last 90 days</option>
+      <option value="180">Last 180 days</option>
+      <option value="365">Last 365 days</option>
+      <option value="ytd">Year to date</option>
+      <option value="all">All time</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="cdates" id="cdates">
+    <input type="date" id="dfrom"><span>to</span><input type="date" id="dto">
+  </div>
+
+  <div class="fg">
+    <label>Anchor:</label>
+    <select id="anchor-mode">
+      <option value="funded" selected>Funded-anchored (attribution)</option>
+      <option value="lead">Lead-anchored (cohort)</option>
+      <option value="activity">Activity-anchored (operational)</option>
+    </select>
+  </div>
+
+  <div class="fg">
+    <label>Type:</label>
+    <div class="seg" id="type-seg">
+      <button data-type="all" class="active">All</button>
+      <button data-type="New">New</button>
+      <button data-type="Repeat">Repeat</button>
+      <button data-type="Bolt-On">Bolt-On</button>
+    </div>
+  </div>
+
+  <div class="fg">
+    <label>Fund:</label>
+    <div class="seg" id="fund-seg">
+      <button data-fund="all" class="active">All</button>
+      <button data-fund="Fund 5">Fund 5</button>
+    </div>
+  </div>
+
+  <button id="btn" onclick="loadAll()">↻ Refresh</button>
+  <span id="st" class="sl">Loading…</span>
+</div>
+
+<div id="ov" class="on">
+  <div class="spin"></div>
+  <div id="lm">Connecting to HubSpot…</div>
+</div>
+
+<div id="dash" style="display:none">
+  <div class="fpills" id="fpills"></div>
+
+  <!-- Unmatched-investments banner: shown when some Investments couldn't be
+       matched to a deal context. Click to expand a sample list. -->
+  <div id="unmatched-banner" class="ub" style="display:none">
+    <div class="ub-summary">
+      <div class="ub-icon">⚠</div>
+      <div class="ub-text">
+        <div class="ub-headline" id="ub-headline">—</div>
+        <div class="ub-sub" id="ub-sub">These investments have no associated deal in HubSpot, so their funnel-stage history can't be traced. They still count toward Funded totals but show as "Unstamped" in source attribution.</div>
+      </div>
+      <button class="ub-toggle" id="ub-toggle" onclick="toggleUnmatchedList()">View list ▾</button>
+    </div>
+    <div class="ub-list" id="ub-list" style="display:none">
+      <table>
+        <thead>
+          <tr><th>Email</th><th class="num">Amount</th><th>Funds Received</th><th>Type</th></tr>
+        </thead>
+        <tbody id="ub-list-body"></tbody>
+      </table>
+      <div class="ub-list-footer" id="ub-list-footer"></div>
+    </div>
+  </div>
+
+  <div class="krow">
+    <div class="kpi clickable" id="kpi-leads"><div class="kl">Leads in window</div><div class="kv" id="k1">—</div><div class="ks">deals created in window</div></div>
+    <div class="kpi clickable" id="kpi-dcb"><div class="kl">Discovery calls booked</div><div class="kv" id="k2">—</div><div class="ks">deals reaching DCB</div></div>
+    <div class="kpi clickable" id="kpi-funded"><div class="kl">Funded investments</div><div class="kv" id="k3">—</div><div class="ks" id="k3s">by Funds Received date</div></div>
+    <div class="kpi clickable" id="kpi-capital"><div class="kl">Capital raised</div><div class="kv" id="k4">—</div><div class="ks" id="k4s">sum of investments in window</div></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="dual" id="dual">
+    <div class="panel" data-side="left">
+      <div class="panel-h">
+        <h2 id="title-left">First-Touch Attribution</h2>
+        <div class="panel-controls">
+          <select class="view-pick" data-side="left">
+            <option value="first" selected>First-touch</option>
+            <option value="last">Last-touch (at milestone)</option>
+            <option value="latest">Latest source (now)</option>
+          </select>
+          <select class="ms-pick" data-side="left" style="display:none">
+            <option value="booked_discovery_call" selected>at DCB</option>
+            <option value="investnext_commitment">at Committed</option>
+            <option value="closed_won">at Closed Won</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-sub" id="sub-left"></div>
+      <div class="funnel" id="funnel-left"></div>
+    </div>
+    <div class="panel" data-side="right">
+      <div class="panel-h">
+        <h2 id="title-right">Last-Touch at DCB</h2>
+        <div class="panel-controls">
+          <select class="view-pick" data-side="right">
+            <option value="first">First-touch</option>
+            <option value="last" selected>Last-touch (at milestone)</option>
+            <option value="latest">Latest source (now)</option>
+          </select>
+          <select class="ms-pick" data-side="right">
+            <option value="booked_discovery_call" selected>at DCB</option>
+            <option value="investnext_commitment">at Committed</option>
+            <option value="closed_won">at Closed Won</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-sub" id="sub-right"></div>
+      <div class="funnel" id="funnel-right"></div>
+    </div>
+  </div>
+
+  <div class="bdown" id="bdown">
+    <div class="bdown-h">
+      <h3 id="bdown-title">Source breakdown</h3>
+      <div class="bdown-h-controls">
+        <label>Anchor:</label>
+        <select id="bdown-anchor">
+          <option value="left" selected>Left panel view</option>
+          <option value="right">Right panel view</option>
+        </select>
+      </div>
+    </div>
+    <table id="bdown-tbl">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th class="num">Leads</th>
+          <th class="num">DCB</th>
+          <th class="num">DC Done</th>
+          <th class="num">DecCB</th>
+          <th class="num">Decision Done</th>
+          <th class="num">Funded</th>
+          <th class="num">Capital</th>
+          <th class="num">Lead → Funded</th>
+        </tr>
+      </thead>
+      <tbody id="bdown-body"></tbody>
+    </table>
+  </div>
+
+  <footer class="notes">
+    <b>Stage definitions.</b> Lead = deal created · DCB = deal entered Discovery Call Booked stage · DC Done = deal entered Discovery Call Completed · DecCB = deal entered Decision Call Booked · Decision Done = deal entered Decision Call Completed (Nurture or Disqualified) · Funded = Investment record exists with <code>funds_received</code>.
+    <br><br>
+    <b>Three windowing modes.</b> <b>Funded-anchored (default)</b>: of the investments funded in the window, trace each backward through the funnel. Best for attribution — answers "where did our funded capital come from." <b>Lead-anchored</b>: of the deals created in the window, trace forward through the funnel. Best for cohort analysis — but expect the Funded count to lag because recent leads haven't matured yet. <b>Activity-anchored</b>: each row counts events that happened in the window, independent of cohort. Best for operational tracking — funnel may be non-monotonic.
+    <br><br>
+    <b>Three attribution views.</b> <b>First-touch</b> reads <code>hs_analytics_source</code> on the deal — origin of the contact, immutable, complete historical coverage. <b>Last-touch (at milestone)</b> reads <code>traffic_source_0_before_&lt;milestone&gt;</code> for the milestone you select — coverage starts Jan 2026. <b>Latest source (now)</b> reads <code>hs_analytics_latest_source</code> on the deal — wherever the contact most recently touched. Each panel's view is set independently.
+    <br><br>
+    <b>Investment type filter.</b> <b>All</b> includes every funded investment. <b>New</b> = first-time investor (acquisition attribution). <b>Repeat</b> = prior investor in a different fund (cross-fund retention). <b>Bolt-On</b> = additional investment within the same fund (within-fund stickiness). The filter affects the Funded row, capital totals, and breakdown table. KPI sublines always show the full breakdown for context.
+    <br><br>
+    <b>Investment → deal matching.</b> Each Investment is matched to a deal via <code>email_address</code>. Matching searches across <b>all pipelines</b> (since older Fund 4 deals live in legacy pipelines). Primary path uses the deal's <code>email</code> mirror; <b>fallback</b> uses contact-association lookup (catches deals where the email mirror isn't populated, like secondary-contact or soft-commit deals). The fallback also handles email aliases — investors whose Investment email is one of their alternate addresses (<code>hs_additional_emails</code>) rather than the contact's primary email. If the contact has one deal, it's used. If multiple, a Closed Won deal whose <code>amount</code> is within 10% of <code>investment_amount</code> is preferred; ties broken by Closed Won date closest to <code>funds_received</code>. <b>Funnel-stage history (DCB → Decision Done) is read only from Main Sales Pipeline deals</b> because the stage-stamping workflow only runs there. Source attribution and Closed Won counts use any matched deal regardless of pipeline. Stage history aggregates across all of the contact's MSP deals (Rule C-prime).
+  </footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<!-- Drill-down panel (slide-in from right) — opens when user clicks any
+     funnel segment, KPI card, or breakdown table cell. -->
+<div id="dd-backdrop" class="dd-backdrop" onclick="closeDrilldown()"></div>
+<aside id="dd-panel" class="dd-panel" aria-hidden="true">
+  <header class="dd-header">
+    <div class="dd-header-text">
+      <div class="dd-title" id="dd-title">—</div>
+      <div class="dd-sub" id="dd-sub">—</div>
+    </div>
+    <button class="dd-close" onclick="closeDrilldown()" aria-label="Close">×</button>
+  </header>
+  <!-- Top zone: aggregated breakdown by selected dimension -->
+  <div class="dd-breakdown-wrap">
+    <div class="dd-breakdown-controls">
+      <label>View by:</label>
+      <select id="dd-dim" onchange="onDimensionChange()"></select>
+      <span class="dd-filter-state" id="dd-filter-state"></span>
+    </div>
+    <div class="dd-breakdown-body" id="dd-breakdown-body"></div>
+  </div>
+  <!-- Bottom zone: individual record list, optionally filtered by breakdown row -->
+  <div class="dd-records-wrap">
+    <div class="dd-records-header" id="dd-records-header">Individual records</div>
+    <div class="dd-body" id="dd-body"></div>
+    <div class="dd-footer" id="dd-footer" style="display:none"></div>
+  </div>
+</aside>
+
+<!-- Guide panel (slide-in from right) — opens via the Guide button.
+     Contains user-facing instructions on how to read the dashboard. -->
+<div id="guide-backdrop" class="dd-backdrop" onclick="closeHelp()"></div>
+<aside id="guide-panel" class="guide-panel" aria-hidden="true">
+  <header class="guide-header">
+    <div class="guide-title">How to read this dashboard</div>
+    <button class="guide-close" onclick="closeHelp()" aria-label="Close guide">×</button>
+  </header>
+  <div class="guide-body">
+
+    <h2>What this dashboard measures</h2>
+    <p>This is a marketing-attribution view of the SCI capital-raise funnel — where investors come from and how they move from first touch to funded. The dashboard answers two related questions: <strong>where did our funded capital come from</strong>, and <strong>how is the current pipeline of leads converting</strong>.</p>
+    <p>The funnel runs left-to-right through six stages: <strong>Lead</strong> (deal created) → <strong>DCB</strong> (Discovery Call Booked) → <strong>DC Done</strong> (Discovery Call Completed) → <strong>Decision CB</strong> (Decision Call Booked) → <strong>Decision Done</strong> (Decision Call Completed) → <strong>Funded</strong> (Investment record exists).</p>
+
+    <h2>The three windowing modes</h2>
+    <p>The <strong>Anchor</strong> dropdown changes which question the funnel is answering. Each mode produces a meaningfully different funnel shape from the same underlying data.</p>
+
+    <h3><span class="pill-inline attr">Funded-anchored (default)</span></h3>
+    <p>Of the investments funded in the window, trace each one backward through the funnel. Every row is a subset of the Funded count — the same population traced through their journey. Best for attribution: "where did our funded capital come from?"</p>
+    <p>The funnel typically shows Funded = Lead at top and bottom, with intermediate rows being subsets (some funded investors didn't go through every stage; some skipped DCB entirely if they came in via direct closer outreach or migration).</p>
+
+    <h3><span class="pill-inline cohort">Lead-anchored</span></h3>
+    <p>Of the deals created in the window, trace forward through the funnel. The Lead row is the cohort size; each downstream row is a subset that reached that stage. Best for cohort analysis: "how is this batch of leads converting?"</p>
+    <p><strong>Watch out:</strong> recent windows will show a tiny Funded count because leads take 2-6 months to fund. Use longer windows (12 months, all-time) for honest funded-rate reads in this mode.</p>
+
+    <h3><span class="pill-inline activity">Activity-anchored</span></h3>
+    <p>Each row counts events that happened in the window, independent of cohort. The Lead row counts deals created in window; the DCB row counts deals that hit DCB in window; etc. The funnel can be non-monotonic — DCB row can exceed Lead row if old leads are booking discoveries this period.</p>
+    <p>Best for operational tracking: "what activity happened across our funnel this period?" This is the right mode for closer/setter performance reads where you don't care about cohort relationships.</p>
+
+    <h3>How the modes look on the same data</h3>
+    <p>Same data, three modes, three different funnel shapes. Here's what a typical "Last 90 days" window might show with each mode active:</p>
+    <ul>
+      <li><strong>Funded-anchored:</strong> Lead = 35 · DCB = 25 · DC Done = 22 · Funded = 35 (the cohort floor and ceiling are equal — every funded investor was a lead at some point)</li>
+      <li><strong>Lead-anchored:</strong> Lead = 297 · DCB = 188 · DC Done = 104 · Funded = 32 (each row is a subset of Leads; Funded count is small because recent leads haven't matured)</li>
+      <li><strong>Activity-anchored:</strong> Lead = 297 · DCB = 236 · DC Done = 139 · Funded = 44 (DCB exceeds Leads because old leads are booking discoveries this period; Funded is the true funded-this-window count)</li>
+    </ul>
+    <p>Notice how DCB differs across modes (188 vs 236) — the gap of 48 is "deals booking discoveries this window whose lead was created before this window." That's a real business signal: longer-cycle leads still moving through the pipeline. Funded differs too (32 vs 44) — 12 of this window's fundings came from older lead cohorts.</p>
+
+    <div class="callout">
+      <strong>Caveat — at All time, the modes converge.</strong> When the range is unbounded ("All time"), the cohort filter has nothing to filter against, so all three modes read essentially the same dataset and produce nearly identical funnels. The mode difference only becomes visible when you constrain the range (Last 30/90/180 days, custom dates). If you toggle Anchor at All time and nothing changes, that's expected — switch to a constrained range to see the modes diverge.
+    </div>
+
+    <h2>The three attribution views</h2>
+    <p>Each panel has its own view dropdown. The two panels can show different views simultaneously — that's the side-by-side comparison feature.</p>
+
+    <h3>First-touch</h3>
+    <p>Where did the contact originally come from? Reads <code>hs_analytics_source</code> on the deal — this is the source recorded when the contact first entered HubSpot. Immutable, complete historical coverage. The most reliable attribution for "what channel acquired this investor."</p>
+
+    <h3>Last-touch (at milestone)</h3>
+    <p>What channel were they on at a specific milestone moment? When you select Last-touch, a milestone picker appears: DCB, Committed, or Closed Won. The dashboard reads <code>traffic_source_0_before_&lt;milestone&gt;</code> — a workflow-stamped value captured the moment the deal hit that stage.</p>
+    <p><strong>Coverage starts Jan 2026</strong> for milestone-snapshot stamps. Earlier deals that hit those stages before the workflow was running will show as "Unstamped" in this view. Expect the Unstamped segment to shrink over time as more deals pass through milestones with the workflow active.</p>
+
+    <h3>Latest source (now)</h3>
+    <p>Where is the contact most recently touching us? Reads <code>hs_analytics_latest_source</code> on the deal — reflects current state, mutable. Most useful for re-engagement questions: "of our funded investors, which channels are they currently coming back through?"</p>
+
+    <h2>Investment type filter</h2>
+    <p>Investments are categorized by type, which determines what kind of attribution they represent:</p>
+    <ul>
+      <li><strong>New</strong> — first-time investor. Pure acquisition attribution. The channel that brought them in earned the credit.</li>
+      <li><strong>Repeat</strong> — prior investor in a different fund. Cross-fund retention. Their original acquisition source still gets credit, but this is about retention not acquisition.</li>
+      <li><strong>Bolt-On</strong> — additional investment within the same fund. Within-fund stickiness. Same investor topping up.</li>
+      <li><strong>All</strong> — every investment regardless of type. Most accurate for total volume questions.</li>
+    </ul>
+    <p>The filter affects the Funded row, capital totals, and breakdown table. <strong>The KPI sublines always show the full type breakdown</strong> ("22 new · 11 repeat · 2 bolt-on") regardless of filter — so you can always see the full picture even when filtering.</p>
+
+    <h2>Drill-down — clicking the numbers</h2>
+    <p>Most numbers and segments are clickable. Each click opens a slide-in panel showing the underlying records:</p>
+    <ul>
+      <li><strong>Click any funnel bar segment</strong> (e.g., the Meta-colored part of the DCB row) → see the deals that hit DCB from Meta.</li>
+      <li><strong>Click any funnel row's count</strong> (the big number at the right of each bar) → see all records for that stage across all sources.</li>
+      <li><strong>Click any KPI card</strong> → see all records for that metric.</li>
+      <li><strong>Click any cell in the breakdown table</strong> → see records for that source × stage combination.</li>
+    </ul>
+    <p>Inside the drill-down panel, each row is clickable and opens that record (deal or investment) in HubSpot in a new tab.</p>
+
+    <h2>How attribution is anchored — per-contact, not per-deal</h2>
+    <p>This dashboard answers <strong>"how was this investor procured"</strong> — not "what email did they click before their fourth investment." Attribution is anchored to the contact's <strong>first Closed Won deal</strong>, regardless of which deal the current Investment is technically tied to.</p>
+    <p>The reasoning: an investor is "won" exactly once. That moment is when a channel converted a stranger into a customer. Subsequent deals from the same contact — repeat investments in new funds, bolt-ons within the same fund, follow-on commitments — are <em>relationship management</em>, not channel-driven re-acquisition. Crediting Jimmy's fourth investment to whatever email he happened to click last week would dilute the truth of where Jimmy actually came from.</p>
+    <p><strong>How it works in practice:</strong> When the dashboard reads source attribution for any Investment, it walks the matched deal's contact-graph to find the earliest Closed Won deal in that contact's history. The source values (first-touch, last-touch, latest source) are read from <em>that</em> procurement deal, not the directly-matched deal. If no Closed Won exists anywhere in the contact's history, the dashboard falls back to reading the matched deal directly.</p>
+    <p><strong>Practical consequence:</strong> Repeat investors don't get re-attributed every time they fund. Joe Fairless's Fund 5 commitment in 2026 inherits the source attribution from his Fund 3 deal in 2023 — because that's when Joe was actually procured. ROAS calculations are honest as a result: spend on a channel is divided across all the lifetime capital from contacts that channel acquired, not split arbitrarily across deals.</p>
+
+    <div class="callout">
+      <strong>What this means for the source views.</strong> First-touch, last-touch, and latest source all answer the same conceptual question — where did the investor come from — using different signals on the procurement deal. First-touch reads the contact's original entry source (most reliable, fully populated). Last-touch reads workflow-stamped values at a milestone (less coverage, depends on stamping reliability). Latest source reads current contact state (mutable, useful for re-engagement reads).
+    </div>
+
+    <h2>Investment → deal matching</h2>
+    <p>Investment records are matched to deal records via the investor's email address. Matching searches across all HubSpot pipelines because older Fund 4 deals live in legacy pipelines, not just the Main Sales Pipeline.</p>
+    <p>The matcher uses a multi-step approach:</p>
+    <ul>
+      <li><strong>Primary:</strong> deal-side <code>email</code> mirror lookup. Fast.</li>
+      <li><strong>Fallback:</strong> if no match, search HubSpot contacts by email (including <code>hs_additional_emails</code> for investors with multiple addresses), then look up that contact's associated deals.</li>
+      <li><strong>Selection:</strong> if the contact has one deal, use it. If multiple, prefer one whose <code>amount</code> is within 10% of <code>investment_amount</code>; ties broken by Closed Won date closest to <code>funds_received</code>.</li>
+      <li><strong>Stage history:</strong> aggregates across all of the contact's Main Sales Pipeline deals (Rule C-prime), so duplicate-deal records don't create funnel gaps.</li>
+    </ul>
+    <p>Match rate is currently around 95%. The unmatched-investments banner appears at the top when any window contains unmatched records — click "View list" to see them. These are typically investors with no corresponding deal record at all (older funds, direct-to-InvestNext investors).</p>
+
+    <h2>Reading caveats</h2>
+    <p><strong>Funnel-stage history is Main Sales Pipeline only.</strong> When the matched deal is in a legacy pipeline, the Investment still contributes to Funded counts and source attribution, but its DCB / DC Done / Decision data isn't read because the stamping workflow only runs in the Main Sales Pipeline. Some funded-anchored funnels will show fewer DCBs than Funded as a result — that's honest, not a bug.</p>
+    <p><strong>2023-12-31 cluster.</strong> Many investments funded on Dec 31, 2023 — that's a real launch-week cohort for Fund 4 (which started Nov 2023), bunched naturally by year-end tax pressures and capital-call activation. Not a placeholder date.</p>
+    <p><strong>"Unstamped" in the source breakdown.</strong> Records appear here when their associated deal has no <code>hs_analytics_source</code>, or when no deal could be matched at all. These investments still count toward Funded totals; they just lack channel attribution.</p>
+
+    <h2>Glossary</h2>
+    <p><strong>DCB</strong> — Discovery Call Booked. The pipeline stage where a setter has scheduled a discovery call.</p>
+    <p><strong>DC Done</strong> — Discovery Call Completed. The discovery actually happened.</p>
+    <p><strong>Decision CB / Decision Done</strong> — Decision Call Booked / Completed. Second meeting in the funnel, typically with the closer.</p>
+    <p><strong>Committed</strong> — InvestNext-side commitment confirmed. Comes after Decision Done in the funnel; not displayed as a funnel row but available as a milestone for last-touch attribution.</p>
+    <p><strong>Closed Won</strong> — deal-side close in HubSpot. Used as the time anchor for matching investments to deals.</p>
+    <p><strong>Funded</strong> — actual wire received. Anchored on the Investment record's <code>funds_received</code> date.</p>
+    <p><strong>Type of Investment</strong> — categorization on each Investment record: New / Repeat / Bolt-On.</p>
+  </div>
+</aside>
+
+<script>
+// ── Configuration ─────────────────────────────────────────
+const WORKER_URL='https://sunrise-hubspot-proxy.billing-d58.workers.dev/hs-api';
+const PID='134921120';
+
+const STAGE = {
+  DCB:        '233853873',
+  DC_DONE:    '1128525679',
+  DEC_CB:     '234597472',
+  DEC_DONE_N: '234597474',
+  DEC_DONE_D: '947406196',
+  COMMIT:     '1202837318',
+  WIRE:       '1215036715',
+  CLOSED_WON: '234597476',
+};
+
+const PROP_TS0 = (m) => `traffic_source_0_before_${m}`;
+const PROP_TS1 = (m) => `traffic_source_before_${m}`;       // irregular naming, no _1_
+const PROP_TS2 = (m) => `traffic_source_2_before_${m}`;
+
+const MILESTONE_LABEL = {
+  'booked_discovery_call': 'DCB',
+  'investnext_commitment': 'Committed',
+  'closed_won': 'Closed Won',
+};
+
+const DPROPS = [
+  'dealname','amount','pipeline','dealstage','createdate','email',
+  'hs_is_closed_won','closedate',
+  `hs_v2_date_entered_${STAGE.DCB}`,
+  `hs_v2_date_entered_${STAGE.DC_DONE}`,
+  `hs_v2_date_entered_${STAGE.DEC_CB}`,
+  `hs_v2_date_entered_${STAGE.DEC_DONE_N}`,
+  `hs_v2_date_entered_${STAGE.DEC_DONE_D}`,
+  `hs_v2_date_entered_${STAGE.CLOSED_WON}`,
+  // First-touch
+  'hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2',
+  // Latest (now)
+  'hs_analytics_latest_source','hs_analytics_latest_source_data_1','hs_analytics_latest_source_data_2',
+  // Last-touch DCB
+  PROP_TS0('booked_discovery_call'), PROP_TS1('booked_discovery_call'), PROP_TS2('booked_discovery_call'),
+  // Last-touch Committed
+  PROP_TS0('investnext_commitment'), PROP_TS1('investnext_commitment'), PROP_TS2('investnext_commitment'),
+  // Last-touch Closed Won
+  PROP_TS0('closed_won'), PROP_TS1('closed_won'), PROP_TS2('closed_won'),
+];
+
+const SRC_ORDER = ['Meta','Google','LinkedIn','Organic Search','Direct','Referral','Email','Other'];
+const SRC_COLOR = {
+  'Meta':'var(--src-meta)','Google':'var(--src-google)','LinkedIn':'var(--src-linkedin)',
+  'Organic Search':'var(--src-organic)','Direct':'var(--src-direct)','Referral':'var(--src-referral)',
+  'Email':'var(--src-email)','Other':'var(--src-other)','Unstamped':'#cbd5e1'
+};
+
+const STAGES = [
+  {key:'lead', label:'Leads'},
+  {key:'dcb', label:'DCB'},
+  {key:'dcDone', label:'DC Done'},
+  {key:'decCB', label:'Decision CB'},
+  {key:'decDone', label:'Decision Done'},
+  {key:'funded', label:'Funded'},
+];
+
+// ── State ─────────────────────────────────────────────────
+let ALL_DEALS=[];
+let ALL_INVS=[];
+// Contact properties indexed by normalized email. Populated during the
+// matching pipeline's contact-batch fetches, used for attribution drill-downs
+// (First Conversion, Recent Conversion, source data 1/2 from contact side).
+let CONTACT_PROPS_BY_EMAIL = {};
+let DIM_SOURCES=new Set();
+let ANCHOR_MODE='funded';     // 'funded' | 'lead' | 'activity'
+let TYPE_FILTER='all';        // 'all' | 'New' | 'Repeat' | 'Bolt-On'
+let FUND_FILTER='all';        // 'all' | 'Fund 4' | 'Fund 5' (Option A: strict — only investors with corresponding Investment records in the selected fund)
+
+// Fund-membership indexes (rebuilt on each fresh load by buildFundMembershipIndexes()).
+// FUNDS_BY_DEAL_ID: dealId(string) → Set of funds invested via this deal's matched Investments.
+//   Used to filter deals in the funnel: keep a deal iff at least one of its matched Investments
+//   is in the selected fund.
+// FUNDS_BY_EMAIL: normalized email → Set of funds this contact has invested in.
+//   Used as fallback for deals that don't have any directly-matched Investment but whose
+//   email is shared with another deal that does.
+let FUNDS_BY_DEAL_ID = {};
+let FUNDS_BY_EMAIL = {};
+
+const PANEL_STATE = {
+  left:  { view: 'first', milestone: 'booked_discovery_call' },
+  right: { view: 'last',  milestone: 'booked_discovery_call' },
+};
+
+// ── Utilities ─────────────────────────────────────────────
+function st(msg, cls){ const e=document.getElementById('st'); e.textContent=msg; e.className=cls||'sl'; }
+function lm(msg){ document.getElementById('lm').textContent=msg; }
+function fmt(n){ if(n==null||isNaN(n)) return '—'; if(Math.abs(n)>=1e6) return '$'+(n/1e6).toFixed(2)+'M'; if(Math.abs(n)>=1e3) return '$'+(n/1e3).toFixed(0)+'K'; return '$'+Math.round(n).toLocaleString(); }
+function fmtN(n){ if(n==null||isNaN(n)) return '—'; return n.toLocaleString(); }
+function fmtPct(n){ if(n==null||isNaN(n)||!isFinite(n)) return '—'; return (n*100).toFixed(1)+'%'; }
+function tsOf(s){ if(!s) return null; const t=new Date(s).getTime(); return isNaN(t)?null:t; }
+
+function getRange(){
+  const v=document.getElementById('rng').value;
+  const now=Date.now();
+  if(v==='custom'){
+    const f=document.getElementById('dfrom').value, t=document.getElementById('dto').value;
+    return { from: f? new Date(f+'T00:00:00').getTime() : null, to: t? new Date(t+'T23:59:59').getTime() : null, label: f&&t? `${f} → ${t}` : 'Custom' };
+  }
+  if(v==='all') return { from: null, to: null, label: 'All time' };
+  if(v==='ytd'){
+    const start=new Date(new Date().getFullYear(),0,1).getTime();
+    return { from: start, to: now, label: 'Year to date' };
+  }
+  const days=parseInt(v,10);
+  return { from: now - days*86400000, to: now, label: `Last ${days} days` };
+}
+
+// ── Source rollup ─────────────────────────────────────────
+function rollupSource(s0, s1) {
+  if(!s0 || s0==='') return 'Unstamped';
+  const c = String(s0).toUpperCase().replace(/\s+/g,'_');
+  const d1 = String(s1||'').toLowerCase();
+  if(c==='PAID_SOCIAL') {
+    if(d1.includes('linkedin')) return 'LinkedIn';
+    if(d1.includes('facebook') || d1.includes('instagram') || d1.includes('meta')) return 'Meta';
+    return 'Meta';
+  }
+  if(c==='PAID_SEARCH') return 'Google';
+  if(c==='ORGANIC_SEARCH') return 'Organic Search';
+  if(c==='DIRECT_TRAFFIC') return 'Direct';
+  if(c==='REFERRALS') return 'Referral';
+  if(c==='EMAIL_MARKETING') return 'Email';
+  if(c==='SOCIAL_MEDIA') return 'Other';
+  if(c==='OFFLINE_SOURCES') return 'Other';
+  if(c==='OTHER_CAMPAIGNS') return 'Other';
+  return 'Other';
+}
+
+// Resolve the source for a given deal under a given view configuration
+// Source attribution.
+// IMPORTANT — per-contact attribution model:
+// We attribute every source view (first-touch, last-touch, latest) to the
+// contact's PROCUREMENT deal — defined as their earliest Closed Won deal in
+// HubSpot. This is the moment a channel actually won the investor.
+//
+// Repeat investments and bolt-ons inherit attribution from that procurement
+// deal; they're relationship-managed expansion, not channel re-acquisition.
+// The view dropdown still controls WHICH attribution property to read from
+// the procurement deal (first-touch source vs latest source vs milestone-stamped).
+//
+// If no procurement deal can be identified (no Closed Won anywhere in the
+// contact's history), we fall back to reading from the directly matched deal.
+function sourceForDeal(deal, viewConfig, inv){
+  // Find the procurement deal: contact's earliest Closed Won
+  const procurement = procurementDealFor(deal, inv);
+  return readSourceFromDeal(procurement || deal, viewConfig);
+}
+
+// Read source attribution from a specific deal record (no contact-graph traversal)
+function readSourceFromDeal(deal, viewConfig){
+  const p = deal.properties || {};
+  if(viewConfig.view === 'first'){
+    return rollupSource(p.hs_analytics_source, p.hs_analytics_source_data_1);
+  }
+  if(viewConfig.view === 'latest'){
+    return rollupSource(p.hs_analytics_latest_source, p.hs_analytics_latest_source_data_1);
+  }
+  // last-touch (at milestone)
+  const m = viewConfig.milestone;
+  return rollupSource(p[PROP_TS0(m)], p[PROP_TS1(m)]);
+}
+
+// Find the procurement deal for a contact: their earliest Closed Won deal
+// across ALL of their deals (Main Sales Pipeline + legacy pipelines).
+// Per-contact attribution model: this is the deal whose attribution
+// represents how the investor was originally won.
+function procurementDealFor(matchedDeal, inv){
+  // Collect candidate deals: the matched deal + the contact's other deals
+  const candidates = [];
+  if(matchedDeal) candidates.push(matchedDeal);
+  if(inv && inv._contactDeals){
+    inv._contactDeals.forEach(d => {
+      if(d && d.id !== matchedDeal?.id) candidates.push(d);
+    });
+  }
+  if(candidates.length === 0) return null;
+
+  // Filter to Closed Won deals only
+  const closedWon = candidates.filter(d => {
+    const p = d.properties || {};
+    if(p.hs_is_closed_won === 'true' || p.hs_is_closed_won === true) return true;
+    return false;
+  });
+  if(closedWon.length === 0) return null;
+
+  // Sort by closedate ascending; earliest is the procurement deal
+  closedWon.sort((a, b) => {
+    const ta = tsOf(a.properties?.closedate) || Infinity;
+    const tb = tsOf(b.properties?.closedate) || Infinity;
+    return ta - tb;
+  });
+  return closedWon[0];
+}
+
+// ── API helpers ───────────────────────────────────────────
+async function api(path,body){
+  const r=await fetch((WORKER_URL+path).replace(/([^:])\/{2,}/g,'$1/'),{
+    method:body?'POST':'GET',
+    headers:{'Content-Type':'application/json'},
+    ...(body?{body:JSON.stringify(body)}:{})
+  });
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    const err = new Error(e.message||'HTTP '+r.status);
+    err.status = r.status;
+    throw err;
+  }
+  return r.json();
+}
+
+// Sleep helper
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+// HubSpot rate limit is ~100 requests per 10 seconds (varies by tier).
+// Inter-call delay keeps us safely under that.
+const API_DELAY_MS = 110;
+
+// Track whether any fetch loop hit an unrecoverable error so we can warn the user.
+let LOAD_INCOMPLETE = false;
+let LOAD_INCOMPLETE_REASON = '';
+
+// Wrapper that retries on 429 (rate limit) with exponential backoff.
+// HubSpot's "secondly limit" recovers in ~1 second; the "ten-secondly" needs ~10.
+async function apiWithRetry(path, body, label){
+  const backoffs = [1000, 3000, 10000]; // 1s, 3s, 10s
+  for(let attempt=0; attempt<=backoffs.length; attempt++){
+    try {
+      return await api(path, body);
+    } catch(e){
+      if(e.status === 429 && attempt < backoffs.length){
+        const wait = backoffs[attempt];
+        console.warn(`Rate limit hit on ${label||path}, retrying in ${wait}ms (attempt ${attempt+1}/${backoffs.length})`);
+        if(label) lm(`Rate limit — waiting ${wait/1000}s…`);
+        await sleep(wait);
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+async function fetchDealsChunk(fromMs, toMs, loaded){
+  let all=[],after=null,page=0;
+  while(true){
+    page++;
+    lm(`Loading deals… (${loaded+all.length} fetched)`);
+    // Fetch deals across ALL pipelines (not just Main Sales Pipeline) so we
+    // can match Investments to legacy-pipeline deals (older Fund 4 closes).
+    const filters=[
+      {propertyName:'createdate',operator:'HAS_PROPERTY'},
+    ];
+    if(fromMs) filters.push({propertyName:'createdate',operator:'GTE',value:String(fromMs)});
+    if(toMs)   filters.push({propertyName:'createdate',operator:'LTE',value:String(toMs)});
+    const body={
+      filterGroups:[{filters}],
+      properties:DPROPS,
+      sorts:[{propertyName:'createdate',direction:'ASCENDING'}],
+      limit:200,
+      ...(after?{after}:{})
+    };
+    let d;
+    try{
+      d=await Promise.race([
+        apiWithRetry('/crm/v3/objects/deals/search',body,'deals'),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Chunk timed out')),28000))
+      ]);
+    }catch(e){
+      console.warn('Chunk error:',e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Deal fetch interrupted: ${e.message}`;
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    // No per-chunk cap — paginate the full month so dense periods (e.g. fund-launch
+    // months) aren't silently truncated. Rate-limit retry handles pacing.
+    // HubSpot's search API hard-caps total returnable results at 10,000 per query;
+    // with monthly chunks we're far under that even in the densest months.
+    // Pace requests to stay under HubSpot's per-second rate limit
+    await sleep(API_DELAY_MS);
+  }
+  return all;
+}
+
+// ── Cache-aware fetchers (v19) ──────────────────────────────────
+// Try the worker's R2 cache first; fall back to live HubSpot if anything goes wrong.
+// The cache is rebuilt nightly by the worker's cron + on-demand via /admin/refresh-cache.
+const CACHE_BASE_URL = WORKER_URL.replace(/\/hs-api$/, '');
+
+// Fetch metadata about the current cache (lastUpdated, counts).
+// Returns null if unavailable — dashboard can still load without it.
+async function fetchCacheMeta(){
+  try {
+    const r = await fetch(`${CACHE_BASE_URL}/cache-meta`);
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e){
+    console.warn('cache-meta fetch failed:', e.message);
+    return null;
+  }
+}
+
+// Try the cached endpoint; if it returns 404 (not yet built) or any non-OK
+// response, throw so the caller can fall back to the live path.
+async function fetchFromCache(endpoint, label){
+  const r = await fetch(`${CACHE_BASE_URL}/${endpoint}`);
+  if(r.status === 404){
+    throw new Error(`${label} cache not yet populated`);
+  }
+  if(!r.ok){
+    throw new Error(`${label} cache read failed: ${r.status}`);
+  }
+  const d = await r.json();
+  if(!d || !Array.isArray(d.results)){
+    throw new Error(`${label} cache returned unexpected shape`);
+  }
+  return d.results;
+}
+
+// Cache-first deal fetch: try R2-backed worker cache, fall back to live HubSpot pull.
+// This is the public entry point — load() calls this without knowing whether
+// the data came from cache or HubSpot.
+async function fetchAllDeals(){
+  try {
+    lm('Loading deals from cache…');
+    const deals = await fetchFromCache('cached-deals', 'deals');
+    return deals;
+  } catch(e){
+    console.warn('Cache miss for deals, falling back to live:', e.message);
+    lm(`Cache unavailable (${e.message}) — fetching deals from HubSpot…`);
+    return await fetchAllDealsLive();
+  }
+}
+
+async function fetchInvestments(){
+  try {
+    lm('Loading investments from cache…');
+    const invs = await fetchFromCache('cached-investments', 'investments');
+    return invs;
+  } catch(e){
+    console.warn('Cache miss for investments, falling back to live:', e.message);
+    lm(`Cache unavailable (${e.message}) — fetching investments from HubSpot…`);
+    return await fetchInvestmentsLive();
+  }
+}
+
+async function fetchAllDealsLive(){
+  const start=new Date('2023-01-01');
+  const end=new Date();
+  const chunks=[];
+  let cur=new Date(start.getFullYear(), start.getMonth(), 1);
+  while(cur<=end){
+    const cFrom=cur.getTime();
+    const cTo=Math.min(new Date(cur.getFullYear(), cur.getMonth()+1, 0, 23, 59, 59, 999).getTime(), end.getTime());
+    chunks.push([cFrom,cTo]);
+    cur=new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  }
+  // Parallelize: run CHUNK_PARALLELISM month-chunks at once. Each chunk paginates
+  // sequentially within itself (HubSpot's `after` cursor forces sequential paging within
+  // a query), but separate date ranges have independent cursors and can run concurrently.
+  // Batch size of 3 keeps us well under HubSpot's 100-requests-per-10-seconds rate limit
+  // even at ~2-4 pages per chunk. apiWithRetry handles 429s if we ever do hit the limit.
+  const CHUNK_PARALLELISM = 3;
+  let all = [];
+  let completedChunks = 0;
+  const totalChunks = chunks.length;
+  for(let i=0; i<chunks.length; i+=CHUNK_PARALLELISM){
+    const batch = chunks.slice(i, i+CHUNK_PARALLELISM);
+    lm(`Loading deals… ${completedChunks}/${totalChunks} months done (${all.length} deals)`);
+    const results = await Promise.all(
+      batch.map(([cFrom,cTo]) => fetchDealsChunk(cFrom, cTo, all.length))
+    );
+    results.forEach(arr => { all = all.concat(arr); });
+    completedChunks += batch.length;
+    // Dedupe periodically to keep memory from ballooning
+    const seen=new Set();
+    all = all.filter(d => seen.has(d.id) ? false : seen.add(d.id));
+  }
+  return all;
+}
+
+async function fetchInvestmentsLive(){
+  let all=[],after=null,page=0;
+  while(true){
+    page++;
+    lm(`Loading investments… page ${page} (${all.length} loaded)`);
+    const body={
+      properties:['investment_amount','funds_received','hs_createdate','type_of_investment','email_address','fund_invested'],
+      limit:100,
+      ...(after?{after}:{})
+    };
+    let d;
+    try{
+      d=await apiWithRetry('/crm/v3/objects/2-59402465/search',body,'investments');
+    }catch(e){
+      console.warn('Inv fetch error:',e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Investment fetch interrupted at page ${page}: ${e.message}`;
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    if(page>30) break;
+    // Pace requests to stay under HubSpot's per-second rate limit
+    await sleep(API_DELAY_MS);
+  }
+  return all;
+}
+
+// ── Funnel computation ────────────────────────────────────
+// Stage-entry timestamps. The DCB/DC Done/Decision/Closed Won stage IDs are
+// specific to the Main Sales Pipeline — legacy pipelines use different stage IDs.
+// For non-MSP deals, stage timestamps are returned as null so they don't pollute
+// funnel-stage reads. Source attribution and Funded counts still work via the
+// matched-deal lookup elsewhere in the code.
+function dealMilestoneTimes(deal){
+  const p = deal.properties || {};
+  const createdMs = tsOf(p.createdate);
+  // Only read stage timestamps from Main Sales Pipeline deals
+  if(p.pipeline !== PID){
+    return {
+      createdMs,
+      dcbMs: null, dcDoneMs: null, decCBMs: null, decDoneMs: null, closedWonMs: null,
+    };
+  }
+  return {
+    createdMs,
+    dcbMs:    tsOf(p[`hs_v2_date_entered_${STAGE.DCB}`]),
+    dcDoneMs: tsOf(p[`hs_v2_date_entered_${STAGE.DC_DONE}`]),
+    decCBMs:  tsOf(p[`hs_v2_date_entered_${STAGE.DEC_CB}`]),
+    decDoneMs: Math.max(tsOf(p[`hs_v2_date_entered_${STAGE.DEC_DONE_N}`])||0, tsOf(p[`hs_v2_date_entered_${STAGE.DEC_DONE_D}`])||0) || null,
+    closedWonMs: tsOf(p[`hs_v2_date_entered_${STAGE.CLOSED_WON}`]),
+  };
+}
+
+// Investment funding date: prefer funds_received, fall back to hs_createdate
+function investmentFundingTime(inv){
+  const ip = inv.properties || {};
+  return tsOf(ip.funds_received) || tsOf(ip.hs_createdate);
+}
+
+// Normalize email for lookup keys — lowercased, trimmed
+function normEmail(s){ return String(s || '').trim().toLowerCase(); }
+
+// Build email → [deals] index from the loaded deal pool.
+// One contact's email may map to multiple deals (the duplicate-deal problem,
+// and the legitimate one-deal-per-fund pattern for repeat investors).
+function buildDealsByEmail(){
+  const map = {};
+  ALL_DEALS.forEach(deal => {
+    const email = normEmail(deal.properties?.email);
+    if(!email) return;
+    if(!map[email]) map[email] = [];
+    map[email].push(deal);
+  });
+  return map;
+}
+
+// Cross-pipeline Closed Won detection.
+// MSP has a specific stage ID for Closed Won, but legacy pipelines use different stage IDs.
+// HubSpot maintains hs_is_closed_won as a portal-wide boolean that's true regardless of pipeline.
+// The deal's closedate is set when the deal closes (won or lost), used for date-proximity matching.
+function dealClosedWonTime(deal){
+  const p = deal.properties || {};
+  const isWon = p.hs_is_closed_won === true || p.hs_is_closed_won === 'true';
+  if(!isWon) return null;
+  // Prefer MSP-specific stage entry date when available (more precise), fall back to closedate
+  return tsOf(p[`hs_v2_date_entered_${STAGE.CLOSED_WON}`]) || tsOf(p.closedate);
+}
+
+// Find the matched deal for a given Investment using the refined Rule C-prime:
+//   - If the investor's email maps to no deals → null (Unmatched)
+//   - If exactly one deal exists for that email → use it (amount irrelevant)
+//   - If multiple deals exist:
+//       1. Filter to those that are Closed Won (any pipeline, via hs_is_closed_won)
+//       2. Prefer those whose `amount` is within 10% of investment_amount
+//       3. Of those, pick the one with Closed Won date closest to funds_received
+//       4. If none meet the 10% threshold, fall back to closest Closed Won by date
+//       5. If no deal has Closed Won at all, fall back to most recent deal by createdate
+function matchDealForInvestment(inv, dealsByEmail){
+  const email = normEmail(inv.properties?.email_address);
+  if(!email) return null;
+  const candidates = dealsByEmail[email];
+  if(!candidates || candidates.length === 0) return null;
+
+  // Single-deal short circuit
+  if(candidates.length === 1) return candidates[0];
+
+  const invAmt = parseFloat(inv.properties?.investment_amount || 0);
+  const invFundMs = investmentFundingTime(inv);
+
+  // Identify Closed Won deals across any pipeline
+  const closedWon = candidates.filter(d => dealClosedWonTime(d) != null);
+
+  if(closedWon.length === 0){
+    // No closed-won deal — fall back to most recent by createdate
+    return candidates.slice().sort((a, b) =>
+      (tsOf(b.properties?.createdate) || 0) - (tsOf(a.properties?.createdate) || 0)
+    )[0];
+  }
+
+  // Try amount-match within 10%
+  const tolerance = 0.10;
+  let withinAmount = closedWon.filter(d => {
+    const dealAmt = parseFloat(d.properties?.amount || 0);
+    if(!invAmt || !dealAmt) return false;
+    return Math.abs(dealAmt - invAmt) / invAmt <= tolerance;
+  });
+
+  // If none match by amount, fall back to all closed-won (date-only)
+  const pool = withinAmount.length > 0 ? withinAmount : closedWon;
+
+  // Tiebreaker: closest Closed Won date (cross-pipeline) to funds_received
+  return pool.slice().sort((a, b) => {
+    const aDiff = Math.abs((dealClosedWonTime(a) || 0) - (invFundMs || 0));
+    const bDiff = Math.abs((dealClosedWonTime(b) || 0) - (invFundMs || 0));
+    return aDiff - bDiff;
+  })[0];
+}
+
+// Build all the contact's deals for a given investment's email.
+// Used for C-prime stage history aggregation.
+function dealsForInvestment(inv, dealsByEmail){
+  const email = normEmail(inv.properties?.email_address);
+  if(!email) return [];
+  return dealsByEmail[email] || [];
+}
+
+// Cache the matched deal and contact-deal pool on each Investment record at load time.
+// Avoids recomputing on every render.
+function attachMatchedDealsToInvestments(){
+  const dealsByEmail = buildDealsByEmail();
+  ALL_INVS.forEach(inv => {
+    inv._matchedDeal = matchDealForInvestment(inv, dealsByEmail);
+    inv._contactDeals = dealsForInvestment(inv, dealsByEmail);
+  });
+}
+
+// Fallback: for Investments that didn't match via deal-side email mirror,
+// resolve via contact-association lookup. Some deals (notably soft-commit-stage
+// deals and deals with secondary contact relationships) don't have a populated
+// `email` property mirror, so the primary email-index can miss them.
+// This fallback uses the contact API path: email → contact → associated deals.
+async function resolveUnmatchedViaContactAssociation(){
+  const unmatched = ALL_INVS.filter(i => !i._matchedDeal && i.properties?.email_address);
+  if(unmatched.length === 0) return { resolved: 0, attempted: 0 };
+
+  lm(`Resolving ${unmatched.length} unmatched investments via contact lookup…`);
+
+  // Build deal-by-id index for fast lookup later
+  const dealById = {};
+  ALL_DEALS.forEach(d => { dealById[d.id] = d; });
+
+  // Step 1: batch-fetch contacts by email (HubSpot batch read by email)
+  const emails = [...new Set(unmatched.map(i => normEmail(i.properties.email_address)).filter(Boolean))];
+  const emailToContactId = {};
+  for(let i=0; i<emails.length; i+=100){
+    const batch = emails.slice(i, i+100);
+    lm(`Looking up contacts… (${i+batch.length}/${emails.length})`);
+    try {
+      const d = await apiWithRetry('/crm/v3/objects/contacts/batch/read', {
+        idProperty: 'email',
+        properties: ['email','hs_additional_emails',
+          'first_conversion_event_name','recent_conversion_event_name',
+          'hs_analytics_source_data_1','hs_analytics_source_data_2'],
+        inputs: batch.map(e => ({id: e}))
+      }, 'contacts batch');
+      (d.results || []).forEach(c => {
+        // Key the contact ID under its primary email AND all its alias emails.
+        // HubSpot stores aliases in hs_additional_emails as semicolon-separated.
+        // This handles investors whose Investment email_address is one of their
+        // alternate addresses rather than their primary contact email.
+        const aliases = new Set();
+        const primary = normEmail(c.properties?.email);
+        if(primary) aliases.add(primary);
+        const additional = c.properties?.hs_additional_emails || '';
+        additional.split(';').forEach(e => {
+          const norm = normEmail(e);
+          if(norm) aliases.add(norm);
+        });
+        aliases.forEach(e => {
+          emailToContactId[e] = c.id;
+          // Also stash the contact's attribution properties under each alias
+          // so we can read them later when computing drill-down breakdowns.
+          CONTACT_PROPS_BY_EMAIL[e] = c.properties || {};
+        });
+      });
+    } catch(e){
+      console.warn('Contact batch read error:', e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Contact lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+
+  // Step 2: batch-fetch deal associations for those contact IDs
+  // Dedupe contact IDs since one contact may be keyed under multiple email aliases
+  const contactIds = [...new Set(Object.values(emailToContactId))];
+  const contactToDealIds = {};
+  for(let i=0; i<contactIds.length; i+=100){
+    const batch = contactIds.slice(i, i+100);
+    lm(`Looking up deal associations… (${i+batch.length}/${contactIds.length})`);
+    try {
+      const d = await apiWithRetry('/crm/v4/associations/contacts/deals/batch/read', {
+        inputs: batch.map(id => ({id}))
+      }, 'associations batch');
+      (d.results || []).forEach(r => {
+        const cid = r.from?.id;
+        const dealIds = (r.to || []).map(t => String(t.toObjectId)).filter(Boolean);
+        if(cid && dealIds.length) contactToDealIds[cid] = dealIds;
+      });
+    } catch(e){
+      console.warn('Contact-deal association batch error:', e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Association lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+
+  // Step 3: build a deals-by-email map specifically for fallback Investments,
+  // using the contact-association path (rather than deal.email)
+  const fallbackDealsByEmail = {};
+  Object.entries(emailToContactId).forEach(([email, cid]) => {
+    const dealIds = contactToDealIds[cid] || [];
+    const deals = dealIds.map(id => dealById[id]).filter(Boolean);
+    if(deals.length) fallbackDealsByEmail[email] = deals;
+  });
+
+  // Step 4: re-run matching for unmatched investments using the fallback index
+  let resolved = 0;
+  unmatched.forEach(inv => {
+    const fallbackMatched = matchDealForInvestment(inv, fallbackDealsByEmail);
+    if(fallbackMatched){
+      inv._matchedDeal = fallbackMatched;
+      inv._contactDeals = dealsForInvestment(inv, fallbackDealsByEmail);
+      resolved++;
+    }
+  });
+
+  return { resolved, attempted: unmatched.length };
+}
+
+// Per-contact attribution requires the FULL contact-deal graph for each Investment,
+// not just the deals found via email matching. The primary email-mirror match returns
+// only deals where the investor's email appears on the deal — typically just the
+// most recent deal. To resolve attribution to the contact's earliest Closed Won
+// (the procurement deal), we need to know about all of their deals.
+//
+// This function runs after primary matching for any Investment whose matched deal
+// lacks a milestone stamp (which indicates the deal hasn't been re-stamped recently).
+// For those, we fetch the contact's complete deal graph and augment _contactDeals.
+async function augmentContactDealsForAttribution(){
+  // Find Investments whose matched deal has no milestone stamp — these are the ones
+  // most likely to need procurement-deal lookup
+  const needsAugmentation = ALL_INVS.filter(inv => {
+    const matched = inv._matchedDeal;
+    if(!matched) return false;
+    const p = matched.properties || {};
+    // If any milestone stamp is populated, we have direct attribution — no augmentation needed
+    if(p.traffic_source_0_before_closed_won) return false;
+    return !!inv.properties?.email_address;
+  });
+
+  if(needsAugmentation.length === 0) return { augmented: 0, attempted: 0 };
+
+  lm(`Augmenting contact-deals for ${needsAugmentation.length} investments needing procurement attribution…`);
+
+  // Build deal-by-id index for resolving deal IDs to full deal records
+  const dealById = {};
+  ALL_DEALS.forEach(d => { dealById[d.id] = d; });
+
+  // Step 1: batch-fetch contacts by email (including aliases)
+  const emails = [...new Set(needsAugmentation.map(i => normEmail(i.properties.email_address)).filter(Boolean))];
+  const emailToContactId = {};
+  for(let i=0; i<emails.length; i+=100){
+    const batch = emails.slice(i, i+100);
+    lm(`Procurement lookup — contacts (${i+batch.length}/${emails.length})`);
+    try {
+      const d = await apiWithRetry('/crm/v3/objects/contacts/batch/read', {
+        idProperty: 'email',
+        properties: ['email','hs_additional_emails',
+          'first_conversion_event_name','recent_conversion_event_name',
+          'hs_analytics_source_data_1','hs_analytics_source_data_2'],
+        inputs: batch.map(e => ({id: e}))
+      }, 'procurement contacts batch');
+      (d.results || []).forEach(c => {
+        const aliases = new Set();
+        const primary = normEmail(c.properties?.email);
+        if(primary) aliases.add(primary);
+        const additional = c.properties?.hs_additional_emails || '';
+        additional.split(';').forEach(e => {
+          const norm = normEmail(e);
+          if(norm) aliases.add(norm);
+        });
+        aliases.forEach(e => {
+          emailToContactId[e] = c.id;
+          CONTACT_PROPS_BY_EMAIL[e] = c.properties || {};
+        });
+      });
+    } catch(e){
+      console.warn('Procurement contact batch error:', e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Procurement contact lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+
+  // Step 2: batch-fetch deal associations for those contacts
+  const contactIds = [...new Set(Object.values(emailToContactId))];
+  const contactToDealIds = {};
+  for(let i=0; i<contactIds.length; i+=100){
+    const batch = contactIds.slice(i, i+100);
+    lm(`Procurement lookup — associations (${i+batch.length}/${contactIds.length})`);
+    try {
+      const d = await apiWithRetry('/crm/v4/associations/contacts/deals/batch/read', {
+        inputs: batch.map(id => ({id}))
+      }, 'procurement associations batch');
+      (d.results || []).forEach(r => {
+        const cid = r.from?.id;
+        const dealIds = (r.to || []).map(t => String(t.toObjectId)).filter(Boolean);
+        if(cid && dealIds.length) contactToDealIds[cid] = dealIds;
+      });
+    } catch(e){
+      console.warn('Procurement association batch error:', e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Procurement association lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+
+  // Step 3: for each Investment needing augmentation, replace _contactDeals
+  // with the full deal graph for that contact
+  let augmented = 0;
+  needsAugmentation.forEach(inv => {
+    const email = normEmail(inv.properties?.email_address);
+    const contactId = emailToContactId[email];
+    if(!contactId) return;
+    const dealIds = contactToDealIds[contactId] || [];
+    const fullDealGraph = dealIds.map(id => dealById[id]).filter(Boolean);
+    if(fullDealGraph.length > (inv._contactDeals?.length || 0)){
+      // Only replace if we found more deals than the email-match knew about
+      inv._contactDeals = fullDealGraph;
+      augmented++;
+    }
+  });
+
+  return { augmented, attempted: needsAugmentation.length };
+}
+
+// Stage 4: ensure CONTACT_PROPS_BY_EMAIL has an entry for every Investment.
+// Stages 2 and 3 only fetch contacts for unmatched/unstamped Investments.
+// For drill-down breakdowns (by First Conversion, Recent Conversion, source data),
+// we need contact properties for ALL Investments — including those that primary-matched.
+async function fetchContactPropsForRemaining(){
+  const missing = [...new Set(
+    ALL_INVS
+      .map(i => normEmail(i.properties?.email_address))
+      .filter(e => e && !CONTACT_PROPS_BY_EMAIL[e])
+  )];
+  if(missing.length === 0) return { fetched: 0 };
+  lm(`Fetching attribution properties for ${missing.length} additional contacts…`);
+  let fetched = 0;
+  for(let i=0; i<missing.length; i+=100){
+    const batch = missing.slice(i, i+100);
+    lm(`Attribution lookup (${i+batch.length}/${missing.length})`);
+    try {
+      const d = await apiWithRetry('/crm/v3/objects/contacts/batch/read', {
+        idProperty: 'email',
+        properties: ['email','hs_additional_emails',
+          'first_conversion_event_name','recent_conversion_event_name',
+          'hs_analytics_source_data_1','hs_analytics_source_data_2'],
+        inputs: batch.map(e => ({id: e}))
+      }, 'attribution contacts batch');
+      (d.results || []).forEach(c => {
+        const aliases = new Set();
+        const primary = normEmail(c.properties?.email);
+        if(primary) aliases.add(primary);
+        const additional = c.properties?.hs_additional_emails || '';
+        additional.split(';').forEach(e => {
+          const norm = normEmail(e);
+          if(norm) aliases.add(norm);
+        });
+        aliases.forEach(e => { CONTACT_PROPS_BY_EMAIL[e] = c.properties || {}; });
+        fetched++;
+      });
+    } catch(e){
+      console.warn('Attribution batch read error:', e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Attribution properties lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+  return { fetched };
+}
+
+// Helper to get the contact-side properties for an Investment.
+// Returns {} if no contact found (sparse properties don't break the dashboard).
+function contactPropsFor(inv){
+  const email = normEmail(inv?.properties?.email_address);
+  return CONTACT_PROPS_BY_EMAIL[email] || {};
+}
+
+// Filter investments by type ('all' or 'New' / 'Repeat' / 'Bolt-On')
+function invMatchesType(inv, typeFilter){
+  if(typeFilter === 'all') return true;
+  return (inv.properties?.type_of_investment || '') === typeFilter;
+}
+
+// Filter investments by fund ('all' or 'Fund 4' / 'Fund 5'). Strict — checks the
+// Investment's own fund_invested property.
+function invMatchesFund(inv, fundFilter){
+  if(fundFilter === 'all') return true;
+  return (inv.properties?.fund_invested || '') === fundFilter;
+}
+
+// Filter deals by fund. A deal "matches" Fund X if any of its matched Investments
+// is in Fund X, OR (fallback) if the deal's email belongs to a contact with at least
+// one Investment in Fund X. The email fallback ensures deals that didn't directly match
+// any Investment but share a contact with a funded one still appear when relevant.
+function dealMatchesFund(deal, fundFilter){
+  if(fundFilter === 'all') return true;
+  const direct = FUNDS_BY_DEAL_ID[String(deal.id)];
+  if(direct && direct.has(fundFilter)) return true;
+  const email = normEmail(deal.properties?.email);
+  if(email){
+    const viaEmail = FUNDS_BY_EMAIL[email];
+    if(viaEmail && viaEmail.has(fundFilter)) return true;
+  }
+  return false;
+}
+
+// Build the deal→funds and email→funds indexes from ALL_INVS.
+// Called once after Stages 1-4 of the matching pipeline complete.
+function buildFundMembershipIndexes(){
+  FUNDS_BY_DEAL_ID = {};
+  FUNDS_BY_EMAIL = {};
+  ALL_INVS.forEach(inv => {
+    const fund = inv.properties?.fund_invested;
+    if(!fund) return;
+    // Index by the matched deal id (the procurement deal or first match)
+    const dealId = inv._matchedDeal?.id;
+    if(dealId){
+      const k = String(dealId);
+      if(!FUNDS_BY_DEAL_ID[k]) FUNDS_BY_DEAL_ID[k] = new Set();
+      FUNDS_BY_DEAL_ID[k].add(fund);
+    }
+    // Also index by the Investment's email so we can match deals by shared contact
+    const invEmail = normEmail(inv.properties?.email_address);
+    if(invEmail){
+      if(!FUNDS_BY_EMAIL[invEmail]) FUNDS_BY_EMAIL[invEmail] = new Set();
+      FUNDS_BY_EMAIL[invEmail].add(fund);
+    }
+    // Plus the deal's email if different from the Investment's
+    const dealEmail = normEmail(inv._matchedDeal?.properties?.email);
+    if(dealEmail && dealEmail !== invEmail){
+      if(!FUNDS_BY_EMAIL[dealEmail]) FUNDS_BY_EMAIL[dealEmail] = new Set();
+      FUNDS_BY_EMAIL[dealEmail].add(fund);
+    }
+  });
+}
+
+// Top-level dispatcher
+function computeFunnel(viewConfig, range, mode, typeFilter, fundFilter){
+  if(mode === 'activity') return computeActivityFunnel(viewConfig, range, typeFilter, fundFilter);
+  if(mode === 'lead')     return computeLeadAnchoredFunnel(viewConfig, range, typeFilter, fundFilter);
+  return computeFundedAnchoredFunnel(viewConfig, range, typeFilter, fundFilter);
+}
+
+function emptyStages(){
+  const stages = STAGES.map(s => ({...s, bySource: {}}));
+  const sources = SRC_ORDER.concat(['Unstamped']);
+  stages.forEach(s => sources.forEach(src => s.bySource[src]=0));
+  return stages;
+}
+
+// Activity-anchored: each stage row counts events that happened during the window.
+// Rows are independent. Funnel can be non-monotonic.
+// Type filter only applies to the Funded row (other stages don't have an investment type).
+// Fund filter applies to ALL rows: a deal contributes to Lead/DCB/etc. only if its
+// contact eventually funded into the selected fund.
+function computeActivityFunnel(viewConfig, range, typeFilter, fundFilter){
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const stages = emptyStages();
+  const stageIdx = Object.fromEntries(STAGES.map((s,i) => [s.key, i]));
+
+  ALL_DEALS.forEach(deal => {
+    if(!dealMatchesFund(deal, fundFilter)) return;
+    const t = dealMilestoneTimes(deal);
+    const src = sourceForDeal(deal, viewConfig);
+    if(inRange(t.createdMs))   stages[stageIdx.lead].bySource[src]++;
+    if(inRange(t.dcbMs))       stages[stageIdx.dcb].bySource[src]++;
+    if(inRange(t.dcDoneMs))    stages[stageIdx.dcDone].bySource[src]++;
+    if(inRange(t.decCBMs))     stages[stageIdx.decCB].bySource[src]++;
+    if(inRange(t.decDoneMs))   stages[stageIdx.decDone].bySource[src]++;
+  });
+
+  ALL_INVS.forEach(inv => {
+    if(!invMatchesType(inv, typeFilter)) return;
+    if(!invMatchesFund(inv, fundFilter)) return;
+    const fundMs = investmentFundingTime(inv);
+    if(!inRange(fundMs)) return;
+    const deal = inv._matchedDeal;
+    const src = deal ? sourceForDeal(deal, viewConfig, inv) : 'Unstamped';
+    stages[stageIdx.funded].bySource[src] = (stages[stageIdx.funded].bySource[src]||0) + 1;
+  });
+
+  return stages;
+}
+
+// Lead-anchored: pick deals created in window, trace each forward through stages.
+// Each row ≤ Lead row. Funded count reflects current cohort state.
+// Type filter applies to the Funded row's deal-cohort matching.
+// Fund filter applies to ALL rows: only deals whose contact eventually funded
+// the selected fund are included in the lead cohort.
+function computeLeadAnchoredFunnel(viewConfig, range, typeFilter, fundFilter){
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const stages = emptyStages();
+  const stageIdx = Object.fromEntries(STAGES.map((s,i) => [s.key, i]));
+
+  // Anchor cohort: deals created in window, matching fund filter
+  const cohortDeals = ALL_DEALS.filter(deal =>
+    inRange(tsOf(deal.properties?.createdate)) && dealMatchesFund(deal, fundFilter)
+  );
+
+  // Build dealId → investment(s) reverse map via the email-based matched deal
+  const dealToInvs = {};
+  ALL_INVS.forEach(inv => {
+    if(!invMatchesType(inv, typeFilter)) return;
+    if(!invMatchesFund(inv, fundFilter)) return;
+    const matched = inv._matchedDeal;
+    if(!matched) return;
+    if(!dealToInvs[matched.id]) dealToInvs[matched.id] = [];
+    dealToInvs[matched.id].push(inv);
+  });
+
+  cohortDeals.forEach(deal => {
+    const t = dealMilestoneTimes(deal);
+    const src = sourceForDeal(deal, viewConfig);
+    // Each cohort deal contributes to Lead row unconditionally
+    stages[stageIdx.lead].bySource[src]++;
+    // Then to each stage they ever reached
+    if(t.dcbMs)     stages[stageIdx.dcb].bySource[src]++;
+    if(t.dcDoneMs)  stages[stageIdx.dcDone].bySource[src]++;
+    if(t.decCBMs)   stages[stageIdx.decCB].bySource[src]++;
+    if(t.decDoneMs) stages[stageIdx.decDone].bySource[src]++;
+    // Funded — count investments matched to this deal (filtered by type + fund).
+    // Use inv-aware source so the Funded row uses procurement attribution.
+    const invs = dealToInvs[deal.id] || [];
+    invs.forEach(inv => {
+      const fundedSrc = sourceForDeal(deal, viewConfig, inv);
+      stages[stageIdx.funded].bySource[fundedSrc] = (stages[stageIdx.funded].bySource[fundedSrc]||0) + 1;
+    });
+  });
+
+  return stages;
+}
+
+// Funded-anchored: pick investments funded in window, trace back through stages.
+// All rows trace the same funded cohort. Funnel inverts naturally — funded count
+// drives the anchor, prior stages are subsets of those funded investors' deals.
+function computeFundedAnchoredFunnel(viewConfig, range, typeFilter, fundFilter){
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const stages = emptyStages();
+  const stageIdx = Object.fromEntries(STAGES.map((s,i) => [s.key, i]));
+
+  // Anchor cohort: investments funded in window, matching type + fund filters
+  const cohortInvs = ALL_INVS.filter(inv =>
+    invMatchesType(inv, typeFilter) &&
+    invMatchesFund(inv, fundFilter) &&
+    inRange(investmentFundingTime(inv))
+  );
+
+  cohortInvs.forEach(inv => {
+    const matched = inv._matchedDeal;
+    const contactDeals = inv._contactDeals || [];
+    const src = matched ? sourceForDeal(matched, viewConfig, inv) : 'Unstamped';
+
+    // Funded row: every cohort member counts under its matched deal's source
+    stages[stageIdx.funded].bySource[src] = (stages[stageIdx.funded].bySource[src]||0) + 1;
+
+    // Lead row: every funded investor counts once
+    stages[stageIdx.lead].bySource[src]++;
+
+    // Stage history aggregated across ALL the contact's deals (Rule C-prime).
+    // We count each stage at most once per Investment, even if multiple of the
+    // contact's deals reached the same stage.
+    const stagesHit = { dcb: false, dcDone: false, decCB: false, decDone: false };
+    contactDeals.forEach(d => {
+      const t = dealMilestoneTimes(d);
+      if(t.dcbMs)     stagesHit.dcb = true;
+      if(t.dcDoneMs)  stagesHit.dcDone = true;
+      if(t.decCBMs)   stagesHit.decCB = true;
+      if(t.decDoneMs) stagesHit.decDone = true;
+    });
+    if(stagesHit.dcb)     stages[stageIdx.dcb].bySource[src]++;
+    if(stagesHit.dcDone)  stages[stageIdx.dcDone].bySource[src]++;
+    if(stagesHit.decCB)   stages[stageIdx.decCB].bySource[src]++;
+    if(stagesHit.decDone) stages[stageIdx.decDone].bySource[src]++;
+  });
+
+  return stages;
+}
+
+function totalAcrossStage(stage){
+  return Object.values(stage.bySource).reduce((a,b)=>a+b,0);
+}
+
+// ── Subtitles & titles per panel ──────────────────────────
+function subtitleFor(viewConfig){
+  if(viewConfig.view === 'first'){
+    return 'Source recorded when the contact first entered HubSpot. Immutable. Reads <code>hs_analytics_source</code> on each deal — full historical coverage.';
+  }
+  if(viewConfig.view === 'latest'){
+    return 'Source the contact was most recently on, regardless of milestone. Reads <code>hs_analytics_latest_source</code> on each deal — reflects current state, mutable.';
+  }
+  const m = viewConfig.milestone;
+  const lbl = MILESTONE_LABEL[m] || m;
+  return `Source captured at the moment of <b>${lbl}</b> by the live workflow. Reads <code>traffic_source_0_before_${m}</code> on each deal — coverage for this milestone starts Jan 2026.`;
+}
+
+function titleFor(viewConfig){
+  if(viewConfig.view === 'first') return 'First-Touch Attribution';
+  if(viewConfig.view === 'latest') return 'Latest Source (Now)';
+  const lbl = MILESTONE_LABEL[viewConfig.milestone] || viewConfig.milestone;
+  return `Last-Touch at ${lbl}`;
+}
+
+// ── Rendering ─────────────────────────────────────────────
+function renderFunnel(elId, stages, sideCfg){
+  const el=document.getElementById(elId);
+  el.innerHTML='';
+  const maxCount=Math.max(...stages.map(totalAcrossStage),1);
+  const range = getRange();
+
+  stages.forEach(stage => {
+    const total=totalAcrossStage(stage);
+    const widthPct=(total/maxCount)*100;
+
+    const row=document.createElement('div');
+    row.className='fstage';
+    row.innerHTML=`<div class="fstage-label">${stage.label}</div>`;
+
+    const barWrap=document.createElement('div');
+    barWrap.className='fstage-bar';
+    const innerBar=document.createElement('div');
+    innerBar.style.cssText=`display:flex;height:100%;width:${widthPct}%;border-radius:5px;overflow:hidden`;
+
+    SRC_ORDER.concat(['Unstamped']).forEach(src => {
+      const count=stage.bySource[src]||0;
+      if(count===0) return;
+      if(DIM_SOURCES.has(src)) return;
+      const segPct=total>0?(count/total)*100:0;
+      const seg=document.createElement('div');
+      seg.className='fstage-seg' + (segPct<6?' tiny':'');
+      seg.style.cssText=`width:${segPct}%;background:${SRC_COLOR[src]||'#999'}`;
+      seg.textContent=segPct>=6 ? count : '';
+      seg.dataset.src=src;
+      seg.title = `Click to view ${count} ${src} record${count===1?'':'s'} at ${stage.label}`;
+      seg.addEventListener('mouseenter',(e)=>showTip(e, `${src}: ${count} at ${stage.label} — click to view`));
+      seg.addEventListener('mouseleave',hideTip);
+      seg.addEventListener('mousemove',moveTip);
+      seg.addEventListener('click', () => openDrilldown(stage.key, src, sideCfg, range));
+      innerBar.appendChild(seg);
+    });
+    barWrap.appendChild(innerBar);
+    row.appendChild(barWrap);
+
+    const countEl=document.createElement('div');
+    countEl.className='fstage-count' + (total > 0 ? ' clickable' : '');
+    countEl.textContent=fmtN(total);
+    if(total > 0){
+      countEl.title = `Click to view all ${total} record${total===1?'':'s'} at ${stage.label}`;
+      countEl.addEventListener('click', () => openDrilldown(stage.key, null, sideCfg, range));
+    }
+    row.appendChild(countEl);
+
+    el.appendChild(row);
+  });
+}
+
+function renderLegend(){
+  const el=document.getElementById('legend');
+  el.innerHTML='';
+  const sources=SRC_ORDER.concat(['Unstamped']);
+  sources.forEach(src => {
+    const item=document.createElement('div');
+    item.className='legend-item' + (DIM_SOURCES.has(src)?' dim':'');
+    item.innerHTML=`<div class="legend-dot" style="background:${SRC_COLOR[src]}"></div><span>${src}</span>`;
+    item.addEventListener('click',()=>{
+      if(DIM_SOURCES.has(src)) DIM_SOURCES.delete(src); else DIM_SOURCES.add(src);
+      render();
+    });
+    el.appendChild(item);
+  });
+}
+
+// Cache the breakdown's current view config so the delegated click handler
+// on its tbody knows which sideCfg to drill into.
+let BDOWN_CFG = null;
+
+function renderBreakdown(stages, viewConfig){
+  BDOWN_CFG = viewConfig;
+  const v = viewConfig.view === 'first' ? 'first-touch'
+          : viewConfig.view === 'latest' ? 'latest source'
+          : `last-touch at ${MILESTONE_LABEL[viewConfig.milestone]}`;
+  document.getElementById('bdown-title').textContent = `Source breakdown — ${v}`;
+
+  const body=document.getElementById('bdown-body');
+  body.innerHTML='';
+  const sources=SRC_ORDER.concat(['Unstamped']);
+
+  const range=getRange();
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const capBySource={};
+  ALL_INVS.forEach(inv => {
+    if(!invMatchesType(inv, TYPE_FILTER)) return;
+    if(!invMatchesFund(inv, FUND_FILTER)) return;
+    const fundMs=investmentFundingTime(inv);
+    if(!inRange(fundMs)) return;
+    const deal = inv._matchedDeal;
+    const src = deal ? sourceForDeal(deal, viewConfig, inv) : 'Unstamped';
+    const amt=parseFloat(inv.properties.investment_amount||0);
+    capBySource[src]=(capBySource[src]||0)+amt;
+  });
+
+  const totals={lead:0,dcb:0,dcDone:0,decCB:0,decDone:0,funded:0,capital:0};
+  sources.forEach(src => {
+    const lead=stages.find(s=>s.key==='lead').bySource[src]||0;
+    const dcb=stages.find(s=>s.key==='dcb').bySource[src]||0;
+    const dcDone=stages.find(s=>s.key==='dcDone').bySource[src]||0;
+    const decCB=stages.find(s=>s.key==='decCB').bySource[src]||0;
+    const decDone=stages.find(s=>s.key==='decDone').bySource[src]||0;
+    const funded=stages.find(s=>s.key==='funded').bySource[src]||0;
+    const capital=capBySource[src]||0;
+
+    if(lead+dcb+dcDone+decCB+decDone+funded+capital === 0) return;
+
+    totals.lead+=lead; totals.dcb+=dcb; totals.dcDone+=dcDone;
+    totals.decCB+=decCB; totals.decDone+=decDone; totals.funded+=funded; totals.capital+=capital;
+
+    const conv = lead>0 ? funded/lead : null;
+    const tr=document.createElement('tr');
+
+    const sourceLabel = `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${SRC_COLOR[src]};margin-right:6px;vertical-align:middle"></span>${src}`;
+
+    // Helper: build a clickable cell for a given metric+source. Non-zero only.
+    const cell = (val, metricKey, isMoney) => {
+      if(!val){
+        return `<td class="num">${isMoney ? fmt(val) : fmtN(val)}</td>`;
+      }
+      const display = isMoney ? fmt(val) : fmtN(val);
+      // metricKey null = capital column (handled as 'funded' since capital and funded come from same Investment records)
+      const mk = metricKey || 'funded';
+      return `<td class="num clickable" data-metric="${mk}" data-source="${src}" title="Click to view ${val} record${val===1?'':'s'}">${display}</td>`;
+    };
+
+    tr.innerHTML = `
+      <td>${sourceLabel}</td>
+      ${cell(lead, 'lead', false)}
+      ${cell(dcb, 'dcb', false)}
+      ${cell(dcDone, 'dcDone', false)}
+      ${cell(decCB, 'decCB', false)}
+      ${cell(decDone, 'decDone', false)}
+      ${cell(funded, 'funded', false)}
+      ${cell(capital, 'funded', true)}
+      <td class="num">${fmtPct(conv)}</td>`;
+    body.appendChild(tr);
+  });
+
+  const totalConv = totals.lead>0 ? totals.funded/totals.lead : null;
+  const tr=document.createElement('tr');
+  tr.className='total';
+  tr.innerHTML=`
+    <td>Total</td>
+    <td class="num">${fmtN(totals.lead)}</td>
+    <td class="num">${fmtN(totals.dcb)}</td>
+    <td class="num">${fmtN(totals.dcDone)}</td>
+    <td class="num">${fmtN(totals.decCB)}</td>
+    <td class="num">${fmtN(totals.decDone)}</td>
+    <td class="num">${fmtN(totals.funded)}</td>
+    <td class="num">${fmt(totals.capital)}</td>
+    <td class="num">${fmtPct(totalConv)}</td>`;
+  body.appendChild(tr);
+}
+
+// Compute type-breakdown counts/amounts for investments funded in range
+function computeTypeBreakdown(range){
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const counts = { 'New': 0, 'Repeat': 0, 'Bolt-On': 0, 'Other': 0, total: 0 };
+  const amounts = { 'New': 0, 'Repeat': 0, 'Bolt-On': 0, 'Other': 0, total: 0 };
+  ALL_INVS.forEach(inv => {
+    if(!inRange(investmentFundingTime(inv))) return;
+    if(!invMatchesFund(inv, FUND_FILTER)) return;
+    const t = inv.properties?.type_of_investment || 'Other';
+    const key = (t === 'New' || t === 'Repeat' || t === 'Bolt-On') ? t : 'Other';
+    const amt = parseFloat(inv.properties?.investment_amount || 0);
+    counts[key]++; counts.total++;
+    amounts[key] += amt; amounts.total += amt;
+  });
+  return { counts, amounts };
+}
+
+function renderKpis(leftStages, range){
+  document.getElementById('k1').textContent=fmtN(totalAcrossStage(leftStages.find(s=>s.key==='lead')));
+  document.getElementById('k2').textContent=fmtN(totalAcrossStage(leftStages.find(s=>s.key==='dcb')));
+
+  const breakdown = computeTypeBreakdown(range);
+
+  // Funded count: respects type filter for the headline number; subline always shows breakdown
+  const fundedCount = TYPE_FILTER === 'all' ? breakdown.counts.total : (breakdown.counts[TYPE_FILTER] || 0);
+  document.getElementById('k3').textContent = fmtN(fundedCount);
+  const subParts = [];
+  if(breakdown.counts['New']) subParts.push(`${breakdown.counts['New']} new`);
+  if(breakdown.counts['Repeat']) subParts.push(`${breakdown.counts['Repeat']} repeat`);
+  if(breakdown.counts['Bolt-On']) subParts.push(`${breakdown.counts['Bolt-On']} bolt-on`);
+  document.getElementById('k3s').textContent = subParts.length ? subParts.join(' · ') : 'by Funds Received date';
+
+  // Capital: respects type filter; subline always shows breakdown
+  const capital = TYPE_FILTER === 'all' ? breakdown.amounts.total : (breakdown.amounts[TYPE_FILTER] || 0);
+  document.getElementById('k4').textContent = fmt(capital);
+  const capSubParts = [];
+  if(breakdown.amounts['New']) capSubParts.push(`${fmt(breakdown.amounts['New'])} new`);
+  if(breakdown.amounts['Repeat']) capSubParts.push(`${fmt(breakdown.amounts['Repeat'])} rep`);
+  if(breakdown.amounts['Bolt-On']) capSubParts.push(`${fmt(breakdown.amounts['Bolt-On'])} bolt`);
+  document.getElementById('k4s').textContent = capSubParts.length ? capSubParts.join(' · ') : 'sum of investments in window';
+}
+
+function renderPills(range){
+  const el=document.getElementById('fpills');
+  el.innerHTML='';
+  const add = (txt) => { const p=document.createElement('div'); p.className='fpill'; p.textContent=txt; el.appendChild(p); };
+  add(range.label);
+  add(ANCHOR_MODE === 'funded' ? 'Funded-anchored' : ANCHOR_MODE === 'lead' ? 'Lead-anchored' : 'Activity-anchored');
+  add(TYPE_FILTER === 'all' ? 'All types' : `${TYPE_FILTER} only`);
+  if(FUND_FILTER !== 'all') add(`${FUND_FILTER} only`);
+}
+
+// Render the unmatched-investments banner. Shown when any Investment in the
+// current window can't be matched to a deal. Clicking expands a sample list.
+function renderUnmatchedBanner(range){
+  const banner = document.getElementById('unmatched-banner');
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+
+  const unmatched = ALL_INVS.filter(inv =>
+    !inv._matchedDeal &&
+    inRange(investmentFundingTime(inv)) &&
+    invMatchesType(inv, TYPE_FILTER) &&
+    invMatchesFund(inv, FUND_FILTER)
+  );
+
+  if(unmatched.length === 0){
+    banner.style.display = 'none';
+    return;
+  }
+
+  banner.style.display = '';
+  const totalAmt = unmatched.reduce((sum, inv) =>
+    sum + parseFloat(inv.properties?.investment_amount || 0), 0
+  );
+
+  document.getElementById('ub-headline').textContent =
+    `${fmtN(unmatched.length)} unmatched investment${unmatched.length===1?'':'s'} in this window — ${fmt(totalAmt)} in capital`;
+
+  // Populate the expandable list with up to 50 records sorted by amount descending
+  const sorted = unmatched.slice().sort((a,b) =>
+    parseFloat(b.properties?.investment_amount || 0) - parseFloat(a.properties?.investment_amount || 0)
+  );
+  const shown = sorted.slice(0, 50);
+  const body = document.getElementById('ub-list-body');
+  body.innerHTML = '';
+  shown.forEach(inv => {
+    const tr = document.createElement('tr');
+    const p = inv.properties || {};
+    tr.innerHTML = `
+      <td>${p.email_address || '<em>(no email)</em>'}</td>
+      <td class="num">${fmt(parseFloat(p.investment_amount || 0))}</td>
+      <td>${p.funds_received || '—'}</td>
+      <td>${p.type_of_investment || '—'}</td>
+    `;
+    body.appendChild(tr);
+  });
+
+  const footer = document.getElementById('ub-list-footer');
+  if(unmatched.length > 50){
+    footer.textContent = `Showing top 50 by amount. ${unmatched.length - 50} additional unmatched investments not shown.`;
+  } else {
+    footer.textContent = `Showing all ${unmatched.length}.`;
+  }
+}
+
+function toggleUnmatchedList(){
+  const list = document.getElementById('ub-list');
+  const toggle = document.getElementById('ub-toggle');
+  if(list.style.display === 'none'){
+    list.style.display = '';
+    toggle.textContent = 'Hide list ▴';
+  } else {
+    list.style.display = 'none';
+    toggle.textContent = 'View list ▾';
+  }
+}
+
+function syncPanelControls(side){
+  const cfg = PANEL_STATE[side];
+  const viewSel = document.querySelector(`.view-pick[data-side="${side}"]`);
+  const msSel = document.querySelector(`.ms-pick[data-side="${side}"]`);
+  if(viewSel) viewSel.value = cfg.view;
+  if(msSel){
+    msSel.value = cfg.milestone;
+    msSel.style.display = cfg.view === 'last' ? '' : 'none';
+  }
+  document.getElementById(`title-${side}`).textContent = titleFor(cfg);
+  document.getElementById(`sub-${side}`).innerHTML = subtitleFor(cfg);
+}
+
+function render(){
+  if(!ALL_DEALS.length) return;
+  const range=getRange();
+  const leftCfg = PANEL_STATE.left;
+  const rightCfg = PANEL_STATE.right;
+  const leftStages = computeFunnel(leftCfg, range, ANCHOR_MODE, TYPE_FILTER, FUND_FILTER);
+  const rightStages = computeFunnel(rightCfg, range, ANCHOR_MODE, TYPE_FILTER, FUND_FILTER);
+
+  renderKpis(leftStages, range);
+  renderLegend();
+  syncPanelControls('left');
+  syncPanelControls('right');
+  renderFunnel('funnel-left', leftStages, leftCfg);
+  renderFunnel('funnel-right', rightStages, rightCfg);
+
+  const anchorSide = document.getElementById('bdown-anchor').value;
+  const anchorCfg = anchorSide === 'right' ? rightCfg : leftCfg;
+  const anchorStages = anchorSide === 'right' ? rightStages : leftStages;
+  renderBreakdown(anchorStages, anchorCfg);
+
+  renderPills(range);
+  renderUnmatchedBanner(range);
+}
+
+// ── Drill-down panel ──────────────────────────────────────
+let DD_OPEN=false;
+
+// Drill-down state. Persisted between dimension changes / row clicks within a panel session.
+const DD_STATE = {
+  records: [],          // current cohort (array of {kind, inv|deal, source, ...})
+  sideCfg: null,        // active panel's view config
+  metricKey: null,      // funnel stage clicked
+  source: null,         // source segment clicked (or null = all)
+  range: null,          // active date range
+  dimension: null,      // currently selected breakdown dimension
+  selectedGroup: null,  // currently selected breakdown row (filter), or null
+};
+
+// Available breakdown dimensions. The default dimension depends on the panel view —
+// when the panel is in First-Touch view, the "source detail" reads first-touch fields;
+// in Last-Touch view, it reads the milestone-stamped fields.
+function dimensionsFor(sideCfg){
+  const dims = [];
+  if(sideCfg.view === 'first'){
+    dims.push({key: 'source_detail', label: 'Source detail (first-touch)', readFn: rec => recContactProp(rec, 'hs_analytics_source_data_1')});
+    dims.push({key: 'source_data2', label: 'Source data 2 (first-touch)', readFn: rec => recContactProp(rec, 'hs_analytics_source_data_2')});
+  } else if(sideCfg.view === 'last'){
+    const m = sideCfg.milestone;
+    dims.push({key: 'milestone_detail', label: `Source detail at ${MILESTONE_LABEL[m]}`, readFn: rec => recDealProp(rec, PROP_TS1(m))});
+    dims.push({key: 'milestone_data2', label: `Source data 2 at ${MILESTONE_LABEL[m]}`, readFn: rec => recDealProp(rec, PROP_TS2(m))});
+  } else {
+    // latest
+    dims.push({key: 'latest_detail', label: 'Latest source detail', readFn: rec => recDealProp(rec, 'hs_analytics_latest_source_data_1')});
+    dims.push({key: 'latest_data2', label: 'Latest source data 2', readFn: rec => recDealProp(rec, 'hs_analytics_latest_source_data_2')});
+  }
+  // Conversion dimensions (always available, contact-side)
+  dims.push({key: 'first_conversion', label: 'First Conversion (form)', readFn: rec => recContactProp(rec, 'first_conversion_event_name')});
+  dims.push({key: 'recent_conversion', label: 'Recent Conversion (form)', readFn: rec => recContactProp(rec, 'recent_conversion_event_name')});
+  return dims;
+}
+
+// Read a contact-side property for a drill-down record (handles both kinds).
+function recContactProp(rec, propName){
+  const inv = rec.inv || rec.invContext;
+  if(inv) return contactPropsFor(inv)[propName] || null;
+  // Deal-only record (lead-anchored stage rows): try contact via deal email
+  const deal = rec.deal;
+  if(deal){
+    const email = normEmail(deal.properties?.email);
+    return CONTACT_PROPS_BY_EMAIL[email]?.[propName] || null;
+  }
+  return null;
+}
+
+// Read a deal-side property — uses procurement deal for inv-typed records to
+// stay consistent with the per-contact attribution model.
+function recDealProp(rec, propName){
+  const inv = rec.inv || rec.invContext;
+  if(inv){
+    const matched = inv._matchedDeal;
+    const proc = procurementDealFor(matched, inv);
+    return (proc || matched)?.properties?.[propName] || null;
+  }
+  if(rec.deal){
+    return rec.deal.properties?.[propName] || null;
+  }
+  return null;
+}
+
+function openDrilldown(metricKey, source, sideCfg, range){
+  const panel = document.getElementById('dd-panel');
+  const backdrop = document.getElementById('dd-backdrop');
+  const records = recordsForDrilldown(metricKey, source, sideCfg, range);
+
+  // Initialize DD state for this session
+  DD_STATE.records = records;
+  DD_STATE.sideCfg = sideCfg;
+  DD_STATE.metricKey = metricKey;
+  DD_STATE.source = source;
+  DD_STATE.range = range;
+  DD_STATE.selectedGroup = null;
+
+  // Compose title + subtitle
+  const stageLabel = STAGES.find(s => s.key === metricKey)?.label || metricKey;
+  const sourceLabel = source ? source : 'All sources';
+  document.getElementById('dd-title').textContent = `${stageLabel} · ${sourceLabel}`;
+
+  const anchorLabel = ANCHOR_MODE === 'funded' ? 'Funded-anchored'
+                    : ANCHOR_MODE === 'lead' ? 'Lead-anchored'
+                    : 'Activity-anchored';
+  const viewLabel = sideCfg.view === 'first' ? 'First-touch'
+                  : sideCfg.view === 'latest' ? 'Latest source'
+                  : `Last-touch at ${MILESTONE_LABEL[sideCfg.milestone]}`;
+  const typeLabel = TYPE_FILTER === 'all' ? '' : ` · ${TYPE_FILTER} only`;
+  const fundLabel = FUND_FILTER === 'all' ? '' : ` · ${FUND_FILTER} only`;
+  document.getElementById('dd-sub').textContent =
+    `${range.label} · ${anchorLabel} · ${viewLabel}${typeLabel}${fundLabel} · ${records.length} record${records.length===1?'':'s'}`;
+
+  // Populate dimension dropdown
+  const dims = dimensionsFor(sideCfg);
+  const dimSel = document.getElementById('dd-dim');
+  dimSel.innerHTML = '';
+  dims.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.key;
+    opt.textContent = d.label;
+    dimSel.appendChild(opt);
+  });
+  // Default to first dimension (source-detail-of-active-view)
+  DD_STATE.dimension = dims[0].key;
+  dimSel.value = DD_STATE.dimension;
+
+  renderBreakdownAndRecords();
+
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden', 'false');
+  backdrop.classList.add('open');
+  DD_OPEN = true;
+}
+
+function onDimensionChange(){
+  DD_STATE.dimension = document.getElementById('dd-dim').value;
+  DD_STATE.selectedGroup = null;
+  renderBreakdownAndRecords();
+}
+
+function onBreakdownRowClick(groupValue){
+  // Toggle: clicking the selected group again clears the filter
+  if(DD_STATE.selectedGroup === groupValue){
+    DD_STATE.selectedGroup = null;
+  } else {
+    DD_STATE.selectedGroup = groupValue;
+  }
+  renderBreakdownAndRecords();
+}
+
+function clearBreakdownFilter(){
+  DD_STATE.selectedGroup = null;
+  renderBreakdownAndRecords();
+}
+
+function renderBreakdownAndRecords(){
+  const dims = dimensionsFor(DD_STATE.sideCfg);
+  const dim = dims.find(d => d.key === DD_STATE.dimension) || dims[0];
+
+  // Aggregate records by dimension value
+  const groups = {};
+  DD_STATE.records.forEach(rec => {
+    const v = dim.readFn(rec);
+    const key = (v && String(v).trim()) ? String(v).trim() : '— (not set)';
+    if(!groups[key]) groups[key] = { count: 0, amount: 0 };
+    groups[key].count++;
+    if(rec.inv){
+      groups[key].amount += parseFloat(rec.inv.properties?.investment_amount || 0);
+    } else if(rec.deal){
+      groups[key].amount += parseFloat(rec.deal.properties?.amount || 0);
+    }
+  });
+
+  // Sort groups by amount desc (dollar-weighted attribution), count as tiebreaker;
+  // "(not set)" sinks to the bottom regardless of value
+  const sorted = Object.entries(groups).sort((a, b) => {
+    const aIsEmpty = a[0] === '— (not set)';
+    const bIsEmpty = b[0] === '— (not set)';
+    if(aIsEmpty && !bIsEmpty) return 1;
+    if(!aIsEmpty && bIsEmpty) return -1;
+    if(b[1].amount !== a[1].amount) return b[1].amount - a[1].amount;
+    return b[1].count - a[1].count;
+  });
+
+  // Render breakdown rows
+  const bdBody = document.getElementById('dd-breakdown-body');
+  bdBody.innerHTML = '';
+  if(sorted.length === 0){
+    bdBody.innerHTML = '<div class="dd-bd-empty">No data to break down.</div>';
+  } else {
+    sorted.forEach(([key, val]) => {
+      const row = document.createElement('div');
+      row.className = 'dd-bd-row' + (DD_STATE.selectedGroup === key ? ' selected' : '');
+      row.innerHTML = `
+        <div class="dd-bd-name" title="${key}">${key}</div>
+        <div class="dd-bd-count">${fmtN(val.count)} ${val.count === 1 ? 'record' : 'records'}</div>
+        <div class="dd-bd-amount">${fmt(val.amount)}</div>
+      `;
+      row.addEventListener('click', () => onBreakdownRowClick(key));
+      bdBody.appendChild(row);
+    });
+  }
+
+  // Update filter-state indicator
+  const stateEl = document.getElementById('dd-filter-state');
+  if(DD_STATE.selectedGroup){
+    stateEl.innerHTML = `Filtered: ${DD_STATE.selectedGroup} <span class="clear-btn" onclick="clearBreakdownFilter()">clear</span>`;
+  } else {
+    stateEl.innerHTML = '';
+  }
+
+  // Filter records by selectedGroup if set
+  let filtered = DD_STATE.records;
+  if(DD_STATE.selectedGroup){
+    filtered = DD_STATE.records.filter(rec => {
+      const v = dim.readFn(rec);
+      const key = (v && String(v).trim()) ? String(v).trim() : '— (not set)';
+      return key === DD_STATE.selectedGroup;
+    });
+  }
+
+  // Render filtered records
+  const headerEl = document.getElementById('dd-records-header');
+  headerEl.textContent = DD_STATE.selectedGroup
+    ? `${filtered.length} of ${DD_STATE.records.length} records (filtered)`
+    : `${DD_STATE.records.length} ${DD_STATE.records.length === 1 ? 'record' : 'records'}`;
+
+  const body = document.getElementById('dd-body');
+  body.innerHTML = '';
+  if(filtered.length === 0){
+    body.innerHTML = '<div class="dd-empty">No records match this filter.</div>';
+  } else {
+    const shown = filtered.slice(0, 200);
+    shown.forEach(rec => body.appendChild(renderDrilldownRow(rec)));
+  }
+
+  const footer = document.getElementById('dd-footer');
+  if(filtered.length > 200){
+    footer.style.display = '';
+    footer.textContent = `Showing top 200 of ${filtered.length}.`;
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+function closeDrilldown(){
+  document.getElementById('dd-panel').classList.remove('open');
+  document.getElementById('dd-panel').setAttribute('aria-hidden', 'true');
+  document.getElementById('dd-backdrop').classList.remove('open');
+  DD_OPEN = false;
+}
+
+// Returns the array of records (deals or investments) matching a clicked drill-down.
+// metricKey: 'lead' | 'dcb' | 'dcDone' | 'decCB' | 'decDone' | 'funded'
+// source: a source name (e.g. 'Meta') or null for "all sources"
+// sideCfg: { view, milestone } from the panel that was clicked
+// range: { from, to, label }
+function recordsForDrilldown(metricKey, source, sideCfg, range){
+  const inRange = (ms) => ms != null && (range.from==null || ms >= range.from) && (range.to==null || ms <= range.to);
+  const matchesSource = (deal) => !source || sourceForDeal(deal, sideCfg) === source;
+
+  const records = [];
+
+  if(metricKey === 'funded'){
+    // Investment-typed records
+    ALL_INVS.forEach(inv => {
+      if(!invMatchesType(inv, TYPE_FILTER)) return;
+      if(!invMatchesFund(inv, FUND_FILTER)) return;
+
+      // For each anchor mode, the "Funded" row uses the Investment's funds_received as the time anchor
+      if(ANCHOR_MODE === 'lead'){
+        // Lead-anchored: Investment must be tied (via matched deal) to a deal created in window
+        const deal = inv._matchedDeal;
+        if(!deal) return;
+        if(!inRange(tsOf(deal.properties?.createdate))) return;
+      } else {
+        // Funded-anchored or Activity-anchored: anchor on funding time
+        if(!inRange(investmentFundingTime(inv))) return;
+      }
+
+      // Source filter
+      const deal = inv._matchedDeal;
+      const recordSource = deal ? sourceForDeal(deal, sideCfg, inv) : 'Unstamped';
+      if(source && recordSource !== source) return;
+
+      records.push({ kind: 'investment', inv, source: recordSource });
+    });
+    return records;
+  }
+
+  // Deal-stage rows (lead, dcb, dcDone, decCB, decDone)
+  const stageDateField = {
+    lead: 'createdMs',
+    dcb: 'dcbMs',
+    dcDone: 'dcDoneMs',
+    decCB: 'decCBMs',
+    decDone: 'decDoneMs',
+  }[metricKey];
+
+  if(ANCHOR_MODE === 'activity'){
+    // Each stage uses its own date as the time anchor; deals are independent
+    ALL_DEALS.forEach(deal => {
+      if(!dealMatchesFund(deal, FUND_FILTER)) return;
+      const t = dealMilestoneTimes(deal);
+      if(!inRange(t[stageDateField])) return;
+      if(!matchesSource(deal)) return;
+      records.push({ kind: 'deal', deal, source: sourceForDeal(deal, sideCfg), stageDate: t[stageDateField] });
+    });
+    return records;
+  }
+
+  if(ANCHOR_MODE === 'lead'){
+    // Anchor cohort: deals created in window. Each row is "of those, who hit this stage"
+    ALL_DEALS.forEach(deal => {
+      if(!dealMatchesFund(deal, FUND_FILTER)) return;
+      const t = dealMilestoneTimes(deal);
+      if(!inRange(t.createdMs)) return;
+      if(metricKey !== 'lead' && !t[stageDateField]) return;
+      if(!matchesSource(deal)) return;
+      records.push({ kind: 'deal', deal, source: sourceForDeal(deal, sideCfg), stageDate: t[stageDateField] || t.createdMs });
+    });
+    return records;
+  }
+
+  // ANCHOR_MODE === 'funded': trace funded investors back through stages.
+  // For each funded investment in window, look at its matched deal + contact's deals.
+  ALL_INVS.forEach(inv => {
+    if(!invMatchesType(inv, TYPE_FILTER)) return;
+    if(!invMatchesFund(inv, FUND_FILTER)) return;
+    if(!inRange(investmentFundingTime(inv))) return;
+    const matched = inv._matchedDeal;
+    const recordSource = matched ? sourceForDeal(matched, sideCfg, inv) : 'Unstamped';
+    if(source && recordSource !== source) return;
+
+    if(metricKey === 'lead'){
+      // Every funded investor counts as a Lead at top of funnel
+      if(matched){
+        records.push({ kind: 'deal', deal: matched, source: recordSource, stageDate: tsOf(matched.properties?.createdate), invContext: inv });
+      }
+      return;
+    }
+
+    // For DCB / DC Done / Decision rows: check if any of the contact's MSP deals hit that stage
+    const contactDeals = inv._contactDeals || [];
+    for(const d of contactDeals){
+      const t = dealMilestoneTimes(d);
+      if(t[stageDateField]){
+        records.push({ kind: 'deal', deal: d, source: recordSource, stageDate: t[stageDateField], invContext: inv });
+        return; // count this Investment once for this stage (Rule C-prime)
+      }
+    }
+  });
+
+  return records;
+}
+
+function renderDrilldownRow(rec){
+  const row = document.createElement('div');
+  row.className = 'dd-row';
+
+  const main = document.createElement('div');
+  main.className = 'dd-row-main';
+
+  const tags = document.createElement('div');
+  tags.className = 'dd-row-tags';
+
+  if(rec.kind === 'investment'){
+    const inv = rec.inv;
+    const p = inv.properties || {};
+    const email = p.email_address || '(no email)';
+    const amount = parseFloat(p.investment_amount || 0);
+    const fundDate = p.funds_received || '—';
+    const type = p.type_of_investment || '';
+
+    const link = document.createElement('a');
+    link.className = 'dd-row-name';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.href = `https://app.hubspot.com/contacts/23126809/record/2-59402465/${inv.id}`;
+    link.textContent = email;
+    main.appendChild(link);
+
+    const meta = document.createElement('div');
+    meta.className = 'dd-row-meta';
+    const matchedDeal = inv._matchedDeal;
+    const dealName = matchedDeal?.properties?.dealname || (matchedDeal ? '(unnamed deal)' : '— no matched deal —');
+    meta.textContent = `Funded ${fundDate} · ${rec.source} · matched: ${dealName}`;
+    main.appendChild(meta);
+
+    const amtTag = document.createElement('span');
+    amtTag.className = 'dd-tag amount';
+    amtTag.textContent = fmt(amount);
+    tags.appendChild(amtTag);
+
+    if(type){
+      const typeTag = document.createElement('span');
+      typeTag.className = 'dd-tag ' + (type === 'New' ? 'type-new' : type === 'Repeat' ? 'type-repeat' : 'type-bolt');
+      typeTag.textContent = type;
+      tags.appendChild(typeTag);
+    }
+    if(!matchedDeal){
+      const tag = document.createElement('span');
+      tag.className = 'dd-tag unmatched';
+      tag.textContent = 'unmatched';
+      tags.appendChild(tag);
+    }
+  } else {
+    // Deal record
+    const deal = rec.deal;
+    const p = deal.properties || {};
+    const dealName = p.dealname || '(unnamed deal)';
+    const email = p.email || '(no email)';
+    const amount = parseFloat(p.amount || 0);
+    const stageDateStr = rec.stageDate ? new Date(rec.stageDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+
+    const link = document.createElement('a');
+    link.className = 'dd-row-name';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.href = `https://app.hubspot.com/contacts/23126809/record/0-3/${deal.id}`;
+    link.textContent = dealName;
+    main.appendChild(link);
+
+    const meta = document.createElement('div');
+    meta.className = 'dd-row-meta';
+    meta.textContent = `${email} · ${stageDateStr} · ${rec.source}`;
+    main.appendChild(meta);
+
+    if(amount > 0){
+      const amtTag = document.createElement('span');
+      amtTag.className = 'dd-tag amount';
+      amtTag.textContent = fmt(amount);
+      tags.appendChild(amtTag);
+    }
+  }
+
+  row.appendChild(main);
+  row.appendChild(tags);
+  return row;
+}
+
+// ── Guide panel ───────────────────────────────────────────
+let GUIDE_OPEN=false;
+function openHelp(){
+  if(DD_OPEN) closeDrilldown();
+  document.getElementById('guide-panel').classList.add('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','false');
+  document.getElementById('guide-backdrop').classList.add('open');
+  GUIDE_OPEN=true;
+}
+function closeHelp(){
+  document.getElementById('guide-panel').classList.remove('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','true');
+  document.getElementById('guide-backdrop').classList.remove('open');
+  GUIDE_OPEN=false;
+}
+
+// ── Tooltip ───────────────────────────────────────────────
+function showTip(e, txt){
+  const tip=document.getElementById('tip');
+  tip.textContent=txt;
+  tip.classList.add('on');
+  moveTip(e);
+}
+function hideTip(){ document.getElementById('tip').classList.remove('on'); }
+function moveTip(e){
+  const tip=document.getElementById('tip');
+  tip.style.left=(e.clientX+12)+'px';
+  tip.style.top=(e.clientY+12)+'px';
+}
+
+// ── Bootstrap ─────────────────────────────────────────────
+async function loadAll(){
+  document.getElementById('btn').disabled=true;
+  document.getElementById('ov').classList.add('on');
+  document.getElementById('dash').style.display='none';
+  st('Loading…','sl');
+  // Reset incomplete-load tracking on each fresh load
+  LOAD_INCOMPLETE = false;
+  LOAD_INCOMPLETE_REASON = '';
+  // Reset contact props cache for this load
+  CONTACT_PROPS_BY_EMAIL = {};
+  try{
+    lm('Connecting to HubSpot…');
+    ALL_DEALS = await fetchAllDeals();
+    st(`Loaded ${ALL_DEALS.length} deals`,'so');
+
+    lm('Loading investments…');
+    ALL_INVS = await fetchInvestments();
+
+    if(ALL_INVS.length){
+      lm('Matching investments to deals by email…');
+      attachMatchedDealsToInvestments();
+
+      // Stage 2 matching: contact-association fallback for Investments
+      // whose deals don't have email mirrored. Catches secondary-contact
+      // and soft-commit-stage deals.
+      const fallback = await resolveUnmatchedViaContactAssociation();
+      if(fallback.attempted > 0){
+        console.log(`Fallback contact-association matching: ${fallback.resolved}/${fallback.attempted} additionally resolved`);
+      }
+
+      // Stage 3: augment _contactDeals for matched Investments whose deal
+      // lacks a milestone stamp. Required for per-contact attribution to find
+      // the procurement deal — the email-mirror match returns only the most
+      // recent deal, but procurement attribution needs the full deal graph.
+      const augment = await augmentContactDealsForAttribution();
+      if(augment.attempted > 0){
+        console.log(`Procurement-deal augmentation: ${augment.augmented}/${augment.attempted} contacts augmented with full deal graph`);
+      }
+
+      // Stage 4: fetch contact attribution properties for any Investment not
+      // yet covered by Stages 2 or 3. Required for drill-down breakdowns.
+      const attribFetch = await fetchContactPropsForRemaining();
+      if(attribFetch.fetched > 0){
+        console.log(`Attribution properties: fetched for ${attribFetch.fetched} additional contacts`);
+      }
+
+      // Stage 5: build fund-membership indexes used by the Fund filter.
+      // FUNDS_BY_DEAL_ID: dealId → Set of funds invested via this deal's matched investments
+      // FUNDS_BY_EMAIL: normalized email → Set of funds the contact has invested in
+      // These let the funnel and drill-downs answer "did this deal/contact end up funding Fund X?"
+      buildFundMembershipIndexes();
+    }
+
+    // Diagnostic: count Investments with/without a matched deal
+    const matched = ALL_INVS.filter(i => i._matchedDeal).length;
+    console.log(`Investment matching: ${matched}/${ALL_INVS.length} matched, ${ALL_INVS.length - matched} unmatched`);
+
+    // Show cache age in header if available, otherwise current time.
+    const meta = await fetchCacheMeta();
+    if(meta && meta.lastUpdated){
+      const cacheAge = Date.now() - new Date(meta.lastUpdated).getTime();
+      const ageMin = Math.floor(cacheAge / 60000);
+      const ageHr = Math.floor(ageMin / 60);
+      const ageStr = ageHr >= 1 ? `${ageHr}h ${ageMin % 60}m ago` : `${ageMin}m ago`;
+      document.getElementById('ts').textContent = `Cache: ${ageStr}`;
+    } else {
+      document.getElementById('ts').textContent='Updated '+new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+    document.getElementById('ov').classList.remove('on');
+    document.getElementById('dash').style.display='block';
+    st(`Loaded ${ALL_DEALS.length} deals · ${ALL_INVS.length} investments (${matched} matched)`,'so');
+
+    // Surface incomplete-load warning if any fetch loop hit an unrecoverable error
+    showIncompleteLoadBanner();
+
+    render();
+  }catch(e){
+    console.error(e);
+    st('Load error: '+e.message,'se');
+    lm('Error: '+e.message);
+  }finally{
+    document.getElementById('btn').disabled=false;
+  }
+}
+
+// Show a red banner above the dashboard if the load was truncated.
+// Bypasses the normal funnel render — user needs to know data is incomplete.
+function showIncompleteLoadBanner(){
+  const existing = document.getElementById('incomplete-banner');
+  if(existing) existing.remove();
+  if(!LOAD_INCOMPLETE) return;
+  const dash = document.getElementById('dash');
+  const banner = document.createElement('div');
+  banner.id = 'incomplete-banner';
+  banner.style.cssText = 'background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px';
+  banner.innerHTML = `
+    <div style="font-size:18px;color:#991b1b;flex-shrink:0">⚠</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:#7f1d1d">Data load was incomplete</div>
+      <div style="font-size:11px;color:#991b1b;margin-top:3px;line-height:1.4">${LOAD_INCOMPLETE_REASON} — some recent records may be missing. Click Refresh to retry.</div>
+    </div>
+    <button onclick="loadAll()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:#7f1d1d;background:#fca5a5;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;flex-shrink:0">Retry</button>
+  `;
+  dash.insertBefore(banner, dash.firstChild);
+}
+
+// ── Event wiring ──────────────────────────────────────────
+document.getElementById('rng').addEventListener('change',(e)=>{
+  document.getElementById('cdates').classList.toggle('on', e.target.value==='custom');
+  render();
+});
+document.getElementById('dfrom').addEventListener('change',render);
+document.getElementById('dto').addEventListener('change',render);
+
+document.querySelectorAll('.view-pick').forEach(sel => {
+  sel.addEventListener('change', (e) => {
+    const side = e.target.dataset.side;
+    PANEL_STATE[side].view = e.target.value;
+    render();
+  });
+});
+
+document.querySelectorAll('.ms-pick').forEach(sel => {
+  sel.addEventListener('change', (e) => {
+    const side = e.target.dataset.side;
+    PANEL_STATE[side].milestone = e.target.value;
+    render();
+  });
+});
+
+document.getElementById('bdown-anchor').addEventListener('change', render);
+
+// Delegated click handler on breakdown table cells
+document.getElementById('bdown-body').addEventListener('click', (e) => {
+  const td = e.target.closest('td.clickable');
+  if(!td) return;
+  const metric = td.dataset.metric;
+  const source = td.dataset.source;
+  if(metric && source && BDOWN_CFG){
+    openDrilldown(metric, source, BDOWN_CFG, getRange());
+  }
+});
+
+// KPI card clicks → drill-down using the LEFT panel's view config
+document.getElementById('kpi-leads').addEventListener('click', () => openDrilldown('lead', null, PANEL_STATE.left, getRange()));
+document.getElementById('kpi-dcb').addEventListener('click', () => openDrilldown('dcb', null, PANEL_STATE.left, getRange()));
+document.getElementById('kpi-funded').addEventListener('click', () => openDrilldown('funded', null, PANEL_STATE.left, getRange()));
+document.getElementById('kpi-capital').addEventListener('click', () => openDrilldown('funded', null, PANEL_STATE.left, getRange()));
+
+// ESC key closes any open panel
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    if(GUIDE_OPEN) closeHelp();
+    else if(DD_OPEN) closeDrilldown();
+  }
+});
+
+// Anchor mode (windowing strategy)
+document.getElementById('anchor-mode').addEventListener('change', (e) => {
+  ANCHOR_MODE = e.target.value;
+  render();
+});
+
+// Type-of-investment segmented control
+document.querySelectorAll('#type-seg button').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('#type-seg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    TYPE_FILTER = btn.dataset.type;
+    render();
+  });
+});
+
+// Fund segmented control. Strict per-Investment filter (Option A): an investor
+// only counts under Fund X if they have an actual Investment record in Fund X.
+// Pre-funded prospects are excluded from fund-filtered views.
+document.querySelectorAll('#fund-seg button').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('#fund-seg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    FUND_FILTER = btn.dataset.fund;
+    render();
+  });
+});
+
+loadAll();
+</script>
+</body>
+</html>
