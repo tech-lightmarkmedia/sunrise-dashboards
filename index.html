@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Dashboards</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   Tokens — match the SCI dashboard family. Cream-on-dark luxury aesthetic
+   with DM Serif Display headlines and DM Sans body. Per-dashboard accent
+   colors mirror the signature color used in each dashboard's actual UI.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#f5f3ef;
+  --surface:#fff;
+  --surface2:#edeae3;
+  --surface3:#faf8f3;
+  --border:#ddd9d0;
+  --border2:#c9c4b6;
+  --text:#1a1814;
+  --text2:#6b6558;
+  --text3:#9e9789;
+  --accent:#c44a1e;
+  --accent-bg:#fdf3ee;
+  --accent-dark:#9a3815;
+
+  /* per-dashboard accents */
+  --ad:#1d4ed8;       --ad-bg:#eff6ff;
+  --wistia:#c44a1e;   --wistia-bg:#fdf3ee;
+  --lead:#6d28d9;     --lead-bg:#f5f3ff;
+  --setter:#b45309;   --setter-bg:#fef3c7;
+  --closer:#7c3aed;   --closer-bg:#f3eefe;
+  --conv:#15803d;     --conv-bg:#ecfdf5;
+  --sunrise:#9a3412;  --sunrise-bg:#fef3ec;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text)}
+body{font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+
+/* ─── Header — matches dashboard header pattern ───────────────────────── */
+header.top{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:17px;color:#fff;letter-spacing:-.5px}
+header.top h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;letter-spacing:.1px}
+header.top .built-by{font-size:11px;color:#9e9789;font-style:italic}
+header.top .built-by b{color:#c4b6a2;font-weight:500;font-style:normal}
+
+/* ─── Page shell ──────────────────────────────────────────────────────── */
+main{max-width:1200px;margin:0 auto;padding:48px 28px 80px}
+
+/* ─── Intro ───────────────────────────────────────────────────────────── */
+.intro{margin-bottom:56px;max-width:780px}
+.eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.4px;color:var(--accent);margin-bottom:10px}
+.intro h2{font-family:'DM Serif Display',serif;font-size:44px;line-height:1.08;font-weight:400;letter-spacing:-.5px;margin-bottom:18px;color:var(--text)}
+.intro h2 em{font-style:italic;color:var(--accent-dark)}
+.intro .lede{font-size:16px;line-height:1.6;color:var(--text2);max-width:680px}
+.intro .lede strong{color:var(--text);font-weight:500}
+
+/* Funnel ribbon — tiny visual chip showing where each dashboard sits in the
+   marketing→sales→capital journey. Sits below the lede. */
+.funnel-ribbon{display:flex;gap:6px;margin-top:24px;font-size:11px;flex-wrap:wrap;align-items:center}
+.fr-chip{padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-weight:500;letter-spacing:.2px;white-space:nowrap}
+.fr-sep{color:var(--text3);font-size:14px;margin:0 -2px}
+
+/* ─── Dashboard rows ──────────────────────────────────────────────────── */
+.row{display:grid;grid-template-columns:520px 1fr;gap:42px;align-items:center;padding:36px 0;border-top:1px solid var(--border)}
+.row:first-of-type{border-top:none;padding-top:8px}
+
+.mock-wrap{position:relative}
+.mock{width:100%;aspect-ratio:520/340;border-radius:14px;background:var(--surface);box-shadow:0 1px 0 var(--border),0 12px 32px -16px rgba(26,24,20,.18),0 4px 12px -6px rgba(26,24,20,.08);overflow:hidden;border:1px solid var(--border)}
+.mock svg{width:100%;height:100%;display:block}
+
+.info{min-width:0}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:14px}
+.badge-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+.info h3{font-family:'DM Serif Display',serif;font-size:32px;line-height:1.1;font-weight:400;letter-spacing:-.2px;color:var(--text);margin-bottom:8px}
+.info .tagline{font-family:'DM Serif Display',serif;font-style:italic;font-size:16px;color:var(--text2);line-height:1.35;margin-bottom:18px;font-weight:400}
+.info ul{list-style:none;padding:0;margin:0 0 22px}
+.info li{font-size:13px;line-height:1.55;color:var(--text2);padding:5px 0 5px 22px;position:relative}
+.info li::before{content:'';position:absolute;left:0;top:11px;width:11px;height:1px;background:var(--text3)}
+.info li b{color:var(--text);font-weight:500}
+.info .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn-open{display:inline-flex;align-items:center;gap:6px;background:var(--text);color:#f5f3ef;padding:9px 18px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:.1px;transition:background .15s ease,transform .15s ease;border:none;cursor:pointer}
+.btn-open:hover{background:#33302a;transform:translateY(-1px)}
+.btn-open .arrow{font-size:14px;line-height:1}
+.btn-secondary{font-size:12px;color:var(--text3);text-decoration:none;padding:9px 4px;letter-spacing:.1px}
+.btn-secondary:hover{color:var(--text)}
+
+/* Per-dashboard accent on the row (badge + button hover) */
+.row[data-d="ad"]      .badge{background:var(--ad-bg);     color:var(--ad)}      .row[data-d="ad"]      .badge-dot{background:var(--ad)}
+.row[data-d="wistia"]  .badge{background:var(--wistia-bg); color:var(--wistia)}  .row[data-d="wistia"]  .badge-dot{background:var(--wistia)}
+.row[data-d="lead"]    .badge{background:var(--lead-bg);   color:var(--lead)}    .row[data-d="lead"]    .badge-dot{background:var(--lead)}
+.row[data-d="setter"]  .badge{background:var(--setter-bg); color:var(--setter)}  .row[data-d="setter"]  .badge-dot{background:var(--setter)}
+.row[data-d="closer"]  .badge{background:var(--closer-bg); color:var(--closer)}  .row[data-d="closer"]  .badge-dot{background:var(--closer)}
+.row[data-d="conv"]    .badge{background:var(--conv-bg);   color:var(--conv)}    .row[data-d="conv"]    .badge-dot{background:var(--conv)}
+.row[data-d="sunrise"] .badge{background:var(--sunrise-bg);color:var(--sunrise)} .row[data-d="sunrise"] .badge-dot{background:var(--sunrise)}
+
+/* ─── Footer ──────────────────────────────────────────────────────────── */
+footer.bot{margin-top:56px;padding:32px 28px;background:var(--text);color:#9e9789}
+footer.bot .inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+footer.bot .brand{font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:#c4b6a2}
+footer.bot .meta{font-size:11px;color:#76705f}
+
+/* ─── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width:960px){
+  .row{grid-template-columns:1fr;gap:24px;padding:30px 0}
+  .mock{max-width:520px}
+  .info h3{font-size:26px}
+  .intro h2{font-size:32px}
+  main{padding:36px 22px 60px}
+  .funnel-ribbon{font-size:10px}
+}
+
+/* Inline SVG mock styling — keep mocks visually rich and on-brand. The
+   mocks use CSS vars where possible so per-dashboard accents come through. */
+.mock-grid line{stroke:var(--border);stroke-width:1}
+.mock-kpi-bg{fill:var(--surface3)}
+.mock-text-mono{font-family:'DM Sans',sans-serif;font-weight:500}
+.mock-text-serif{font-family:'DM Serif Display',serif}
+.mock-bar{fill:currentColor}
+.mock-faint{fill:var(--text3);opacity:.5}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="hdr">
+    <div class="logo">S</div>
+    <h1>Sunrise Capital — Dashboards</h1>
+  </div>
+  <div class="built-by">Built by <b>Lightmark Media</b></div>
+</header>
+
+<main>
+
+  <section class="intro">
+    <div class="eyebrow">The Lightmark Suite for Sunrise Capital</div>
+    <h2>Seven dashboards. <em>One funnel.</em><br>From first impression to funded capital.</h2>
+    <p class="lede">
+      Each dashboard answers a specific question along the path from a paid ad
+      impression to a wire received. Together they form an end-to-end view of
+      <strong>where capital comes from, who's working it, and how the funnel is converting</strong> —
+      with consistent definitions, live HubSpot data, and drill-downs at every cell.
+    </p>
+    <div class="funnel-ribbon">
+      <span class="fr-chip">Ad Spend</span>
+      <span class="fr-sep">›</span>
+      <span class="fr-chip">Video Engagement</span>
+      <span class="fr-sep">›</span>
+      <span class="fr-chip">Leads</span>
+      <span class="fr-sep">›</span>
+      <span class="fr-chip">Setter Activity</span>
+      <span class="fr-sep">›</span>
+      <span class="fr-chip">Closer Activity</span>
+      <span class="fr-sep">›</span>
+      <span class="fr-chip">Funded Capital</span>
+    </div>
+  </section>
+
+  <!-- ═══ 1. AD PERFORMANCE ════════════════════════════════════════════ -->
+  <section class="row" data-d="ad" id="ad">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <!-- header bar -->
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Ad Performance</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v10.8.4</text>
+        <!-- KPI strip — 3 tiles -->
+        <g transform="translate(14,46)">
+          <rect width="158" height="56" rx="7" fill="#faf8f3" stroke="#ddd9d0"/>
+          <text x="12" y="18" fill="#9e9789" font-size="8" font-weight="600" letter-spacing=".5">PERIOD</text>
+          <text x="12" y="40" fill="#1a1814" font-family="DM Serif Display, serif" font-size="14">Last 12 months</text>
+
+          <rect x="166" width="158" height="56" rx="7" fill="#eff6ff" stroke="#cdd6f3"/>
+          <text x="178" y="18" fill="#1d4ed8" font-size="8" font-weight="600" letter-spacing=".5">INTROS BOOKED</text>
+          <text x="178" y="44" fill="#1d4ed8" font-family="DM Serif Display, serif" font-size="22">1,247</text>
+
+          <rect x="332" width="158" height="56" rx="7" fill="#f5f3ff" stroke="#d8cdf3"/>
+          <text x="344" y="18" fill="#6d28d9" font-size="8" font-weight="600" letter-spacing=".5">DISCOVERIES BOOKED</text>
+          <text x="344" y="44" fill="#6d28d9" font-family="DM Serif Display, serif" font-size="22">312</text>
+        </g>
+        <!-- 4 chart panels, 2x2 -->
+        <g transform="translate(14,114)">
+          <!-- intros pie panel -->
+          <rect width="240" height="100" rx="7" fill="#eff6ff" stroke="#cdd6f3"/>
+          <text x="12" y="16" fill="#1d4ed8" font-size="8" font-weight="600">INTROS — TOP CAMPAIGNS</text>
+          <circle cx="56" cy="60" r="26" fill="none" stroke="#1d4ed8" stroke-width="12" stroke-dasharray="60 100"/>
+          <circle cx="56" cy="60" r="26" fill="none" stroke="#60a5fa" stroke-width="12" stroke-dasharray="35 100" stroke-dashoffset="-60"/>
+          <circle cx="56" cy="60" r="26" fill="none" stroke="#93c5fd" stroke-width="12" stroke-dasharray="25 100" stroke-dashoffset="-95"/>
+          <circle cx="56" cy="60" r="16" fill="#eff6ff"/>
+          <g font-size="8" fill="#1a1814">
+            <rect x="94" y="38" width="6" height="6" fill="#1d4ed8"/><text x="104" y="44">LM-Parking</text><text x="225" y="44" text-anchor="end" fill="#6b6558">412</text>
+            <rect x="94" y="52" width="6" height="6" fill="#60a5fa"/><text x="104" y="58">LM-Tax</text><text x="225" y="58" text-anchor="end" fill="#6b6558">298</text>
+            <rect x="94" y="66" width="6" height="6" fill="#93c5fd"/><text x="104" y="72">Direct</text><text x="225" y="72" text-anchor="end" fill="#6b6558">187</text>
+            <rect x="94" y="80" width="6" height="6" fill="#a8a29e"/><text x="104" y="86">Other</text><text x="225" y="86" text-anchor="end" fill="#6b6558">350</text>
+          </g>
+
+          <!-- discoveries pie panel -->
+          <g transform="translate(252,0)">
+            <rect width="240" height="100" rx="7" fill="#f5f3ff" stroke="#d8cdf3"/>
+            <text x="12" y="16" fill="#6d28d9" font-size="8" font-weight="600">DISCOVERIES — TOP CAMPAIGNS</text>
+            <circle cx="56" cy="60" r="26" fill="none" stroke="#6d28d9" stroke-width="12" stroke-dasharray="48 100"/>
+            <circle cx="56" cy="60" r="26" fill="none" stroke="#a78bfa" stroke-width="12" stroke-dasharray="32 100" stroke-dashoffset="-48"/>
+            <circle cx="56" cy="60" r="26" fill="none" stroke="#c4b5fd" stroke-width="12" stroke-dasharray="20 100" stroke-dashoffset="-80"/>
+            <circle cx="56" cy="60" r="16" fill="#f5f3ff"/>
+            <g font-size="8" fill="#1a1814">
+              <rect x="94" y="38" width="6" height="6" fill="#6d28d9"/><text x="104" y="44">LM-Parking</text><text x="225" y="44" text-anchor="end" fill="#6b6558">98</text>
+              <rect x="94" y="52" width="6" height="6" fill="#a78bfa"/><text x="104" y="58">LM-Tax</text><text x="225" y="58" text-anchor="end" fill="#6b6558">72</text>
+              <rect x="94" y="66" width="6" height="6" fill="#c4b5fd"/><text x="104" y="72">Direct</text><text x="225" y="72" text-anchor="end" fill="#6b6558">61</text>
+              <rect x="94" y="80" width="6" height="6" fill="#a8a29e"/><text x="104" y="86">Other</text><text x="225" y="86" text-anchor="end" fill="#6b6558">81</text>
+            </g>
+          </g>
+        </g>
+        <!-- bottom row: AI pie + % AI bar chart -->
+        <g transform="translate(14,222)">
+          <rect width="240" height="104" rx="7" fill="#ecfdf5" stroke="#b6e8d2"/>
+          <text x="12" y="16" fill="#059669" font-size="8" font-weight="600">TOTAL AI LEADS</text>
+          <circle cx="56" cy="62" r="28" fill="none" stroke="#059669" stroke-width="12" stroke-dasharray="55 100"/>
+          <circle cx="56" cy="62" r="28" fill="none" stroke="#34d399" stroke-width="12" stroke-dasharray="30 100" stroke-dashoffset="-55"/>
+          <circle cx="56" cy="62" r="28" fill="none" stroke="#86efac" stroke-width="12" stroke-dasharray="20 100" stroke-dashoffset="-85"/>
+          <circle cx="56" cy="62" r="18" fill="#ecfdf5"/>
+          <text x="56" y="60" text-anchor="middle" font-size="9" fill="#059669" font-weight="600">827</text>
+          <text x="56" y="71" text-anchor="middle" font-size="7" fill="#6b6558">AI Leads</text>
+          <g font-size="8" fill="#1a1814">
+            <rect x="100" y="42" width="6" height="6" fill="#059669"/><text x="110" y="48">LM-Parking</text><text x="225" y="48" text-anchor="end" fill="#6b6558">458</text>
+            <rect x="100" y="56" width="6" height="6" fill="#34d399"/><text x="110" y="62">LM-Tax</text><text x="225" y="62" text-anchor="end" fill="#6b6558">214</text>
+            <rect x="100" y="70" width="6" height="6" fill="#86efac"/><text x="110" y="76">LinkedIn</text><text x="225" y="76" text-anchor="end" fill="#6b6558">155</text>
+          </g>
+
+          <g transform="translate(252,0)">
+            <rect width="240" height="104" rx="7" fill="#ecfdf5" stroke="#b6e8d2"/>
+            <text x="12" y="16" fill="#059669" font-size="8" font-weight="600">% AI BY CAMPAIGN</text>
+            <rect x="170" y="6" width="32" height="14" rx="3" fill="#059669"/>
+            <text x="186" y="16" text-anchor="middle" fill="#fff" font-size="7" font-weight="600">QUALITY</text>
+            <rect x="204" y="6" width="28" height="14" rx="3" fill="#fff" stroke="#b6e8d2"/>
+            <text x="218" y="16" text-anchor="middle" fill="#6b6558" font-size="7">COST</text>
+            <!-- horizontal bars -->
+            <g font-size="7" fill="#1a1814">
+              <text x="12" y="34">Low vol (8)</text> <rect x="76" y="28" width="28" height="8" fill="#a8a29e"/>
+              <text x="12" y="50">LM-Parking</text>  <rect x="76" y="44" width="148" height="8" fill="#059669"/>
+              <text x="12" y="66">LM-Tax</text>      <rect x="76" y="60" width="118" height="8" fill="#059669"/>
+              <text x="12" y="82">LinkedIn-Fund5</text><rect x="76" y="76" width="92" height="8" fill="#059669"/>
+              <text x="12" y="98">LM-IRA</text>      <rect x="76" y="92" width="68" height="8" fill="#059669"/>
+            </g>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Top of funnel · paid acquisition</span>
+      <h3>Ad Performance</h3>
+      <div class="tagline">Pin spend to the campaigns that actually book meetings.</div>
+      <ul>
+        <li>Per-campaign <b>intros and discoveries booked</b>, with Meta / LinkedIn / Google source attribution</li>
+        <li><b>Cost per AI Lead (CPAIL)</b> joined live from Meta + LinkedIn Marketing APIs — quality and cost lenses</li>
+        <li><b>Total / New / Returning</b> lens for any campaign — distinguishes acquisition spend from re-engagement</li>
+        <li><b>Orphan spend panel</b> surfaces campaigns burning cash without any HubSpot attribution, sorted lead-gen-first</li>
+        <li>Drill into any campaign for the full 6-row attribution matrix (Total / New / Returning × Lead / AI)</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_AD_PERFORMANCE_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2. WISTIA VIDEO PERFORMANCE ══════════════════════════════════ -->
+  <section class="row" data-d="wistia" id="wistia">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Wistia Video Performance</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v2</text>
+
+        <!-- 4 KPI cards -->
+        <g transform="translate(14,46)">
+          <rect width="118" height="64" rx="7" fill="#fdf3ee" stroke="#f0d9c8"/>
+          <text x="12" y="18" fill="#c44a1e" font-size="8" font-weight="600" letter-spacing=".5">TOTAL PLAYS</text>
+          <text x="12" y="44" fill="#c44a1e" font-family="DM Serif Display, serif" font-size="22">18,420</text>
+          <text x="12" y="57" fill="#9e9789" font-size="7">across 28 projects</text>
+
+          <rect x="126" width="118" height="64" rx="7" fill="#fdf3ee" stroke="#f0d9c8"/>
+          <text x="138" y="18" fill="#c44a1e" font-size="8" font-weight="600" letter-spacing=".5">HOURS WATCHED</text>
+          <text x="138" y="44" fill="#c44a1e" font-family="DM Serif Display, serif" font-size="22">1,283h</text>
+          <text x="138" y="57" fill="#9e9789" font-size="7">≈ 4.2 min / play</text>
+
+          <rect x="252" width="118" height="64" rx="7" fill="#fdf3ee" stroke="#f0d9c8"/>
+          <text x="264" y="18" fill="#c44a1e" font-size="8" font-weight="600" letter-spacing=".5">PAGE LOADS</text>
+          <text x="264" y="44" fill="#c44a1e" font-family="DM Serif Display, serif" font-size="22">52,847</text>
+          <text x="264" y="57" fill="#9e9789" font-size="7">pages with players</text>
+
+          <rect x="378" width="118" height="64" rx="7" fill="#fdf3ee" stroke="#f0d9c8"/>
+          <text x="390" y="18" fill="#c44a1e" font-size="8" font-weight="600" letter-spacing=".5">PLAY RATE</text>
+          <text x="390" y="44" fill="#c44a1e" font-family="DM Serif Display, serif" font-size="22">34.9%</text>
+          <text x="390" y="57" fill="#9e9789" font-size="7">plays ÷ loads</text>
+        </g>
+
+        <!-- video table -->
+        <g transform="translate(14,124)">
+          <rect width="492" height="200" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="18" fill="#1a1814" font-family="DM Serif Display, serif" font-size="13">Top Videos</text>
+          <text x="478" y="18" text-anchor="end" fill="#9e9789" font-size="8">sort: plays ▼</text>
+          <line x1="0" y1="30" x2="492" y2="30" stroke="#ebe9e2"/>
+          <!-- column headers -->
+          <g font-size="7" fill="#9e9789" font-weight="600" letter-spacing=".3">
+            <text x="14" y="44">VIDEO</text>
+            <text x="290" y="44" text-anchor="end">PROJECT</text>
+            <text x="350" y="44" text-anchor="end">PLAYS</text>
+            <text x="408" y="44" text-anchor="end">HOURS</text>
+            <text x="476" y="44" text-anchor="end">RATE</text>
+          </g>
+          <line x1="0" y1="50" x2="492" y2="50" stroke="#ebe9e2"/>
+          <!-- rows -->
+          <g font-size="9" fill="#1a1814">
+            <rect x="14" y="56" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,59 18,63 22,61" fill="#fff"/>
+            <text x="34" y="65">Fund 5 — Overview</text>
+            <text x="290" y="65" text-anchor="end" fill="#6b6558">Fund 5</text>
+            <text x="350" y="65" text-anchor="end">3,847</text>
+            <text x="408" y="65" text-anchor="end">412h</text>
+            <text x="476" y="65" text-anchor="end" fill="#059669">48.2%</text>
+
+            <rect x="14" y="74" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,77 18,81 22,79" fill="#fff"/>
+            <text x="34" y="83">Tax Strategy Webinar</text>
+            <text x="290" y="83" text-anchor="end" fill="#6b6558">Private Pod</text>
+            <text x="350" y="83" text-anchor="end">2,914</text>
+            <text x="408" y="83" text-anchor="end">198h</text>
+            <text x="476" y="83" text-anchor="end" fill="#059669">42.8%</text>
+
+            <rect x="14" y="92" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,95 18,99 22,97" fill="#fff"/>
+            <text x="34" y="101">IRA Rollover Guide</text>
+            <text x="290" y="101" text-anchor="end" fill="#6b6558">Education</text>
+            <text x="350" y="101" text-anchor="end">2,103</text>
+            <text x="408" y="101" text-anchor="end">142h</text>
+            <text x="476" y="101" text-anchor="end" fill="#059669">38.1%</text>
+
+            <rect x="14" y="110" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,113 18,117 22,115" fill="#fff"/>
+            <text x="34" y="119">Fund 5 — Q&amp;A</text>
+            <text x="290" y="119" text-anchor="end" fill="#6b6558">Fund 5</text>
+            <text x="350" y="119" text-anchor="end">1,728</text>
+            <text x="408" y="119" text-anchor="end">96h</text>
+            <text x="476" y="119" text-anchor="end" fill="#9a3815">29.4%</text>
+
+            <rect x="14" y="128" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,131 18,135 22,133" fill="#fff"/>
+            <text x="34" y="137">Parking Lot Deep Dive</text>
+            <text x="290" y="137" text-anchor="end" fill="#6b6558">Private Pod</text>
+            <text x="350" y="137" text-anchor="end">1,234</text>
+            <text x="408" y="137" text-anchor="end">71h</text>
+            <text x="476" y="137" text-anchor="end" fill="#059669">35.6%</text>
+
+            <rect x="14" y="146" width="14" height="10" rx="2" fill="#c44a1e"/>
+            <polygon points="18,149 18,153 22,151" fill="#fff"/>
+            <text x="34" y="155">Accreditation Walkthrough</text>
+            <text x="290" y="155" text-anchor="end" fill="#6b6558">Education</text>
+            <text x="350" y="155" text-anchor="end">892</text>
+            <text x="408" y="155" text-anchor="end">38h</text>
+            <text x="476" y="155" text-anchor="end" fill="#9a3815">22.1%</text>
+
+            <text x="34" y="178" fill="#9e9789" font-size="8" font-style="italic">+ 22 more videos…</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Engagement signal · content traction</span>
+      <h3>Wistia Video Performance</h3>
+      <div class="tagline">See which investor videos are actually being watched.</div>
+      <ul>
+        <li>Top videos ranked by <b>plays, hours watched, page loads, or play rate</b> — pick your lens</li>
+        <li>Project picker with sane defaults (Fund 5 + Private Podcasts) — expand to all 28 projects when needed</li>
+        <li>Range-filterable for any window — see which content is heating up or cooling off</li>
+        <li>Live name filter for fast retrieval when you're hunting a specific asset</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/wistia" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 3. LEAD TRACKING ═════════════════════════════════════════════ -->
+  <section class="row" data-d="lead" id="lead">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Lead Tracking</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v19</text>
+
+        <!-- filter bar -->
+        <g transform="translate(14,42)">
+          <rect width="492" height="22" rx="5" fill="#fffdf8" stroke="#ddd9d0"/>
+          <text x="10" y="15" fill="#6b6558" font-size="8" font-weight="600">RANGE</text>
+          <rect x="50" y="5" width="84" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/>
+          <text x="56" y="14" fill="#1a1814" font-size="7">Last 90 days ▾</text>
+          <text x="148" y="15" fill="#6b6558" font-size="8" font-weight="600">ANCHOR</text>
+          <rect x="194" y="5" width="106" height="12" rx="3" fill="#1a1814"/>
+          <text x="200" y="14" fill="#fff" font-size="7">Funded-anchored ▾</text>
+          <text x="314" y="15" fill="#6b6558" font-size="8" font-weight="600">TYPE</text>
+          <g><rect x="346" y="5" width="22" height="12" rx="3" fill="#1a1814"/><text x="357" y="14" fill="#fff" font-size="7" text-anchor="middle">All</text></g>
+          <g><rect x="368" y="5" width="32" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/><text x="384" y="14" fill="#6b6558" font-size="7" text-anchor="middle">New</text></g>
+        </g>
+
+        <!-- KPI row -->
+        <g transform="translate(14,74)">
+          <rect width="118" height="38" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="10" y="14" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">LEADS IN WINDOW</text>
+          <text x="10" y="32" fill="#1a1814" font-family="DM Serif Display, serif" font-size="16">297</text>
+
+          <rect x="126" width="118" height="38" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="136" y="14" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">DCB</text>
+          <text x="136" y="32" fill="#1a1814" font-family="DM Serif Display, serif" font-size="16">188</text>
+
+          <rect x="252" width="118" height="38" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="262" y="14" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">FUNDED</text>
+          <text x="262" y="32" fill="#1a1814" font-family="DM Serif Display, serif" font-size="16">35</text>
+
+          <rect x="378" width="118" height="38" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="388" y="14" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">CAPITAL RAISED</text>
+          <text x="388" y="32" fill="#6d28d9" font-family="DM Serif Display, serif" font-size="16">$8.4M</text>
+        </g>
+
+        <!-- two-panel funnel -->
+        <g transform="translate(14,126)">
+          <rect width="240" height="200" rx="8" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="20" fill="#1a1814" font-family="DM Serif Display, serif" font-size="11">First-Touch Attribution</text>
+          <text x="14" y="32" fill="#9e9789" font-size="7" font-style="italic">hs_analytics_source · immutable</text>
+          <!-- stages -->
+          <g font-size="7">
+            <text x="14" y="52" fill="#1a1814" text-anchor="end" x="58">Leads</text>
+            <g transform="translate(64,46)">
+              <rect width="120" height="10" rx="2" fill="#1877f2"/>
+              <rect x="60" width="30" height="10" fill="#0a66c2"/>
+              <rect x="90" width="20" height="10" fill="#ea4335"/>
+              <rect x="110" width="10" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="53" fill="#1a1814" font-weight="600">297</text>
+
+            <text x="58" y="68" fill="#1a1814" text-anchor="end">DCB</text>
+            <g transform="translate(64,62)">
+              <rect width="90" height="10" rx="2" fill="#1877f2"/>
+              <rect x="44" width="24" height="10" fill="#0a66c2"/>
+              <rect x="68" width="14" height="10" fill="#ea4335"/>
+              <rect x="82" width="8" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="69" fill="#1a1814" font-weight="600">188</text>
+
+            <text x="58" y="84" fill="#1a1814" text-anchor="end">DC Done</text>
+            <g transform="translate(64,78)">
+              <rect width="62" height="10" rx="2" fill="#1877f2"/>
+              <rect x="30" width="18" height="10" fill="#0a66c2"/>
+              <rect x="48" width="9" height="10" fill="#ea4335"/>
+              <rect x="57" width="5" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="85" fill="#1a1814" font-weight="600">104</text>
+
+            <text x="58" y="100" fill="#1a1814" text-anchor="end">Dec CB</text>
+            <g transform="translate(64,94)">
+              <rect width="46" height="10" rx="2" fill="#1877f2"/>
+              <rect x="22" width="14" height="10" fill="#0a66c2"/>
+              <rect x="36" width="7" height="10" fill="#ea4335"/>
+              <rect x="43" width="3" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="101" fill="#1a1814" font-weight="600">76</text>
+
+            <text x="58" y="116" fill="#1a1814" text-anchor="end">Dec Done</text>
+            <g transform="translate(64,110)">
+              <rect width="36" height="10" rx="2" fill="#1877f2"/>
+              <rect x="17" width="11" height="10" fill="#0a66c2"/>
+              <rect x="28" width="5" height="10" fill="#ea4335"/>
+              <rect x="33" width="3" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="117" fill="#1a1814" font-weight="600">58</text>
+
+            <text x="58" y="132" fill="#1a1814" text-anchor="end">Funded</text>
+            <g transform="translate(64,126)">
+              <rect width="20" height="10" rx="2" fill="#1877f2"/>
+              <rect x="10" width="6" height="10" fill="#0a66c2"/>
+              <rect x="16" width="3" height="10" fill="#ea4335"/>
+              <rect x="19" width="1" height="10" fill="#15803d"/>
+            </g>
+            <text x="192" y="133" fill="#6d28d9" font-weight="600">35</text>
+          </g>
+          <!-- legend dots -->
+          <g transform="translate(14,158)" font-size="6.5">
+            <rect width="6" height="6" fill="#1877f2"/><text x="10" y="6" fill="#1a1814">Meta</text>
+            <rect x="40" width="6" height="6" fill="#0a66c2"/><text x="50" y="6" fill="#1a1814">LinkedIn</text>
+            <rect x="90" width="6" height="6" fill="#ea4335"/><text x="100" y="6" fill="#1a1814">Google</text>
+            <rect x="138" width="6" height="6" fill="#15803d"/><text x="148" y="6" fill="#1a1814">Organic</text>
+            <rect x="186" width="6" height="6" fill="#92400e"/><text x="196" y="6" fill="#1a1814">Direct</text>
+          </g>
+
+          <!-- right panel -->
+          <g transform="translate(252,0)">
+            <rect width="240" height="200" rx="8" fill="#fff" stroke="#ddd9d0"/>
+            <text x="14" y="20" fill="#1a1814" font-family="DM Serif Display, serif" font-size="11">Last-Touch at DCB</text>
+            <text x="14" y="32" fill="#9e9789" font-size="7" font-style="italic">workflow-stamped at milestone</text>
+            <g font-size="7">
+              <text x="58" y="53" fill="#1a1814" text-anchor="end">Leads</text>
+              <g transform="translate(64,46)">
+                <rect width="120" height="10" rx="2" fill="#1877f2"/>
+                <rect x="50" width="36" height="10" fill="#0a66c2"/>
+                <rect x="86" width="22" height="10" fill="#ea4335"/>
+                <rect x="108" width="12" height="10" fill="#a16207"/>
+              </g>
+              <text x="192" y="53" fill="#1a1814" font-weight="600">297</text>
+
+              <text x="58" y="69" fill="#1a1814" text-anchor="end">DCB</text>
+              <g transform="translate(64,62)">
+                <rect width="92" height="10" rx="2" fill="#1877f2"/>
+                <rect x="38" width="30" height="10" fill="#0a66c2"/>
+                <rect x="68" width="16" height="10" fill="#ea4335"/>
+                <rect x="84" width="8" height="10" fill="#a16207"/>
+              </g>
+              <text x="192" y="69" fill="#1a1814" font-weight="600">188</text>
+
+              <text x="58" y="85" fill="#1a1814" text-anchor="end">DC Done</text>
+              <g transform="translate(64,78)">
+                <rect width="62" height="10" rx="2" fill="#1877f2"/>
+                <rect x="24" width="22" height="10" fill="#0a66c2"/>
+                <rect x="46" width="11" height="10" fill="#ea4335"/>
+                <rect x="57" width="5" height="10" fill="#a16207"/>
+              </g>
+              <text x="192" y="85" fill="#1a1814" font-weight="600">104</text>
+
+              <text x="58" y="101" fill="#1a1814" text-anchor="end">Dec CB</text>
+              <g transform="translate(64,94)">
+                <rect width="46" height="10" rx="2" fill="#1877f2"/>
+                <rect x="18" width="16" height="10" fill="#0a66c2"/>
+                <rect x="34" width="9" height="10" fill="#ea4335"/>
+                <rect x="43" width="3" height="10" fill="#a16207"/>
+              </g>
+              <text x="192" y="101" fill="#1a1814" font-weight="600">76</text>
+
+              <text x="58" y="117" fill="#1a1814" text-anchor="end">Dec Done</text>
+              <g transform="translate(64,110)">
+                <rect width="36" height="10" rx="2" fill="#1877f2"/>
+                <rect x="14" width="13" height="10" fill="#0a66c2"/>
+                <rect x="27" width="7" height="10" fill="#ea4335"/>
+                <rect x="34" width="2" height="10" fill="#a16207"/>
+              </g>
+              <text x="192" y="117" fill="#1a1814" font-weight="600">58</text>
+
+              <text x="58" y="133" fill="#1a1814" text-anchor="end">Funded</text>
+              <g transform="translate(64,126)">
+                <rect width="20" height="10" rx="2" fill="#1877f2"/>
+                <rect x="8" width="7" height="10" fill="#0a66c2"/>
+                <rect x="15" width="3" height="10" fill="#ea4335"/>
+              </g>
+              <text x="192" y="133" fill="#6d28d9" font-weight="600">35</text>
+            </g>
+            <g transform="translate(14,158)" font-size="6.5">
+              <text x="0" y="6" fill="#9e9789" font-style="italic">↔ side-by-side comparison</text>
+            </g>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Marketing attribution · deal level</span>
+      <h3>Lead Tracking</h3>
+      <div class="tagline">Three ways to look at the same funnel — depending on the question you're asking.</div>
+      <ul>
+        <li><b>Funded-anchored</b> — where did our funded capital come from?</li>
+        <li><b>Lead-anchored</b> — how is this cohort converting forward?</li>
+        <li><b>Activity-anchored</b> — what happened across our funnel this period?</li>
+        <li>Three attribution views (<b>First-touch / Last-touch-at-milestone / Latest source</b>) on either panel — compare side-by-side</li>
+        <li>Per-contact <b>procurement attribution</b> so repeat investors aren't re-attributed every time they fund</li>
+        <li>Investment → deal matching across <b>all pipelines</b>, with R2 cache and unmatched-investment surfacing</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_LEAD_TRACKING_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4. SETTER PERFORMANCE ════════════════════════════════════════ -->
+  <section class="row" data-d="setter" id="setter">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Setter Performance</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v45</text>
+
+        <!-- main table -->
+        <g transform="translate(14,44)">
+          <rect width="492" height="282" rx="8" fill="#fff" stroke="#ddd9d0"/>
+
+          <!-- column headers -->
+          <rect width="492" height="24" fill="#faf9f5"/>
+          <text x="14" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4">METRIC</text>
+          <text x="184" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4" text-anchor="middle">CIERRA</text>
+          <text x="240" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4" text-anchor="middle">KAYLA</text>
+          <text x="296" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4" text-anchor="middle">AIDAN</text>
+          <text x="352" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4" text-anchor="middle">ALEX W</text>
+          <text x="412" y="16" fill="#6b6558" font-size="7" font-weight="600" letter-spacing=".4" text-anchor="middle">UNATTR</text>
+          <text x="470" y="16" fill="#1a1814" font-size="7" font-weight="700" letter-spacing=".4" text-anchor="middle">OVERALL</text>
+          <line x1="0" y1="24" x2="492" y2="24" stroke="#ddd9d0"/>
+
+          <!-- Activity section -->
+          <rect width="492" y="24" height="14" fill="#fef3c7"/>
+          <text x="14" y="35" fill="#b45309" font-size="8" font-weight="700" letter-spacing=".5">ACTIVITY</text>
+          <line x1="0" y1="38" x2="492" y2="38" stroke="#fde68a"/>
+
+          <g font-size="9" fill="#1a1814">
+            <text x="14" y="52">Dials</text>
+            <text x="184" y="52" text-anchor="middle">1,247</text>
+            <text x="240" y="52" text-anchor="middle">982</text>
+            <text x="296" y="52" text-anchor="middle">812</text>
+            <text x="352" y="52" text-anchor="middle">624</text>
+            <text x="412" y="52" text-anchor="middle" fill="#9e9789">—</text>
+            <text x="470" y="52" text-anchor="middle" font-weight="600">3,665</text>
+
+            <text x="14" y="66">Connections</text>
+            <text x="184" y="66" text-anchor="middle">412</text>
+            <text x="240" y="66" text-anchor="middle">348</text>
+            <text x="296" y="66" text-anchor="middle">284</text>
+            <text x="352" y="66" text-anchor="middle">198</text>
+            <text x="412" y="66" text-anchor="middle" fill="#9e9789">—</text>
+            <text x="470" y="66" text-anchor="middle" font-weight="600">1,242</text>
+
+            <text x="14" y="80">Intros booked</text>
+            <text x="184" y="80" text-anchor="middle">87</text>
+            <text x="240" y="80" text-anchor="middle">72</text>
+            <text x="296" y="80" text-anchor="middle">58</text>
+            <text x="352" y="80" text-anchor="middle">42</text>
+            <text x="412" y="80" text-anchor="middle" fill="#9e9789">—</text>
+            <text x="470" y="80" text-anchor="middle" font-weight="600">259</text>
+          </g>
+
+          <!-- Bookings section -->
+          <line x1="0" y1="86" x2="492" y2="86" stroke="#ddd9d0"/>
+          <rect width="492" y="86" height="14" fill="#eff6ff"/>
+          <text x="14" y="97" fill="#1d4ed8" font-size="8" font-weight="700" letter-spacing=".5">BOOKINGS — DISCOVERY</text>
+          <line x1="0" y1="100" x2="492" y2="100" stroke="#cdd6f3"/>
+
+          <g font-size="9" fill="#1a1814">
+            <text x="14" y="114">Booked</text>
+            <text x="184" y="114" text-anchor="middle">87</text>
+            <text x="240" y="114" text-anchor="middle">72</text>
+            <text x="296" y="114" text-anchor="middle">58</text>
+            <text x="352" y="114" text-anchor="middle">42</text>
+            <text x="412" y="114" text-anchor="middle">24</text>
+            <text x="470" y="114" text-anchor="middle" font-weight="600">283</text>
+
+            <text x="14" y="128">Held</text>
+            <text x="184" y="128" text-anchor="middle">62</text>
+            <text x="240" y="128" text-anchor="middle">54</text>
+            <text x="296" y="128" text-anchor="middle">41</text>
+            <text x="352" y="128" text-anchor="middle">28</text>
+            <text x="412" y="128" text-anchor="middle">18</text>
+            <text x="470" y="128" text-anchor="middle" font-weight="600">203</text>
+
+            <text x="14" y="142">Completed</text>
+            <text x="184" y="142" text-anchor="middle">58</text>
+            <text x="240" y="142" text-anchor="middle">49</text>
+            <text x="296" y="142" text-anchor="middle">38</text>
+            <text x="352" y="142" text-anchor="middle">24</text>
+            <text x="412" y="142" text-anchor="middle">16</text>
+            <text x="470" y="142" text-anchor="middle" font-weight="600">185</text>
+
+            <text x="14" y="156">No-show</text>
+            <text x="184" y="156" text-anchor="middle" fill="#9a3815">21</text>
+            <text x="240" y="156" text-anchor="middle" fill="#9a3815">14</text>
+            <text x="296" y="156" text-anchor="middle" fill="#9a3815">11</text>
+            <text x="352" y="156" text-anchor="middle" fill="#9a3815">9</text>
+            <text x="412" y="156" text-anchor="middle" fill="#9a3815">4</text>
+            <text x="470" y="156" text-anchor="middle" fill="#9a3815" font-weight="600">59</text>
+          </g>
+
+          <!-- New Money section -->
+          <line x1="0" y1="162" x2="492" y2="162" stroke="#ddd9d0"/>
+          <rect width="492" y="162" height="14" fill="#ecfdf5"/>
+          <text x="14" y="173" fill="#15803d" font-size="8" font-weight="700" letter-spacing=".5">NEW MONEY</text>
+          <line x1="0" y1="176" x2="492" y2="176" stroke="#b6e8d2"/>
+
+          <g font-size="9" fill="#1a1814">
+            <text x="14" y="190">New investments</text>
+            <text x="184" y="190" text-anchor="middle">14</text>
+            <text x="240" y="190" text-anchor="middle">11</text>
+            <text x="296" y="190" text-anchor="middle">8</text>
+            <text x="352" y="190" text-anchor="middle">6</text>
+            <text x="412" y="190" text-anchor="middle">3</text>
+            <text x="470" y="190" text-anchor="middle" font-weight="600">42</text>
+
+            <text x="14" y="204">Capital raised</text>
+            <text x="184" y="204" text-anchor="middle">$1.4M</text>
+            <text x="240" y="204" text-anchor="middle">$1.1M</text>
+            <text x="296" y="204" text-anchor="middle">$820K</text>
+            <text x="352" y="204" text-anchor="middle">$640K</text>
+            <text x="412" y="204" text-anchor="middle">$280K</text>
+            <text x="470" y="204" text-anchor="middle" fill="#15803d" font-weight="600">$4.2M</text>
+          </g>
+
+          <!-- Population toggle pills -->
+          <g transform="translate(14,222)">
+            <text x="0" y="10" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".4">POPULATION:</text>
+            <rect x="60" y="0" width="38" height="14" rx="3" fill="#1a1814"/>
+            <text x="79" y="10" text-anchor="middle" fill="#fff" font-size="7">Booked</text>
+            <rect x="100" y="0" width="32" height="14" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="116" y="10" text-anchor="middle" fill="#6b6558" font-size="7">Held</text>
+            <rect x="134" y="0" width="56" height="14" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="162" y="10" text-anchor="middle" fill="#6b6558" font-size="7">Completed</text>
+          </g>
+
+          <!-- Cohort toggle -->
+          <g transform="translate(14,246)">
+            <text x="0" y="10" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".4">COHORT:</text>
+            <rect x="60" y="0" width="22" height="14" rx="3" fill="#1a1814"/>
+            <text x="71" y="10" text-anchor="middle" fill="#fff" font-size="7">All</text>
+            <rect x="84" y="0" width="60" height="14" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="114" y="10" text-anchor="middle" fill="#6b6558" font-size="7">From intro</text>
+            <rect x="146" y="0" width="60" height="14" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="176" y="10" text-anchor="middle" fill="#6b6558" font-size="7">No intro</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Top-of-pipe sales · Cierra · Kayla · Aidan · Alex W.</span>
+      <h3>Setter Performance</h3>
+      <div class="tagline">Track the work that gets discoveries on the calendar.</div>
+      <ul>
+        <li><b>Activity</b> (Dials, Connections, Intros) and <b>Bookings</b> (Booked → Held → Completed → No-show) per setter</li>
+        <li><b>New Money</b> attribution via the setter cascade — credit flows to whoever booked the original discovery</li>
+        <li><b>From-Intro vs No-Intro</b> cohort comparison — sets without an intro have different conversion math</li>
+        <li><b>Held vs Completed</b> separates actual meetings from dispositioning hygiene</li>
+        <li>Per-setter columns + Unattributed + true grand-total Overall column</li>
+        <li>Every cell drillable to underlying records</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_SETTER_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 5. CLOSER PERFORMANCE ════════════════════════════════════════ -->
+  <section class="row" data-d="closer" id="closer">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Closer Performance</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v19</text>
+
+        <!-- Call outcomes row — 3 small donuts -->
+        <g transform="translate(14,44)">
+          <rect width="492" height="78" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="18" fill="#1a1814" font-family="DM Serif Display, serif" font-size="11">Call Outcomes</text>
+
+          <!-- donut 1: Kelvin -->
+          <g transform="translate(40,52)">
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#15803d" stroke-width="7" stroke-dasharray="68 100"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#ca8a04" stroke-width="7" stroke-dasharray="18 100" stroke-dashoffset="-68"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#9a3815" stroke-width="7" stroke-dasharray="14 100" stroke-dashoffset="-86"/>
+            <text x="0" y="2" text-anchor="middle" font-size="8" font-family="DM Serif Display, serif" fill="#1a1814">142</text>
+          </g>
+          <text x="40" y="76" text-anchor="middle" font-size="8" fill="#6b6558" font-weight="600">KELVIN</text>
+
+          <!-- donut 2: Bronson -->
+          <g transform="translate(132,52)">
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#15803d" stroke-width="7" stroke-dasharray="62 100"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#ca8a04" stroke-width="7" stroke-dasharray="22 100" stroke-dashoffset="-62"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#9a3815" stroke-width="7" stroke-dasharray="16 100" stroke-dashoffset="-84"/>
+            <text x="0" y="2" text-anchor="middle" font-size="8" font-family="DM Serif Display, serif" fill="#1a1814">118</text>
+          </g>
+          <text x="132" y="76" text-anchor="middle" font-size="8" fill="#6b6558" font-weight="600">BRONSON</text>
+
+          <!-- donut 3: Jonny -->
+          <g transform="translate(224,52)">
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#15803d" stroke-width="7" stroke-dasharray="71 100"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#ca8a04" stroke-width="7" stroke-dasharray="15 100" stroke-dashoffset="-71"/>
+            <circle cx="0" cy="0" r="18" fill="none" stroke="#9a3815" stroke-width="7" stroke-dasharray="14 100" stroke-dashoffset="-86"/>
+            <text x="0" y="2" text-anchor="middle" font-size="8" font-family="DM Serif Display, serif" fill="#1a1814">96</text>
+          </g>
+          <text x="224" y="76" text-anchor="middle" font-size="8" fill="#6b6558" font-weight="600">JONNY</text>
+
+          <!-- legend -->
+          <g transform="translate(312,38)" font-size="7">
+            <rect width="6" height="6" fill="#15803d"/><text x="10" y="6" fill="#1a1814">Completed</text>
+            <text x="80" y="6" fill="#6b6558" text-anchor="end">68%</text>
+            <rect y="12" width="6" height="6" fill="#ca8a04"/><text x="10" y="18" fill="#1a1814">No-show</text>
+            <text x="80" y="18" fill="#6b6558" text-anchor="end">18%</text>
+            <rect y="24" width="6" height="6" fill="#9a3815"/><text x="10" y="30" fill="#1a1814">Rescheduled</text>
+            <text x="80" y="30" fill="#6b6558" text-anchor="end">14%</text>
+          </g>
+          <g transform="translate(412,38)" font-size="7">
+            <rect width="6" height="6" fill="#7c3aed"/><text x="10" y="6" fill="#1a1814">Discovery</text>
+            <rect y="14" width="6" height="6" fill="#a78bfa"/><text x="10" y="20" fill="#1a1814">Decision</text>
+          </g>
+        </g>
+
+        <!-- Funded investments table -->
+        <g transform="translate(14,132)">
+          <rect width="492" height="194" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="18" fill="#1a1814" font-family="DM Serif Display, serif" font-size="11">Funded Investments</text>
+          <text x="478" y="18" text-anchor="end" fill="#9e9789" font-size="8">All Money / New / Added</text>
+          <line x1="0" y1="28" x2="492" y2="28" stroke="#ebe9e2"/>
+
+          <!-- column heads -->
+          <g font-size="7" fill="#9e9789" font-weight="600" letter-spacing=".4">
+            <text x="14" y="44">METRIC</text>
+            <text x="172" y="44" text-anchor="middle">KELVIN</text>
+            <text x="220" y="44" text-anchor="middle">BRONSON</text>
+            <text x="268" y="44" text-anchor="middle">JONNY</text>
+            <text x="320" y="44" text-anchor="middle">DANIEL</text>
+            <text x="368" y="44" text-anchor="middle">ALEX Z</text>
+            <text x="412" y="44" text-anchor="middle">UNATTR</text>
+            <text x="466" y="44" fill="#1a1814" text-anchor="middle">OVERALL</text>
+          </g>
+          <line x1="0" y1="50" x2="492" y2="50" stroke="#ebe9e2"/>
+
+          <!-- subhead pill -->
+          <rect x="0" y="50" width="492" height="14" fill="#f3eefe"/>
+          <text x="14" y="61" fill="#7c3aed" font-size="7" font-weight="700" letter-spacing=".5">ALL MONEY</text>
+
+          <g font-size="9" fill="#1a1814">
+            <text x="14" y="80">Investments funded</text>
+            <text x="172" y="80" text-anchor="middle">24</text>
+            <text x="220" y="80" text-anchor="middle">18</text>
+            <text x="268" y="80" text-anchor="middle">15</text>
+            <text x="320" y="80" text-anchor="middle">9</text>
+            <text x="368" y="80" text-anchor="middle">7</text>
+            <text x="412" y="80" text-anchor="middle">4</text>
+            <text x="466" y="80" text-anchor="middle" font-weight="600">71</text>
+
+            <text x="14" y="94">All investors active</text>
+            <text x="172" y="94" text-anchor="middle">18</text>
+            <text x="220" y="94" text-anchor="middle">14</text>
+            <text x="268" y="94" text-anchor="middle">12</text>
+            <text x="320" y="94" text-anchor="middle">7</text>
+            <text x="368" y="94" text-anchor="middle">6</text>
+            <text x="412" y="94" text-anchor="middle">3</text>
+            <text x="466" y="94" text-anchor="middle" font-weight="600">52 <tspan fill="#9e9789" font-size="6" font-style="italic">(8 cc)</tspan></text>
+
+            <text x="14" y="108">Capital raised</text>
+            <text x="172" y="108" text-anchor="middle" font-size="8">$2.4M</text>
+            <text x="220" y="108" text-anchor="middle" font-size="8">$1.8M</text>
+            <text x="268" y="108" text-anchor="middle" font-size="8">$1.5M</text>
+            <text x="320" y="108" text-anchor="middle" font-size="8">$890K</text>
+            <text x="368" y="108" text-anchor="middle" font-size="8">$720K</text>
+            <text x="412" y="108" text-anchor="middle" font-size="8">$340K</text>
+            <text x="466" y="108" text-anchor="middle" fill="#7c3aed" font-weight="600" font-size="8">$7.7M</text>
+          </g>
+
+          <!-- New Money sub-section -->
+          <rect x="0" y="116" width="492" height="14" fill="#ecfdf5"/>
+          <text x="14" y="127" fill="#15803d" font-size="7" font-weight="700" letter-spacing=".5">NEW MONEY</text>
+
+          <g font-size="9" fill="#1a1814">
+            <text x="14" y="146">First-time investors</text>
+            <text x="172" y="146" text-anchor="middle">11</text>
+            <text x="220" y="146" text-anchor="middle">8</text>
+            <text x="268" y="146" text-anchor="middle">6</text>
+            <text x="320" y="146" text-anchor="middle">4</text>
+            <text x="368" y="146" text-anchor="middle">3</text>
+            <text x="412" y="146" text-anchor="middle">2</text>
+            <text x="466" y="146" text-anchor="middle" font-weight="600">34</text>
+
+            <text x="14" y="160">New money raised</text>
+            <text x="172" y="160" text-anchor="middle" font-size="8">$1.1M</text>
+            <text x="220" y="160" text-anchor="middle" font-size="8">$820K</text>
+            <text x="268" y="160" text-anchor="middle" font-size="8">$640K</text>
+            <text x="320" y="160" text-anchor="middle" font-size="8">$410K</text>
+            <text x="368" y="160" text-anchor="middle" font-size="8">$320K</text>
+            <text x="412" y="160" text-anchor="middle" font-size="8">$180K</text>
+            <text x="466" y="160" text-anchor="middle" fill="#15803d" font-weight="600" font-size="8">$3.5M</text>
+          </g>
+
+          <text x="14" y="184" font-size="7" fill="#9e9789" font-style="italic">cc = cross-credited contacts (counted in Overall once)</text>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Bottom-of-pipe sales · Kelvin · Bronson · Jonny · AMs</span>
+      <h3>Closer Performance</h3>
+      <div class="tagline">Closer activity, outcomes, and capital — in one view.</div>
+      <ul>
+        <li><b>Discovery + Decision</b> booking funnels per closer (Booked, Held, Completed, No-show, Rescheduled)</li>
+        <li><b>Funded Investments</b> split three ways: All Money / New Money / Added Money — closers plus AMs (Daniel, Alex Z.)</li>
+        <li><b>Call Outcomes donuts</b> surface dispositioning patterns at a glance</li>
+        <li><b>Cross-credit footnote</b> on unique-contact rows keeps the math honest when one investor talks to two closers</li>
+        <li>Drill into any cell for the underlying meetings or investments</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_CLOSER_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 6. CONVERSION DASHBOARD ══════════════════════════════════════ -->
+  <section class="row" data-d="conv">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Conversion Dashboard</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v17</text>
+
+        <!-- Two-axis toggle controls -->
+        <g transform="translate(14,42)">
+          <rect width="492" height="32" rx="6" fill="#fffdf8" stroke="#ddd9d0"/>
+
+          <text x="14" y="13" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">FUNNEL VIEW</text>
+          <g transform="translate(14,16)">
+            <rect width="50" height="12" rx="3" fill="#15803d"/>
+            <text x="25" y="9" text-anchor="middle" fill="#fff" font-size="7" font-weight="600">Setter</text>
+            <rect x="52" width="50" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="77" y="9" text-anchor="middle" fill="#6b6558" font-size="7">Closer</text>
+            <rect x="104" width="80" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="144" y="9" text-anchor="middle" fill="#6b6558" font-size="7">Pairing matrix</text>
+          </g>
+
+          <text x="246" y="13" fill="#9e9789" font-size="7" font-weight="600" letter-spacing=".5">POPULATION</text>
+          <g transform="translate(246,16)">
+            <rect width="60" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="30" y="9" text-anchor="middle" fill="#6b6558" font-size="7">Booked</text>
+            <rect x="62" width="50" height="12" rx="3" fill="#15803d"/>
+            <text x="87" y="9" text-anchor="middle" fill="#fff" font-size="7" font-weight="600">Held</text>
+            <rect x="114" width="76" height="12" rx="3" fill="#fff" stroke="#ddd9d0"/>
+            <text x="152" y="9" text-anchor="middle" fill="#6b6558" font-size="7">Completed</text>
+          </g>
+        </g>
+
+        <!-- 3-tier setter cascade visualization -->
+        <g transform="translate(14,86)">
+          <rect width="492" height="160" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="18" fill="#1a1814" font-family="DM Serif Display, serif" font-size="11">Setter Cascade — Held Population</text>
+
+          <!-- Tier 1: Intros -->
+          <g transform="translate(14,38)">
+            <rect width="464" height="22" rx="4" fill="#fef3c7"/>
+            <text x="10" y="15" fill="#b45309" font-size="8" font-weight="600">INTROS HELD</text>
+            <text x="454" y="15" text-anchor="end" fill="#b45309" font-size="9" font-weight="600">203</text>
+          </g>
+
+          <!-- Connector lines -->
+          <line x1="46" y1="60" x2="46" y2="72" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+          <line x1="46" y1="72" x2="246" y2="72" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+          <line x1="246" y1="72" x2="246" y2="76" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+
+          <!-- Tier 2: Discoveries booked from intros -->
+          <g transform="translate(14,78)">
+            <rect width="222" height="22" rx="4" fill="#eff6ff"/>
+            <text x="10" y="15" fill="#1d4ed8" font-size="8" font-weight="600">DISCOVERIES BOOKED</text>
+            <text x="212" y="15" text-anchor="end" fill="#1d4ed8" font-size="9" font-weight="600">152</text>
+          </g>
+
+          <!-- Tier 3 -->
+          <line x1="46" y1="100" x2="46" y2="112" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+          <line x1="46" y1="112" x2="138" y2="112" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+          <line x1="138" y1="112" x2="138" y2="116" stroke="#ddd9d0" stroke-dasharray="2 2"/>
+
+          <g transform="translate(14,118)">
+            <rect width="118" height="22" rx="4" fill="#ecfdf5"/>
+            <text x="10" y="15" fill="#15803d" font-size="8" font-weight="600">FUNDED</text>
+            <text x="108" y="15" text-anchor="end" fill="#15803d" font-size="9" font-weight="600">38</text>
+          </g>
+
+          <!-- Conversion rates beside arrows -->
+          <text x="280" y="79" fill="#6b6558" font-size="7" font-style="italic">152 / 203 = 74.9%</text>
+          <text x="160" y="133" fill="#6b6558" font-size="7" font-style="italic">38 / 152 = 25.0%</text>
+
+          <!-- Population pill labels showing cohort consistency -->
+          <text x="14" y="155" fill="#9e9789" font-size="7" font-style="italic">Same cohort traced through every tier — Held population only</text>
+        </g>
+
+        <!-- KPI strip at bottom: overall conversion -->
+        <g transform="translate(14,256)">
+          <rect width="244" height="70" rx="7" fill="#fdf3ee" stroke="#f0d9c8"/>
+          <text x="14" y="18" fill="#c44a1e" font-size="8" font-weight="600" letter-spacing=".5">OVERALL: INTRO → FUNDED</text>
+          <text x="14" y="48" fill="#c44a1e" font-family="DM Serif Display, serif" font-size="22">18.7%</text>
+          <text x="14" y="62" fill="#9e9789" font-size="8">38 funded · 203 intros held</text>
+
+          <rect x="252" width="240" height="70" rx="7" fill="#f5f3ff" stroke="#d8cdf3"/>
+          <text x="266" y="18" fill="#6d28d9" font-size="8" font-weight="600" letter-spacing=".5">COMPARISON: LAST PERIOD</text>
+          <text x="266" y="48" fill="#6d28d9" font-family="DM Serif Display, serif" font-size="22">14.2%</text>
+          <text x="266" y="62" fill="#15803d" font-size="8">▲ +4.5pp · Δ +32%</text>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>End-to-end funnel intelligence</span>
+      <h3>Conversion Dashboard</h3>
+      <div class="tagline">End-to-end funnel intelligence — one place, one cohort.</div>
+      <ul>
+        <li><b>Two-axis toggle</b> — Funnel View (Setter / Closer / Pairing matrix) × Population (Booked / Held / Completed)</li>
+        <li><b>Three-tier setter cascade</b> + <b>two-tier closer cascade</b> — every step attributable, every conversion math-traceable</li>
+        <li><b>Pairing matrix</b> shows who-did-what-for-whom across the setter × closer grid</li>
+        <li><b>True grand-total Overall</b> column — attributed + unattributed sums clean, no double-counting</li>
+        <li><b>Period comparison</b> on every cell — delta and percentage change vs prior period</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_CONVERSION_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 7. SUNRISE INVESTMENT DASHBOARD ══════════════════════════════ -->
+  <section class="row" data-d="sunrise">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="32" fill="#1a1814"/>
+        <circle cx="18" cy="16" r="7" fill="#c44a1e"/>
+        <text x="34" y="20" fill="#f5f3ef" font-family="DM Serif Display, serif" font-size="11">Sunrise Investment Dashboard</text>
+        <text x="480" y="20" fill="#9e9789" font-size="9" text-anchor="end">v28</text>
+
+        <!-- KPI strip — 3 large cards -->
+        <g transform="translate(14,44)">
+          <rect width="159" height="64" rx="7" fill="#fef3ec" stroke="#f0d9c8"/>
+          <text x="12" y="18" fill="#9a3412" font-size="8" font-weight="600" letter-spacing=".5">TOTAL CAPITAL RAISED</text>
+          <text x="12" y="42" fill="#9a3412" font-family="DM Serif Display, serif" font-size="20">$42.8M</text>
+          <text x="12" y="57" fill="#9e9789" font-size="7">all funds · all time</text>
+
+          <rect x="167" width="159" height="64" rx="7" fill="#fef3ec" stroke="#f0d9c8"/>
+          <text x="179" y="18" fill="#9a3412" font-size="8" font-weight="600" letter-spacing=".5">NEW MONEY</text>
+          <text x="179" y="42" fill="#9a3412" font-family="DM Serif Display, serif" font-size="20">$11.2M</text>
+          <text x="179" y="57" fill="#9e9789" font-size="7">first-time investors · this year</text>
+
+          <rect x="334" width="158" height="64" rx="7" fill="#fef3ec" stroke="#f0d9c8"/>
+          <text x="346" y="18" fill="#9a3412" font-size="8" font-weight="600" letter-spacing=".5">ACTIVE INVESTORS</text>
+          <text x="346" y="42" fill="#9a3412" font-family="DM Serif Display, serif" font-size="20">312</text>
+          <text x="346" y="57" fill="#9e9789" font-size="7">unique contacts · funded</text>
+        </g>
+
+        <!-- Capital raised chart -->
+        <g transform="translate(14,118)">
+          <rect width="240" height="100" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="16" fill="#1a1814" font-family="DM Serif Display, serif" font-size="10">Capital Raised — Monthly</text>
+
+          <!-- Bar chart -->
+          <g transform="translate(14,28)">
+            <line x1="0" y1="56" x2="216" y2="56" stroke="#ddd9d0"/>
+            <g fill="#c44a1e">
+              <rect x="0"   y="38" width="14" height="18"/>
+              <rect x="18"  y="30" width="14" height="26"/>
+              <rect x="36"  y="22" width="14" height="34"/>
+              <rect x="54"  y="34" width="14" height="22"/>
+              <rect x="72"  y="14" width="14" height="42"/>
+              <rect x="90"  y="20" width="14" height="36"/>
+              <rect x="108" y="8"  width="14" height="48"/>
+              <rect x="126" y="12" width="14" height="44"/>
+              <rect x="144" y="18" width="14" height="38"/>
+              <rect x="162" y="6"  width="14" height="50"/>
+              <rect x="180" y="10" width="14" height="46"/>
+              <rect x="198" y="4"  width="14" height="52"/>
+            </g>
+            <!-- baseline labels -->
+            <g font-size="6" fill="#9e9789">
+              <text x="7" y="68" text-anchor="middle">J</text>
+              <text x="25" y="68" text-anchor="middle">F</text>
+              <text x="43" y="68" text-anchor="middle">M</text>
+              <text x="61" y="68" text-anchor="middle">A</text>
+              <text x="79" y="68" text-anchor="middle">M</text>
+              <text x="97" y="68" text-anchor="middle">J</text>
+              <text x="115" y="68" text-anchor="middle">J</text>
+              <text x="133" y="68" text-anchor="middle">A</text>
+              <text x="151" y="68" text-anchor="middle">S</text>
+              <text x="169" y="68" text-anchor="middle">O</text>
+              <text x="187" y="68" text-anchor="middle">N</text>
+              <text x="205" y="68" text-anchor="middle">D</text>
+            </g>
+          </g>
+
+          <!-- All Money table on right side -->
+          <g transform="translate(252,0)" font-size="9">
+            <rect width="240" height="100" rx="7" fill="#fff" stroke="#ddd9d0"/>
+            <text x="14" y="16" fill="#1a1814" font-family="DM Serif Display, serif" font-size="10">All Money by Closer</text>
+
+            <g transform="translate(14,26)" font-size="7">
+              <text x="0" y="0" fill="#9e9789" font-weight="600" letter-spacing=".3">CLOSER</text>
+              <text x="160" y="0" text-anchor="end" fill="#9e9789" font-weight="600">INVS</text>
+              <text x="210" y="0" text-anchor="end" fill="#9e9789" font-weight="600">$</text>
+            </g>
+            <line x1="14" y1="32" x2="226" y2="32" stroke="#ebe9e2"/>
+
+            <g transform="translate(14,42)" font-size="8" fill="#1a1814">
+              <text x="0" y="0">Kelvin E.</text>
+              <text x="160" y="0" text-anchor="end">24</text>
+              <text x="210" y="0" text-anchor="end">$8.4M</text>
+
+              <text x="0" y="14">Bronson P.</text>
+              <text x="160" y="14" text-anchor="end">18</text>
+              <text x="210" y="14" text-anchor="end">$6.2M</text>
+
+              <text x="0" y="28">Jonny C.</text>
+              <text x="160" y="28" text-anchor="end">15</text>
+              <text x="210" y="28" text-anchor="end">$5.1M</text>
+
+              <text x="0" y="42">Unattributed</text>
+              <text x="160" y="42" text-anchor="end" fill="#9e9789">14</text>
+              <text x="210" y="42" text-anchor="end" fill="#9e9789">$3.8M</text>
+            </g>
+            <line x1="14" y1="98" x2="226" y2="98" stroke="#ddd9d0"/>
+          </g>
+        </g>
+
+        <!-- Funded Investments list -->
+        <g transform="translate(14,228)">
+          <rect width="492" height="98" rx="7" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="16" fill="#1a1814" font-family="DM Serif Display, serif" font-size="10">Funded Investments — Recent</text>
+          <text x="478" y="16" text-anchor="end" fill="#9e9789" font-size="8">sort: funds received ▼</text>
+          <line x1="0" y1="24" x2="492" y2="24" stroke="#ebe9e2"/>
+
+          <g font-size="7" fill="#9e9789" font-weight="600" letter-spacing=".3">
+            <text x="14" y="38">DATE</text>
+            <text x="80" y="38">INVESTOR</text>
+            <text x="240" y="38">FUND</text>
+            <text x="320" y="38">CLOSER</text>
+            <text x="400" y="38">TYPE</text>
+            <text x="478" y="38" text-anchor="end">AMOUNT</text>
+          </g>
+          <line x1="0" y1="44" x2="492" y2="44" stroke="#ebe9e2"/>
+
+          <g font-size="8" fill="#1a1814">
+            <text x="14" y="58">May 14</text> <text x="80" y="58">Joe F.</text>          <text x="240" y="58">Fund 5</text> <text x="320" y="58">Kelvin</text>  <rect x="396" y="51" width="40" height="10" rx="5" fill="#ecfdf5"/><text x="416" y="58" text-anchor="middle" fill="#15803d" font-size="6.5" font-weight="600">REPEAT</text> <text x="478" y="58" text-anchor="end" font-weight="500">$250K</text>
+            <text x="14" y="72">May 13</text> <text x="80" y="72">Sarah M.</text>       <text x="240" y="72">Fund 5</text> <text x="320" y="72">Bronson</text> <rect x="396" y="65" width="40" height="10" rx="5" fill="#fef3c7"/><text x="416" y="72" text-anchor="middle" fill="#b45309" font-size="6.5" font-weight="600">NEW</text>    <text x="478" y="72" text-anchor="end" font-weight="500">$100K</text>
+            <text x="14" y="86">May 12</text> <text x="80" y="86">David L.</text>       <text x="240" y="86">Fund 5</text> <text x="320" y="86">Jonny</text>   <rect x="396" y="79" width="40" height="10" rx="5" fill="#f3eefe"/><text x="416" y="86" text-anchor="middle" fill="#7c3aed" font-size="6.5" font-weight="600">BOLT</text>   <text x="478" y="86" text-anchor="end" font-weight="500">$50K</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Capital outcomes · the bottom line</span>
+      <h3>Sunrise Investment Dashboard</h3>
+      <div class="tagline">Where the money came from. Where it's going.</div>
+      <ul>
+        <li><b>KPI strip</b>: total capital raised, new money, active investors — at-a-glance fund health</li>
+        <li><b>All Money by Closer / AM</b> with unique-contact dedup and cross-credit footnote for honest math</li>
+        <li><b>Capital raised over time</b> charts with fund-by-fund breakdown</li>
+        <li><b>Funded investments list</b> filterable by fund, type (New / Repeat / Bolt-On), date range, person</li>
+        <li><b>LTV per investor</b> for downstream retention math</li>
+        <li>Drill into every cell for the underlying investment records</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="YOUR_SUNRISE_URL" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="bot">
+  <div class="inner">
+    <div class="brand">Built for Sunrise Capital by Lightmark Media</div>
+    <div class="meta">Dashboards refresh live from HubSpot — most loads run in under two minutes.</div>
+  </div>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   Dashboard URLs — REPLACE THESE
+   ─────────────────────────────────────────────────────────────────────────
+   Each link below points to a placeholder. Replace the right-hand value
+   with the real URL where each dashboard is deployed and the links above
+   will update on page load.
+
+   If your dashboards live at the same root (e.g. R2 bucket served via the
+   worker), you only need to set ROOT once and the rest will compose.
+   ───────────────────────────────────────────────────────────────────────── */
+const DASHBOARD_URLS = {
+  ad:        'YOUR_AD_PERFORMANCE_URL',
+  wistia:    'https://dashboards.sunrisecapitalinvestors.com/wistia',
+  lead:      'YOUR_LEAD_TRACKING_URL',
+  setter:    'YOUR_SETTER_URL',
+  closer:    'YOUR_CLOSER_URL',
+  conversion:'YOUR_CONVERSION_URL',
+  sunrise:   'YOUR_SUNRISE_URL',
+};
+
+/* Map data-d row identifier → URLs key */
+const ROW_TO_KEY = {ad:'ad', wistia:'wistia', lead:'lead', setter:'setter', closer:'closer', conv:'conversion', sunrise:'sunrise'};
+
+/* Wire up href values on load. Lets you keep all URLs in one config block
+   above rather than hunting them throughout the HTML. */
+document.querySelectorAll('section.row').forEach(row => {
+  const key = ROW_TO_KEY[row.dataset.d];
+  const url = DASHBOARD_URLS[key];
+  if(!url) return;
+  row.querySelectorAll('a.btn-open').forEach(a => { a.href = url; });
+});
+</script>
+
+</body>
+</html>
