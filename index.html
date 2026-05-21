@@ -133,7 +133,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
   <div class="hdr">
     <div class="logo">S</div>
     <h1>Sunrise Capital — Dashboards</h1>
-    <span class="version">v4</span>
+    <span class="version">v5</span>
   </div>
   <div class="built-by">Built by <b>Lightmark Media</b></div>
 </header>
@@ -268,7 +268,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Drill into any campaign for the full 6-row attribution matrix (Total / New / Returning × Lead / AI)</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/ad" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/ad" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -386,7 +386,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Live name filter for fast retrieval when you're hunting a specific asset</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/wistia" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/wistia" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -582,7 +582,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Investment → deal matching across <b>all pipelines</b>, with R2 cache and unmatched-investment surfacing</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/lead" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/lead" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -743,7 +743,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Every cell drillable to underlying records</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/setter" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/setter" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -897,7 +897,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Drill into any cell for the underlying meetings or investments</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/closer" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/closer" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -1005,7 +1005,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li><b>Period comparison</b> on every cell — delta and percentage change vs prior period</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/conversion" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/conversion" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -1147,7 +1147,7 @@ footer.bot .meta{font-size:11px;color:#76705f}
         <li>Drill into every cell for the underlying investment records</li>
       </ul>
       <div class="actions">
-        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/sunrise" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
+        <a class="btn-open" href="https://dashboards.sunrisecapitalinvestors.com/d/sunrise" target="_blank" rel="noopener">Open dashboard <span class="arrow">↗</span></a>
       </div>
     </div>
   </section>
@@ -1173,13 +1173,13 @@ footer.bot .meta{font-size:11px;color:#76705f}
    worker), you only need to set ROOT once and the rest will compose.
    ───────────────────────────────────────────────────────────────────────── */
 const DASHBOARD_URLS = {
-  ad:        'https://dashboards.sunrisecapitalinvestors.com/ad',
-  wistia:    'https://dashboards.sunrisecapitalinvestors.com/wistia',
-  lead:      'https://dashboards.sunrisecapitalinvestors.com/lead',
-  setter:    'https://dashboards.sunrisecapitalinvestors.com/setter',
-  closer:    'https://dashboards.sunrisecapitalinvestors.com/closer',
-  conversion:'https://dashboards.sunrisecapitalinvestors.com/conversion',
-  sunrise:   'https://dashboards.sunrisecapitalinvestors.com/sunrise',
+  ad:        'https://dashboards.sunrisecapitalinvestors.com/d/ad',
+  wistia:    'https://dashboards.sunrisecapitalinvestors.com/d/wistia',
+  lead:      'https://dashboards.sunrisecapitalinvestors.com/d/lead',
+  setter:    'https://dashboards.sunrisecapitalinvestors.com/d/setter',
+  closer:    'https://dashboards.sunrisecapitalinvestors.com/d/closer',
+  conversion:'https://dashboards.sunrisecapitalinvestors.com/d/conversion',
+  sunrise:   'https://dashboards.sunrisecapitalinvestors.com/d/sunrise',
 };
 
 /* Map data-d row identifier → URLs key */
