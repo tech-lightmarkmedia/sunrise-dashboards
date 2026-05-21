@@ -1,0 +1,3520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Closer Performance Dashboard (v20)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --setter:#b45309;--setter-bg:#fef3c7;
+  --green:#065f46;--green-bg:#ecfdf5;
+  --red:#991b1b;--red-bg:#fef2f2;
+  --neutral:#6b6558;
+  --overall:#1d4ed8;--overall-bg:#eff6ff;
+  --unattr:#6b6558;--unattr-bg:#f5f3ef;
+
+  /* Per-section accent colors. Activity is orange (matches Sunrise logo gradient),
+     Bookings is blue, Investments is purple — gives a discovery→fund visual gradient.
+     Backgrounds are at ~8% saturation so they read as muted tints, not loud blocks. */
+  --act:#c44a1e;--act-bg:#fdf3ee;
+  --bk:#1d4ed8;--bk-bg:#eff6ff;
+  --inv:#6d28d9;--inv-bg:#f5f3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* Header */
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+.logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:white}
+header h1{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+#ts{font-size:11px;color:#9e9789}
+
+/* Filter bar */
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar-divider{width:1px;height:20px;background:var(--border);align-self:center}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select,input[type=date]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+select:focus,input[type=date]:focus{outline:none;border-color:var(--setter)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px}
+.sl{color:var(--text3)}.sd{color:var(--setter)}.so{color:var(--green);font-weight:500}.se{color:var(--red);font-weight:500}
+
+/* Loading overlay */
+#ov{display:none;position:fixed;inset:0;background:rgba(245,243,239,.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--setter);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lm{font-size:13px;color:var(--text2)}
+
+/* Main */
+#dash{padding:20px 28px 48px}
+
+.fpills{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fpill{background:var(--setter-bg);color:var(--setter);border:1px solid #fcd34d;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500}
+.fpill.range-activity{background:var(--act-bg);color:var(--act);border-color:#f4c4ad}
+.fpill.range-bookings{background:var(--bk-bg);color:var(--bk);border-color:#bfdbfe}
+.fpill.range-investments{background:var(--inv-bg);color:var(--inv);border-color:#ddd6fe}
+.range-info{font-size:11px;color:var(--text3);margin-left:auto}
+.range-info b{color:var(--text2);font-weight:600}
+
+/* KPI Table */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+
+/* Multi-section dashboard layout */
+.dash-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.dash-section .sec-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.dash-section .sec-title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dash-section .sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text)}
+.dash-section .sec-range{font-size:11px;font-weight:500;color:var(--text2);text-transform:none;letter-spacing:0}
+.dash-section .sec-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dash-section .sec-note{font-size:11px;color:var(--text2);font-weight:400;line-height:1.5;font-style:italic;margin-top:-4px}
+.dash-section .sec-status{font-size:11px;font-weight:600;padding:3px 11px;border-radius:11px}
+.dash-section .sec-status.loading{background:rgba(255,255,255,.7);position:relative;padding-left:24px}
+.dash-section .sec-status.loading::before{content:'';position:absolute;left:8px;top:50%;width:10px;height:10px;margin-top:-5px;border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite;opacity:.7}
+.dash-section .sec-status.error{background:#fef2f2;color:#991b1b}
+.dash-section .sec-body{width:100%}
+
+/* Per-section header tinting */
+.dash-section.range-activity .sec-header{background:var(--act-bg);border-left:4px solid var(--act)}
+.dash-section.range-bookings .sec-header{background:var(--bk-bg);border-left:4px solid var(--bk)}
+.dash-section.range-investments .sec-header{background:var(--inv-bg);border-left:4px solid var(--inv)}
+.dash-section.range-activity .sec-title,
+.dash-section.range-activity .sec-status.loading{color:var(--act)}
+.dash-section.range-bookings .sec-title,
+.dash-section.range-bookings .sec-status.loading{color:var(--bk)}
+.dash-section.range-investments .sec-title,
+.dash-section.range-investments .sec-status.loading{color:var(--inv)}
+
+/* ── Call Outcomes section ────────────────────────────────────────
+   Single section header bar holds the date + compare pickers (both donuts)
+   and the Closer picker (which only affects donuts — other dashboard sections
+   always show all closers as columns). Donut cards below have just a title. */
+.section-outcomes{background:transparent;border:none;padding:0;margin-bottom:14px}
+.outcome-section-header{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.outcome-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text)}
+.outcome-section-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.outcome-section-controls label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.outcome-section-controls select{font-size:11px;padding:4px 8px;border:1px solid var(--border);background:white;border-radius:5px;cursor:pointer;font-family:inherit}
+.oc-cdates{display:none;align-items:center;gap:4px}
+.oc-cdates.on{display:inline-flex}
+.oc-cdates input[type="date"]{font-size:11px;padding:2px 5px;border:1px solid var(--border);border-radius:4px}
+.oc-cdates span{font-size:10px;color:var(--text2)}
+.oc-sep{color:var(--border);margin:0 4px;font-size:14px}
+
+.outcomes-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.outcome-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.outcome-card-disc{border-left:4px solid var(--act)}
+.outcome-card-deci{border-left:4px solid var(--bk)}
+.outcome-card-header{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.outcome-card-disc .outcome-card-header{background:var(--act-bg)}
+.outcome-card-deci .outcome-card-header{background:var(--bk-bg)}
+.outcome-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+.outcome-card-disc .outcome-card-title{color:var(--act)}
+.outcome-card-deci .outcome-card-title{color:var(--bk)}
+
+.outcome-card-body{padding:18px 20px;display:grid;grid-template-columns:auto auto 1fr;column-gap:24px;row-gap:10px;align-items:center;min-height:230px}
+.outcome-empty{color:var(--text3);font-size:12px;font-style:italic;grid-column:1/-1;text-align:center;padding:30px 0}
+
+/* SVG donut */
+.outcome-donut{position:relative;width:200px;height:200px;grid-column:1;grid-row:1}
+.outcome-donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+.outcome-donut .slice{cursor:pointer;transition:opacity .15s ease}
+.outcome-donut .slice:hover{opacity:.78}
+.outcome-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.outcome-donut-center-num{font-family:'DM Serif Display',serif;font-size:34px;line-height:1;color:var(--text)}
+.outcome-donut-center-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:4px}
+
+/* Legend with cur + prev columns */
+.outcome-legend{grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:4px;align-self:center}
+.outcome-legend-row{display:grid;grid-template-columns:12px minmax(80px,auto) 30px 38px 14px 32px 36px;align-items:center;gap:6px;font-size:11px;padding:4px 8px;border-radius:5px;cursor:pointer;transition:background .12s}
+.outcome-legend-row:hover{background:var(--surface2)}
+.outcome-legend-swatch{width:10px;height:10px;border-radius:2px}
+.outcome-legend-lbl{color:var(--text)}
+.outcome-legend-val{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;text-align:right}
+.outcome-legend-pct{color:var(--text2);font-size:10px;font-variant-numeric:tabular-nums;text-align:right}
+.outcome-legend-sep{color:var(--text3);font-size:10px;text-align:center;font-weight:400}
+.outcome-legend-prev-val{color:var(--text2);font-variant-numeric:tabular-nums;text-align:right;font-size:10px}
+.outcome-legend-prev-pct{color:var(--text3);font-size:10px;font-variant-numeric:tabular-nums;text-align:right}
+.outcome-legend-header{display:grid;grid-template-columns:12px minmax(80px,auto) 30px 38px 14px 32px 36px;gap:6px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:0 8px 4px;font-weight:600;border-bottom:1px solid var(--surface2);margin-bottom:2px}
+.outcome-legend-header-cur{grid-column:3/5;text-align:right}
+.outcome-legend-header-prev{grid-column:6/8;text-align:right}
+
+/* Subtitle below donut+legend */
+.outcome-sub{grid-column:1/-1;grid-row:2;font-size:11px;color:var(--text2);padding-top:8px;border-top:1px solid var(--surface2);line-height:1.5}
+.outcome-sub-cur{color:var(--text)}
+.outcome-sub strong{font-weight:600;color:var(--text)}
+
+/* Outcome colors */
+.oc-completed{--oc:#16a34a}
+.oc-noshow{--oc:#dc2626}
+.oc-rescheduled{--oc:#d97706}
+.oc-canceled{--oc:#737373}
+.oc-disqualified{--oc:#7c3aed}
+
+/* Apply button shared style */
+.apply-btn{font-size:11px;padding:4px 8px;border:1px solid var(--border);background:white;border-radius:5px;cursor:pointer}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead th{background:var(--surface2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);padding:12px 14px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.tbl thead th.col-setter{text-align:center;min-width:120px}
+.tbl thead th.col-overall{text-align:center;min-width:120px;background:var(--overall-bg);color:var(--overall);border-left:2px solid var(--overall)}
+.tbl thead th.col-unattributed{text-align:center;min-width:120px;background:var(--unattr-bg);color:var(--unattr);border-left:2px solid var(--unattr)}
+.tbl thead th.col-metric{min-width:240px;width:240px}
+
+.section-row td{background:#faf8f3;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);padding:9px 14px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+.section-row .section-range{font-size:10px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--text2);margin-left:4px}
+.section-row .section-status{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 11px;border-radius:11px;margin-left:10px;text-transform:none}
+.section-row .section-status.loading{background:rgba(255,255,255,.6);color:var(--text);position:relative;padding-left:24px}
+.section-row.range-activity .section-status.loading{color:var(--act)}
+.section-row.range-bookings .section-status.loading{color:var(--bk)}
+.section-row.range-investments .section-status.loading{color:var(--inv)}
+.section-row .section-status.loading::before{content:'';position:absolute;left:8px;top:50%;width:10px;height:10px;margin-top:-5px;border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite;opacity:.7}
+.section-row .section-status.error{background:#fef2f2;color:#991b1b}
+.section-note td{background:#fffdf8;font-size:11px;color:var(--text2);font-weight:400;padding:8px 14px 10px;line-height:1.5;border-bottom:1px solid var(--surface2);font-style:italic}
+
+/* Per-range tinted backgrounds — only section header rows + note rows are tinted.
+   Metric rows stay neutral; their colored left border on cell-metric anchors the
+   visual association without making every row a wash of color. */
+tr.section-row.range-activity > td,
+tr.section-note.range-activity > td{background:var(--act-bg)}
+tr.section-row.range-bookings > td,
+tr.section-note.range-bookings > td{background:var(--bk-bg)}
+tr.section-row.range-investments > td,
+tr.section-note.range-investments > td{background:var(--inv-bg)}
+
+tr.section-row.range-activity > td:first-child,
+tr.section-note.range-activity > td:first-child{border-left:4px solid var(--act)}
+tr.section-row.range-bookings > td:first-child,
+tr.section-note.range-bookings > td:first-child{border-left:4px solid var(--bk)}
+tr.section-row.range-investments > td:first-child,
+tr.section-note.range-investments > td:first-child{border-left:4px solid var(--inv)}
+
+tr.range-activity .section-range,
+tr.range-bookings .section-range,
+tr.range-investments .section-range{color:var(--text)}
+
+tr.metric-row.range-activity td.cell-metric{border-left:3px solid var(--act)}
+tr.metric-row.range-bookings td.cell-metric{border-left:3px solid var(--bk)}
+tr.metric-row.range-investments td.cell-metric{border-left:3px solid var(--inv)}
+
+.skeleton-row .cell-val{padding:18px 14px}
+.skeleton-bar{height:24px;background:linear-gradient(90deg, var(--surface2) 0%, #e8e4dc 50%, var(--surface2) 100%);background-size:200% 100%;border-radius:4px;animation:skel 1.5s ease-in-out infinite;max-width:60%;margin:0 auto}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Subgroup divider — thin spacer row between segmented groups within a section
+   (e.g., All / From Intro / No Intro blocks in the Bookings section). */
+tr.subgroup-divider td{padding:0;height:8px;background:var(--surface2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+
+.tbl tbody tr.metric-row{border-bottom:1px solid var(--surface2)}
+.tbl tbody tr.metric-row:last-child{border-bottom:none}
+.tbl tbody tr.metric-row:hover{background:#fcfaf5}
+
+.tbl tbody td.cell-metric{padding:14px;font-size:13px;color:var(--text);font-weight:500}
+.tbl tbody td.cell-metric .metric-sub{font-size:10px;color:var(--text3);font-weight:400;margin-top:2px}
+
+.tbl tbody td.cell-val{padding:12px 14px;text-align:center;vertical-align:top}
+.tbl tbody td.cell-val.col-overall{background:var(--overall-bg);border-left:2px solid var(--overall)}
+.tbl tbody td.cell-val.col-unattributed{background:var(--unattr-bg);border-left:2px solid var(--unattr)}
+
+.val-num{font-family:'DM Serif Display',serif;font-size:22px;line-height:1.05;color:var(--text)}
+.val-num.muted{color:var(--text3)}
+.val-pct{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.05;color:var(--text)}
+.rate-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+.delta{font-size:10px;margin-top:5px;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-weight:600;line-height:1.2}
+.delta.up{color:var(--green);background:var(--green-bg)}
+.delta.dn{color:var(--red);background:var(--red-bg)}
+.delta.flat{color:var(--neutral);background:var(--surface2)}
+.delta.na{color:var(--text3);background:transparent;font-weight:400;font-style:italic}
+.delta-prev{font-size:9px;color:var(--text3);margin-top:3px;display:block}
+.cell-cross-credit{font-size:9px;color:var(--text3);margin-top:3px;display:block;font-style:italic;cursor:help;border-bottom:1px dotted var(--text3);padding-bottom:1px;opacity:.85}
+.cell-cross-credit:hover{color:var(--overall);border-bottom-color:var(--overall);opacity:1}
+
+/* Section grouping bands - subtle left border accents */
+/* Old per-section-class left-border rules superseded by range-X classes above. */
+
+@media (max-width:900px){
+  .tbl thead th.col-metric{min-width:160px;width:160px}
+  .val-num{font-size:18px}
+}
+/* ── Drill-down panel ─────────────────────────────────────
+   Slides in from the right when a count cell is clicked. Renders a list of the
+   underlying records that contributed to that number, with HubSpot links. */
+.dd-backdrop{position:fixed;inset:0;background:rgba(26,24,20,.32);z-index:90;opacity:0;pointer-events:none;transition:opacity .18s ease}
+.dd-backdrop.open{opacity:1;pointer-events:auto}
+.dd-panel{position:fixed;top:0;right:0;bottom:0;width:min(640px,92vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.dd-panel.open{transform:translateX(0)}
+.dd-header{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface)}
+.dd-header-text{flex:1;min-width:0}
+.dd-title{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.25;color:var(--text)}
+.dd-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.dd-close{flex-shrink:0;background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.dd-close:hover{background:var(--surface2);color:var(--text)}
+.dd-body{flex:1;overflow-y:auto;padding:8px 0}
+.dd-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:48px 20px;color:var(--text2);font-size:12px}
+.dd-empty{padding:32px 22px;text-align:center;color:var(--text3);font-size:12px;font-style:italic}
+.dd-row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 22px;border-bottom:1px solid var(--surface2);align-items:start}
+.dd-row:hover{background:var(--surface2)}
+.dd-row-main{min-width:0}
+.dd-row-name{font-size:13px;font-weight:500;color:var(--text);display:inline-block;line-height:1.3;cursor:default}
+.dd-row-name.no-link{color:var(--text);cursor:default}
+.dd-row-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+.dd-row-tags{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dd-tag{font-size:10px;font-weight:500;letter-spacing:.04em;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.dd-tag.completed{background:var(--green-bg);color:var(--green)}
+.dd-tag.no-show{background:#fee2e2;color:#991b1b}
+.dd-tag.rescheduled{background:#fef3c7;color:#92400e}
+.dd-tag.scheduled{background:var(--surface2);color:var(--text2)}
+.dd-tag.canceled{background:#f3f4f6;color:#4b5563}
+.dd-tag.disqualified{background:#f3f4f6;color:#4b5563}
+.dd-tag.funded{background:var(--inv-bg);color:var(--inv);border:1px solid #ddd6fe}
+.dd-tag.unfunded{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.dd-tag.amount{background:var(--bk-bg);color:var(--bk);border:1px solid #bfdbfe}
+
+/* Make count headlines clickable. The pointer cursor + subtle underline-on-hover
+   indicates "this drills down" without being noisy. */
+.cell-val.clickable{cursor:pointer}
+.cell-val.clickable:hover .val-num,
+.cell-val.clickable:hover .val-pct{text-decoration:underline;text-decoration-color:rgba(0,0,0,.18);text-underline-offset:3px}
+
+/* Per-element click targets inside a cell. The headline span (.dd-click.cur) drills
+   into the current period; the delta span (.dd-click.prev) drills into the previous.
+   Hover state lights up only the span being hovered, so each click target reads
+   as its own affordance. */
+.dd-click{cursor:pointer;display:block}
+.dd-click.cur:hover .val-num,
+.dd-click.cur:hover .val-pct{text-decoration:underline;text-decoration-color:rgba(0,0,0,.22);text-underline-offset:3px}
+.dd-click.prev:hover{background:rgba(0,0,0,.025);border-radius:4px}
+.dd-click.prev:hover .delta,
+.dd-click.prev:hover .delta-prev{text-decoration:underline;text-decoration-color:rgba(0,0,0,.18);text-underline-offset:2px}
+
+/* ── Header right cluster + Help button ─────────────────── */
+.hdr-right{display:flex;align-items:center;gap:14px}
+.help-btn{background:rgba(255,255,255,.08);color:#f5f3ef;border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:background .14s ease}
+.help-btn:hover{background:rgba(255,255,255,.16)}
+
+/* ── Guide panel ────────────────────────────────────────── */
+.guide-panel{position:fixed;top:0;right:0;bottom:0;width:min(720px,94vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.guide-panel.open{transform:translateX(0)}
+.guide-header{display:flex;align-items:center;justify-content:space-between;padding:18px 26px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.guide-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+.guide-close{flex-shrink:0;background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.guide-close:hover{background:var(--surface2);color:var(--text)}
+.guide-body{flex:1;overflow-y:auto;padding:22px 28px 48px;line-height:1.55;color:var(--text)}
+.guide-body h2{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);margin:28px 0 8px;border-bottom:1px solid var(--border);padding-bottom:6px;letter-spacing:.01em}
+.guide-body h2:first-child{margin-top:0}
+.guide-body h3{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);margin:18px 0 5px;font-weight:600;letter-spacing:.02em}
+.guide-body p{font-size:13px;color:var(--text2);margin:0 0 10px;line-height:1.55}
+.guide-body p strong{color:var(--text);font-weight:600}
+.guide-body ul{margin:6px 0 12px 20px;padding:0;font-size:13px;color:var(--text2);line-height:1.55}
+.guide-body ul li{margin-bottom:5px}
+.guide-body code{font-family:'SF Mono','Monaco',Consolas,monospace;font-size:12px;background:var(--surface2);padding:1px 6px;border-radius:4px;color:var(--text)}
+.guide-body .pill-inline{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;margin:0 2px;vertical-align:1px}
+.guide-body .pill-inline.discovery{background:var(--act-bg);color:var(--act);border:1px solid #f4c4ad}
+.guide-body .pill-inline.decision{background:var(--bk-bg);color:var(--bk);border:1px solid #bfdbfe}
+.guide-body .pill-inline.funded{background:var(--inv-bg);color:var(--inv);border:1px solid #ddd6fe}
+.guide-body .pill-inline.warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.guide-body .callout{background:var(--surface2);border-left:3px solid var(--act);padding:10px 14px;margin:14px 0;border-radius:0 6px 6px 0;font-size:12px;color:var(--text2)}
+.guide-body .callout strong{color:var(--text)}
+
+/* ── Drill-down copy button ─────────────────────────────── */
+.dd-copy-btn{display:inline-block;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--text2);padding:2px 6px;margin-left:5px;border-radius:4px;vertical-align:middle;line-height:1.4;font-family:'DM Sans',sans-serif;font-weight:500;transition:background .12s,color .12s}
+.dd-copy-btn:hover{background:var(--bk-bg);border-color:var(--bk);color:var(--bk)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo">S</div>
+    <h1>Sunrise Capital — Closer Performance Dashboard</h1>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v20</span>
+  </div>
+  <div class="hdr-right">
+    <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
+    <span id="ts">—</span>
+  </div>
+</header>
+
+<div id="bar">
+  <button id="btn" onclick="forceRefresh()" title="Clear cache and re-fetch all data from HubSpot">↻ Refresh data</button>
+  <span id="st" class="sl">Loading…</span>
+</div>
+
+<!-- Range controls — moved into section headers at render time. Stay outside #bar
+     so the static HTML preserves their state (selected values) across renders. -->
+<div id="range-controls-store" style="display:none">
+  <div class="range-controls" id="range-controls-activity" data-range="activity">
+    <div class="fg">
+      <label>Discovery range</label>
+      <select id="sel-date" onchange="onDateChange('')">
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week" selected>This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="this_year">This Year</option>
+        <option value="last_year">Last Year</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="all">All Time</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="cdates" id="cdates">
+      <input type="date" id="d-from" />
+      <span>to</span>
+      <input type="date" id="d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+    <div class="fg">
+      <label>vs</label>
+      <select id="sel-compare" onchange="onCompareChange('')">
+        <option value="previous" selected>Previous Period</option>
+        <option value="yoy">Same period previous year</option>
+        <option value="none">None</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="this_year">This Year</option>
+        <option value="last_year">Last Year</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="custom">Custom dates…</option>
+      </select>
+    </div>
+    <div class="cdates" id="cmp-cdates">
+      <input type="date" id="cmp-d-from" />
+      <span>to</span>
+      <input type="date" id="cmp-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+  </div>
+
+  <div class="range-controls" id="range-controls-bookings" data-range="bookings">
+    <div class="fg">
+      <label>Decision range</label>
+      <select id="bk-sel-date" onchange="onDateChange('bk-')">
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month" selected>Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="this_year">This Year</option>
+        <option value="last_year">Last Year</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="all">All Time</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="cdates" id="bk-cdates">
+      <input type="date" id="bk-d-from" />
+      <span>to</span>
+      <input type="date" id="bk-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+    <div class="fg">
+      <label>vs</label>
+      <select id="bk-sel-compare" onchange="onCompareChange('bk-')">
+        <option value="previous" selected>Previous Period</option>
+        <option value="yoy">Same period previous year</option>
+        <option value="none">None</option>
+        <option value="last_month">Last Month</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="last_year">Last Year</option>
+        <option value="custom">Custom dates…</option>
+      </select>
+    </div>
+    <div class="cdates" id="bk-cmp-cdates">
+      <input type="date" id="bk-cmp-d-from" />
+      <span>to</span>
+      <input type="date" id="bk-cmp-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+  </div>
+
+  <div class="range-controls" id="range-controls-investments" data-range="investments">
+    <div class="fg">
+      <label>New Money range</label>
+      <select id="inv-sel-date" onchange="onDateChange('inv-')">
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter" selected>Last Quarter</option>
+        <option value="this_year">This Year</option>
+        <option value="last_year">Last Year</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="all">All Time</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="cdates" id="inv-cdates">
+      <input type="date" id="inv-d-from" />
+      <span>to</span>
+      <input type="date" id="inv-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+    <div class="fg">
+      <label>vs</label>
+      <select id="inv-sel-compare" onchange="onCompareChange('inv-')">
+        <option value="previous" selected>Previous Period</option>
+        <option value="yoy">Same period previous year</option>
+        <option value="none">None</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="last_year">Last Year</option>
+        <option value="custom">Custom dates…</option>
+      </select>
+    </div>
+    <div class="cdates" id="inv-cmp-cdates">
+      <input type="date" id="inv-cmp-d-from" />
+      <span>to</span>
+      <input type="date" id="inv-cmp-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div id="ov" style="display:none">
+  <div class="spin"></div>
+  <div id="lm">Connecting to HubSpot…</div>
+</div>
+
+<div id="dash">
+  <div class="fpills" id="fpills"></div>
+
+  <!-- Sections rendered as independent blocks. Each has its own header (with
+       controls) and its own table. Section structure populated by render(). -->
+  <!-- Call Outcomes — donut breakdown of meeting outcomes. The section header
+       below holds one date picker + one compare picker (controls BOTH donuts)
+       plus the Closer picker (only affects donuts; other sections always show
+       all closers as columns). Discovery on left, Decision on right. -->
+  <section class="section-outcomes" id="section-outcomes">
+    <div class="outcome-section-header">
+      <div class="outcome-section-title">Call Outcomes</div>
+      <div class="outcome-section-controls">
+        <label for="oc-sel-date">Date</label>
+        <select id="oc-sel-date" onchange="onOutcomeDateChange()">
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">This Week</option>
+          <option value="last_week" selected>Last Week</option>
+          <option value="this_month">This Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="this_quarter">This Quarter</option>
+          <option value="last_quarter">Last Quarter</option>
+          <option value="this_year">This Year</option>
+          <option value="last_year">Last Year</option>
+          <option value="last_12">Last 12 months</option>
+          <option value="all">All time</option>
+          <option value="custom">Custom dates…</option>
+        </select>
+        <div class="oc-cdates" id="oc-cdates">
+          <input type="date" id="oc-d-from"/>
+          <span>to</span>
+          <input type="date" id="oc-d-to"/>
+          <button class="apply-btn" onclick="render()">Apply</button>
+        </div>
+        <label for="oc-sel-compare">vs</label>
+        <select id="oc-sel-compare" onchange="onOutcomeCompareChange()">
+          <option value="previous" selected>Previous Period</option>
+          <option value="yoy">Same period previous year</option>
+          <option value="none">None</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="this_week">This Week</option>
+          <option value="last_week">Last Week</option>
+          <option value="this_month">This Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="this_quarter">This Quarter</option>
+          <option value="last_quarter">Last Quarter</option>
+          <option value="this_year">This Year</option>
+          <option value="last_year">Last Year</option>
+          <option value="last_12">Last 12 months</option>
+          <option value="custom">Custom dates…</option>
+        </select>
+        <div class="oc-cdates" id="oc-cmp-cdates">
+          <input type="date" id="oc-cmp-d-from"/>
+          <span>to</span>
+          <input type="date" id="oc-cmp-d-to"/>
+          <button class="apply-btn" onclick="render()">Apply</button>
+        </div>
+        <span class="oc-sep">|</span>
+        <label for="sel-setter">Closer</label>
+        <select id="sel-setter" onchange="render()">
+          <option value="all" selected>All Closers</option>
+          <option value="266072428">Kelvin E.</option>
+          <option value="424254278">Bronson P.</option>
+          <option value="601355604">Jonny C.</option>
+        </select>
+      </div>
+    </div>
+    <div class="outcomes-grid">
+      <div class="outcome-card outcome-card-disc">
+        <div class="outcome-card-header">
+          <div class="outcome-card-title">Discovery Call Outcomes</div>
+        </div>
+        <div class="outcome-card-body" id="oc-disc-body">
+          <div class="outcome-empty">Loading…</div>
+        </div>
+      </div>
+      <div class="outcome-card outcome-card-deci">
+        <div class="outcome-card-header">
+          <div class="outcome-card-title">Decision Call Outcomes</div>
+        </div>
+        <div class="outcome-card-body" id="oc-deci-body">
+          <div class="outcome-empty">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-section range-activity" id="section-activity"></section>
+  <section class="dash-section range-bookings" id="section-bookings"></section>
+  <section class="dash-section range-investments" id="section-investments"></section>
+</div>
+
+<!-- Drill-down panel — slides in from the right when a count cell is clicked.
+     Body is populated dynamically by openDrilldown(). Click backdrop, X button,
+     or Esc to close. -->
+<div id="dd-backdrop" class="dd-backdrop" onclick="closeDrilldown()"></div>
+<aside id="dd-panel" class="dd-panel" aria-hidden="true">
+  <header class="dd-header">
+    <div class="dd-header-text">
+      <div class="dd-title" id="dd-title">—</div>
+      <div class="dd-sub" id="dd-sub">—</div>
+    </div>
+    <button class="dd-close" onclick="closeDrilldown()" aria-label="Close drill-down">×</button>
+  </header>
+  <div class="dd-body" id="dd-body">
+    <div class="dd-loading"><div class="spin"></div><div>Loading records…</div></div>
+  </div>
+</aside>
+
+<!-- Guide panel — opens via the Guide button in the header. Static instructional
+     content explaining how to read the dashboard. Same slide-in pattern as the
+     drill-down panel. -->
+<div id="guide-backdrop" class="dd-backdrop" onclick="closeHelp()"></div>
+<aside id="guide-panel" class="guide-panel" aria-hidden="true">
+  <header class="guide-header">
+    <div class="guide-title">How to read this dashboard</div>
+    <button class="guide-close" onclick="closeHelp()" aria-label="Close guide">×</button>
+  </header>
+  <div class="guide-body">
+
+    <h2>What this dashboard measures</h2>
+    <p>This is a closer-side view of the SCI sales process — the work each closer does after a setter has handed off a discovery. The dashboard is organized as a three-stage funnel that mirrors the actual stages a deal moves through: <span class="pill-inline discovery">Discovery</span> → <span class="pill-inline decision">Decision</span> → <span class="pill-inline funded">Funded</span>. Each section measures activity and outcomes for one stage.</p>
+    <p>Closers shown in Discovery and Decision sections: <strong>Kelvin Evans</strong>, <strong>Bronson Picket</strong>, <strong>Jonathan Cattani</strong>. The Funded Investments section adds <strong>Daniel Ackerman</strong> and <strong>Alex Zahn</strong> (AMs) as columns because they own relationship management for many repeat/follow-on fundings — but closers also retain some clients for added money.</p>
+
+    <h2>The three sections</h2>
+
+    <h3>Call Outcomes (top of dashboard)</h3>
+    <p>Two donuts at the very top of the dashboard — Discovery on the left, Decision on the right. Each donut breaks down meeting outcomes for the call type: <strong>Completed</strong> (green), <strong>No-Show</strong> (red), <strong>Rescheduled</strong> (amber), <strong>Canceled</strong> (gray), <strong>Disqualified</strong> (purple). The number in the center of the donut is the resolved-cohort total — the denominator the percentages use.</p>
+    <p><strong>Shared controls in the section header bar</strong> — one date picker, one "vs" comparison picker, and the Closer filter all sit in the bar above the two cards. The date and comparison apply to both donuts; the Closer picker narrows both donuts to a single closer's meetings.</p>
+    <p><strong>The Closer picker only affects these donuts.</strong> The Discovery Activity, Decision Activity, and Funded Investments sections always show every closer (and AM, in Investments) as a column — filtering those sections by closer hides information rather than adding it, so the picker is intentionally scoped to just the donuts.</p>
+    <p><strong>Legend rows show current AND previous numbers side-by-side</strong> — each row has a count + % for the current period and a count + % for the comparison period, so you can scan one row and see how a given outcome's share is trending without doing math.</p>
+    <p><strong>Pending bookings are excluded from the donut.</strong> A meeting scheduled for the future hasn't resolved yet — including it would drag completion % down artificially. The subtitle line tells you how many pending and how many un-dispositioned meetings were dropped, so you can spot data hygiene issues without them polluting the chart.</p>
+    <p>Click any slice or legend row to open the drill-down panel filtered to that outcome — e.g., click No-Show to see every contact who no-showed in the period.</p>
+
+    <h3><span class="pill-inline discovery">Discovery Activity</span></h3>
+    <p>Discovery calls owned by each closer in the selected date range. For each cohort (all discoveries, From Intro subset, No Intro subset) four rows: <strong>Booked</strong>, <strong>Held</strong>, <strong>Completed</strong>, <strong>No-Show</strong>.</p>
+    <p><strong>Held vs Completed.</strong> "Held" counts past bookings whose outcome isn't explicitly a failure — NO_SHOW, RESCHEDULED, CANCELED, or DISQUALIFIED. It <em>includes</em> un-dispositioned past meetings because a past meeting nobody tagged probably happened. "Completed" requires strict <code>outcome === 'COMPLETED'</code> and tracks dispositioning hygiene alongside actual outcome — when Held/Booked is high but Completed/Resolved is low, that's a dispositioning gap, not closer performance. Both rates have value; they answer different questions.</p>
+    <p><strong>The Discovery range anchors on booking creation date, not scheduled meeting date.</strong> A discovery booked Friday for a Monday call counts toward Friday's week (when the closer was assigned the booking) — not the week the call eventually happens. This makes "Discoveries Booked This Week" mean "booked this week" rather than "scheduled this week."</p>
+    <p><strong>Completion and no-show rates use the resolved cohort.</strong> For a given week's bookings, the rates measure "of the bookings that have already resolved (scheduled time has passed), what % completed (or no-showed)?" Pending bookings are excluded. Held rate uses bookings as the denominator (not resolved), since Held already excludes pending future-scheduled bookings.</p>
+    <p>The intro segmentation is where a real lever shows up. A higher completion rate in the From Intro group means inbound-warmed prospects show up better than cold ones — useful signal for resource allocation.</p>
+    <p>Default range: <strong>This Week</strong>. Shorter cadence — closers want to see how the current week is going.</p>
+
+    <h3><span class="pill-inline decision">Decision Activity</span></h3>
+    <p>Decision calls owned by each closer. Same Booked / Held / Completed / No-Show pattern as Discovery, plus a Reschedules row. Reschedules are tracked separately because they're <strong>not no-shows</strong> — the prospect didn't kill the deal, they pushed it. Different signal than someone who didn't show. Worth watching as friction.</p>
+    <p>Decision Activity uses the same booking-creation anchor as Discovery — "Decisions Booked" credits the closer for when the booking was made, not when the call is scheduled.</p>
+    <p>Default range: <strong>Last Month</strong>. The decision-call cycle is short enough that month-level reads make sense.</p>
+
+    <h3><span class="pill-inline funded">Funded Investments</span></h3>
+    <p>Investment fundings that landed in the selected date range, broken into three sub-sections:</p>
+    <ul>
+      <li><strong>All Money</strong> — every contact who funded in the range (first or repeat). The broadest view of investor activity and total capital raised.</li>
+      <li><strong>New Money</strong> — only contacts whose first-ever funded investment falls in the range. Measures investor acquisition — how many new investors each closer brought in.</li>
+      <li><strong>Added Money</strong> — contacts who already had a prior funding and came back to add more in the range. Measures relationship depth and client retention.</li>
+    </ul>
+
+    <h3>Counting: contacts vs records</h3>
+    <p><strong>Investor counts are per unique contact.</strong> A contact who splits $200K across two fund classes on the same funding date is one investor in the count, but $200K in the dollar total. This is the right read for "how many investors" — the business question is about people, not HubSpot records.</p>
+    <p><strong>Dollar totals sum every investment record.</strong> Every raw HubSpot investment record's amount is included. This means dollar totals reconcile with the Sunrise Investment Dashboard for the same date range. Investor counts may differ — Sunrise counts records, this dashboard counts contacts.</p>
+    <p><strong>Average ticket = total dollars ÷ unique contacts.</strong> This answers "what's a typical investor worth in this period?" rather than "what's a typical record worth?"</p>
+    <p><strong>Unique-contact dedup on the Active rows.</strong> "All Investors Active" and "Repeat Investors Active" count <em>unique contacts</em>. A contact whose investments in the date range are attributed to two different people (e.g., a first funding to Kelvin, a follow-on to Daniel A.) counts in BOTH person columns but only ONCE in Overall. So summing the visible columns can exceed the Overall count — the math is honest, just based on distinct people rather than record additions. When that mismatch exists, a small "(N cross-credited)" footnote appears under the Overall cell to make the discrepancy legible. The "New Investors Acquired" row doesn't have this issue (first-investment is unique per contact); dollar rows just add.</p>
+
+    <p>This section shows five named columns (Kelvin, Bronson, Jonny, Daniel, Alex) plus Unattributed and Overall. Daniel and Alex appear here because they own many repeat fundings as AMs, but closers also retain some clients — the attribution follows whoever is on the investment or deal, not a fixed rule about who "should" get added money.</p>
+    <p>Default range: <strong>Last Quarter</strong>. Funding cycles are longer than booking cycles; quarterly ranges give a clean read on closer outcomes.</p>
+
+    <h2>How attribution works</h2>
+    <p>Closer attribution is direct in two of the three sections:</p>
+    <ul>
+      <li><strong>Discovery + Decision</strong>: the meeting's HubSpot owner. Diagnostics on live data confirmed 99% of these meetings are owned directly by one of the three closers, so no fallback cascade is needed.</li>
+      <li><strong>Funded Investments</strong>: cascade — first checks the Investment record's <code>closer</code> field, falls back to the matching closed-won deal's owner (within ±30 days of funds received), otherwise unattributed. Same cascade for all three money views (All / New / Added).</li>
+    </ul>
+    <p>The <strong>Unattributed</strong> column captures records owned by someone outside the current roster. In the investments section, that's anyone not among the five named columns. Worth glancing at: a high count there for any given period is a flag that ownership is drifting outside the team you're looking at.</p>
+    <p>The <strong>Overall</strong> column in the investments section is the grand total — it includes all contacts and dollars regardless of attribution, so dollar totals reconcile with the Sunrise Investment Dashboard. In the Discovery and Decision sections, Overall sums only the three named closers (Daniel and Alex don't appear there).</p>
+
+    <h2>Date ranges and comparison</h2>
+    <p>Each section has its own independent date range. Change one, the other two stay where they are — useful for focusing on different timeframes simultaneously (e.g., this week's discoveries while looking at last quarter's funded outcomes).</p>
+    <p>Each section also has its own <strong>compare</strong> dropdown:</p>
+    <ul>
+      <li><strong>Previous Period</strong> — the period immediately before the base range. Last Quarter compares to Q4 of the prior year, This Week compares to last week's same-elapsed days.</li>
+      <li><strong>Same period previous year</strong> — shifts the base range back one calendar year. Apples-to-apples seasonal comparison. Use this when you want to see Q1 2026 vs Q1 2025.</li>
+      <li><strong>None</strong> — drop the comparison entirely.</li>
+      <li><strong>Specific period</strong> — compare to any named range (Last Month, Last Quarter, etc.).</li>
+      <li><strong>Custom dates</strong> — pick exact from/to dates.</li>
+    </ul>
+
+    <h2>Drill-down — clicking the numbers</h2>
+    <p>Almost every number is clickable. Two click targets per cell:</p>
+    <ul>
+      <li>Click the <strong>headline number</strong> (the big bold figure) → opens a panel showing the underlying records for the current period.</li>
+      <li>Click the <strong>delta line</strong> (the "↓ 18% prev: 125" subtitle) → opens the same panel for the <em>comparison</em> period (whichever you have set in the compare dropdown — Previous Period, Same period previous year, etc.).</li>
+    </ul>
+    <p>The drill-down panel shows each underlying record: contact name, date, owner, and outcome. Each row has a small <strong>⧉ copy button</strong> next to the contact name — click it to copy the HubSpot contact URL to your clipboard. The button turns green and shows <strong>✓ Copied!</strong> to confirm. Paste the URL into a new browser tab to open the contact in HubSpot. (Direct link-opening is blocked by the HubSpot iframe sandbox, so copy-and-paste is the reliable path.)</p>
+    <p>For completed-discovery and completed-decision rows, each row also shows whether that contact has ever funded — labeled <span class="pill-inline funded">Funded $X</span> or <span class="pill-inline warn">Not funded</span>. This is the fastest way to spot stalled deals: open Decision Calls Completed, scan for "Not funded" tags.</p>
+    <p><strong>Booked vs Scheduled dates.</strong> When a booking's creation date and its scheduled meeting time fall on different days, the drill-down row shows both: "Booked Apr 23 · Scheduled Apr 27." This makes the cohort relationship explicit — you can see at a glance that a booking belongs to last week's cohort even though the meeting happens this week. When booking and scheduled dates match, only one date is shown.</p>
+
+    <h2>Reading the funnel together</h2>
+    <p>The closer funnel for any given period reads roughly as: discoveries booked → discoveries completed → decisions booked → decisions completed → investments funded. Each transition is a conversion lever.</p>
+    <p>Where the funnel narrows fastest is where the closer's skill matters most. Decision-completed → funded is typically the lowest conversion step and the most actionable — completed decisions that don't fund are leads still in play (or recently lost) and worth investigating record-by-record via drill-down.</p>
+
+    <h2>Reading caveats</h2>
+    <p><strong>Pre-2026 dispositions are sparse.</strong> Disposition tracking (Completed / No-Show / Rescheduled) wasn't enforced until 2026, so any historical period before 2026 will show suppressed completion rates that reflect data hygiene, not actual performance. When comparing 2026 numbers to anything earlier — Q4 2025, full 2025, year-over-year — expect huge "improvements" in completion rate that are mostly the data getting cleaner. The further back you look, the less reliable disposition-based metrics become; volume metrics (booked, count) are still trustworthy.</p>
+    <p><strong>Pending bookings.</strong> Discovery and decision calls scheduled for the future show as "X still pending" subtext under the Booked count. They count toward Booked but not toward Completed or No-Show — completion and no-show rates use the resolved cohort (booked minus pending), so the rates reflect what actually happened, not what's still on the calendar.</p>
+    <p><strong>Partial period warning.</strong> If the base period is in progress (This Week, This Month, This Quarter, This Year), the Previous Period comparison truncates to same-elapsed days for fairness — and a yellow pill in the section header says so. To compare full vs full, use Same period previous year instead.</p>
+    <p><strong>Segment math sanity pill</strong> (Discovery Activity only). The "All" rate must mathematically lie between the From Intro and No Intro rates because All is a weighted average of the two. If a yellow warning pill fires, the underlying numbers are inconsistent — usually a data hygiene issue worth investigating, not a real performance signal.</p>
+
+    <h2>Glossary</h2>
+    <p><strong>DCB</strong> — Discovery Call Booked. The pipeline stage and the moment the setter's work converts to closer's work.</p>
+    <p><strong>Booking date</strong> — when the meeting record was created in HubSpot (i.e., when the booking was made). Used as the anchor for Discoveries Booked / Decisions Booked cohorts.</p>
+    <p><strong>Scheduled date</strong> — when the meeting is supposed to happen. Used for outcome resolution (Completed / No-Show / Pending) — outcomes only resolve once the scheduled time has passed.</p>
+    <p><strong>From Intro / No Intro</strong> — segmentation on whether the contact had a completed intro call before the discovery booking. From Intro = inbound-warmed; No Intro = direct outbound or referral that skipped the intro.</p>
+    <p><strong>Resolved cohort</strong> — bookings whose scheduled meeting time has already passed. Used as the denominator for completion rate and no-show rate, so the rates aren't dragged down by future bookings that haven't happened yet.</p>
+    <p><strong>Pending</strong> — a discovery or decision booking whose scheduled meeting time is still in the future. Counted in Booked, excluded from rate denominators.</p>
+    <p><strong>Reschedule</strong> — a meeting that was on the calendar, didn't happen as scheduled, and was rebooked. Different from a no-show: the prospect didn't kill the deal, just pushed it.</p>
+
+  </div>
+</aside>
+
+<script>
+// ── Constants ─────────────────────────────────────────────
+const WORKER_URL='https://sunrise-hubspot-proxy.billing-d58.workers.dev/hs-api';
+// Closer roster — Kelvin Evans, Bronson Picket, Jonathan Cattani.
+// Alex Zahn (650567768) and Daniel Ackerman (85544039) are AMs and live on a
+// different dashboard. Kelvin is primarily a manager but does close some deals
+// and may close more going forward — kept in this view at full visibility.
+const CLOSERS={
+  '266072428':'Kelvin E.',
+  '424254278':'Bronson P.',
+  '601355604':'Jonny C.',
+};
+const CLOSER_IDS=['266072428','424254278','601355604'];
+
+// Backward-compat aliases — calcMetrics and rendering code throughout the file
+// reference SETTERS/SETTER_IDS. Rather than rename every usage, we alias them
+// to the closer roster so this file is the only place defining "who's a column".
+const SETTERS=CLOSERS;
+const SETTER_IDS=CLOSER_IDS;
+
+// Account Manager roster — Daniel Ackerman and Alex Zahn. They appear as columns
+// in the investments section only (they don't run discoveries/decisions through
+// meetings — they close through tickets). Some clients stay with closers for
+// added money, so both AMs and closers can have repeat investments.
+const AMS={
+  '85544039':'Daniel A.',
+  '650567768':'Alex Z.',
+};
+const AM_IDS=['85544039','650567768'];
+
+// Combined roster for the investments section — closers + AMs.
+// "Overall" in investments = all 5 people; "Unattributed" = not in this set.
+const INV_PERSONS={...CLOSERS, ...AMS};
+const INV_PERSON_IDS=[...CLOSER_IDS, ...AM_IDS];
+
+// Investment custom object
+const INV_OBJECT_TYPE='2-59402465';
+
+// Discovery meeting type values (from HubSpot's report filter)
+const DISCOVERY_TYPES=new Set(['Discovery Call - Main','Discovery Call - Setters']);
+
+// Deals — Main Sales Pipeline
+const MAIN_PIPELINE_ID='134921120';
+const CLOSED_WON_STAGE_ID='234597476';  // "Closed Won (MSP)"
+
+// Deal closedate vs investment funds_received match window (days, either direction)
+const DEAL_INVESTMENT_MATCH_DAYS=30;
+
+// Property names
+const CALL_PROPS=['hs_timestamp','hs_call_disposition','hubspot_owner_id','hs_call_duration'];
+const MEETING_PROPS=['hs_timestamp','hs_meeting_outcome','hubspot_owner_id','hs_activity_type','call_and_meeting_type','hs_meeting_start_time','hs_meeting_title','hs_createdate'];
+const INV_PROPS=['investment_amount','funds_received','closer','setter','fund_invested'];
+const DEAL_PROPS=['setter_owner','dealstage','closedate','createdate','pipeline','hubspot_owner_id'];
+
+// Storage
+let CALLS=[];           // [{ts, ownerId, disposition, contactId}]
+let MEETINGS=[];        // [{ts, ownerId, outcome, type, contactId, isDiscovery, setter_owner_via_deal}]
+let INVESTMENTS=[];     // [{id, ts, amount, contactId}]
+let INVESTMENT_EVENTS=[]; // [{contactId, ts, totalAmount, recordIds[], setter_owner, attribution_source}]
+let ALL_INVESTMENT_EVENTS=[];   // every funding event (first + repeat) per contact-date
+let ADDED_INVESTMENT_EVENTS=[]; // repeat/follow-on fundings only (not first per contact)
+let DEALS_BY_CONTACT={};  // contactId → [{id, setter_owner, dealstage, closedate, createdate}]
+const CONTACT_SETTER_OWNER={};  // contactId → setter user ID (or null) — fallback when deal lacks setter
+let DISPOSITIONS={};
+let CONNECTED_DISPO_IDS=new Set();
+
+// ── Date range helpers ────────────────────────────────────
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+function endOfDay(d){const x=new Date(d);x.setHours(23,59,59,999);return x}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function startOfWeek(d){
+  // Monday-based week
+  const x=startOfDay(d);
+  const day=x.getDay(); // 0=Sun..6=Sat
+  const diff=(day===0?-6:1-day);
+  x.setDate(x.getDate()+diff);
+  return x;
+}
+function startOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1)}
+function endOfMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59,999)}
+function startOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1)}
+function endOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3+3,0,23,59,59,999)}
+
+/**
+ * Resolve a date-range key (e.g. 'this_week') into {from, to, label, isPartial}.
+ * For "custom", reads from the supplied input IDs.
+ * Used for both the base range and the user-selected comparison range.
+ */
+function resolveDateKey(key, fromInputId, toInputId){
+  const now=new Date();
+  let from, to, label='', isPartial=false;
+
+  if(key==='yesterday'){
+    const y=addDays(now,-1);
+    from=startOfDay(y); to=endOfDay(y);
+    label='Yesterday';
+  }
+  else if(key==='this_week'){
+    from=startOfWeek(now); to=now;
+    label='This Week'; isPartial=true;
+  }
+  else if(key==='last_week'){
+    const sow=startOfWeek(now);
+    from=addDays(sow,-7); to=endOfDay(addDays(sow,-1));
+    label='Last Week';
+  }
+  else if(key==='this_month'){
+    from=startOfMonth(now); to=now;
+    label='This Month'; isPartial=true;
+  }
+  else if(key==='last_month'){
+    const som=startOfMonth(now);
+    from=startOfMonth(addDays(som,-1));
+    to=endOfDay(addDays(som,-1));
+    label='Last Month';
+  }
+  else if(key==='this_quarter'){
+    from=startOfQuarter(now); to=now;
+    label='This Quarter'; isPartial=true;
+  }
+  else if(key==='last_quarter'){
+    const soq=startOfQuarter(now);
+    from=startOfQuarter(addDays(soq,-1));
+    to=endOfDay(addDays(soq,-1));
+    label='Last Quarter';
+  }
+  else if(key==='this_year'){
+    from=new Date(now.getFullYear(),0,1); to=now;
+    label='This Year'; isPartial=true;
+  }
+  else if(key==='last_year'){
+    from=new Date(now.getFullYear()-1,0,1);
+    to=new Date(now.getFullYear()-1,11,31,23,59,59,999);
+    label='Last Year';
+  }
+  else if(key==='last_12'){
+    to=now; from=addDays(now,-365);
+    label='Last 12 months';
+  }
+  else if(key==='all'){
+    // Cap at 3 years back — pulling since 2020 would be slow and most call/meeting data is recent anyway.
+    const threeYearsAgo=new Date(now.getFullYear()-3, now.getMonth(), 1);
+    from=threeYearsAgo; to=now;
+    label='All Time (3yr)';
+  }
+  else if(key==='custom'){
+    const f=document.getElementById(fromInputId).value;
+    const t=document.getElementById(toInputId).value;
+    from=f?startOfDay(new Date(f)):new Date(2020,0,1);
+    to=t?endOfDay(new Date(t)):now;
+    label='Custom';
+  }
+  return {from, to, label, isPartial};
+}
+
+/**
+ * Auto "Previous Period" comparison — derived from the base range.
+ * Truncates current-period to same elapsed time so partial periods compare apples-to-apples.
+ */
+function autoPreviousPeriod(baseKey, baseFrom, baseTo){
+  const now=new Date();
+  let prevFrom, prevTo, prevLabel='';
+
+  if(baseKey==='yesterday'){
+    const dby=addDays(now,-2);
+    prevFrom=startOfDay(dby); prevTo=endOfDay(dby);
+    prevLabel='Day before';
+  }
+  else if(baseKey==='this_week'){
+    const sow=startOfWeek(now);
+    const lastSow=addDays(sow,-7);
+    const elapsedMs=baseTo-baseFrom;
+    prevFrom=lastSow; prevTo=new Date(lastSow.getTime()+elapsedMs);
+    prevLabel='Last week (same elapsed)';
+  }
+  else if(baseKey==='last_week'){
+    const sow=startOfWeek(now);
+    prevFrom=addDays(sow,-14); prevTo=endOfDay(addDays(sow,-8));
+    prevLabel='Previous week';
+  }
+  else if(baseKey==='this_month'){
+    const som=startOfMonth(now);
+    const lastSom=startOfMonth(addDays(som,-1));
+    const elapsedMs=baseTo-baseFrom;
+    prevFrom=lastSom; prevTo=new Date(lastSom.getTime()+elapsedMs);
+    prevLabel='Last month (same elapsed)';
+  }
+  else if(baseKey==='last_month'){
+    prevFrom=startOfMonth(addDays(baseFrom,-1));
+    prevTo=endOfDay(addDays(baseFrom,-1));
+    prevLabel='Previous month';
+  }
+  else if(baseKey==='this_quarter'){
+    const soq=startOfQuarter(now);
+    const lastSoq=startOfQuarter(addDays(soq,-1));
+    const elapsedMs=baseTo-baseFrom;
+    prevFrom=lastSoq; prevTo=new Date(lastSoq.getTime()+elapsedMs);
+    prevLabel='Last quarter (same elapsed)';
+  }
+  else if(baseKey==='last_quarter'){
+    prevFrom=startOfQuarter(addDays(baseFrom,-1));
+    prevTo=endOfDay(addDays(baseFrom,-1));
+    prevLabel='Previous quarter';
+  }
+  else if(baseKey==='this_year'){
+    const soy=new Date(now.getFullYear(),0,1);
+    const lastSoy=new Date(now.getFullYear()-1,0,1);
+    const elapsedMs=baseTo-soy;
+    prevFrom=lastSoy; prevTo=new Date(lastSoy.getTime()+elapsedMs);
+    prevLabel='Last year (same elapsed)';
+  }
+  else if(baseKey==='last_year'){
+    prevFrom=new Date(now.getFullYear()-2,0,1);
+    prevTo=new Date(now.getFullYear()-2,11,31,23,59,59,999);
+    prevLabel='Previous year';
+  }
+  else if(baseKey==='last_12'){
+    prevTo=new Date(baseFrom.getTime()-1);
+    prevFrom=addDays(prevTo,-365);
+    prevLabel='Prior 12 months';
+  }
+  else if(baseKey==='all'){
+    return {prevFrom:null, prevTo:null, prevLabel:'—'};
+  }
+  else if(baseKey==='custom'){
+    const durationMs=baseTo-baseFrom;
+    prevTo=new Date(baseFrom.getTime()-1);
+    prevFrom=new Date(prevTo.getTime()-durationMs);
+    prevLabel='Prior equivalent range';
+  }
+  return {prevFrom, prevTo, prevLabel};
+}
+
+/**
+ * Returns { from, to, prevFrom, prevTo, label, prevLabel, isPartial, lengthMismatch }
+ * Pulls compare-with mode into account.
+ */
+/**
+ * Resolve a date range for a given section. The dashboard now has three independent
+ * range pickers — Activity (top-of-funnel calls/intros), Bookings (discovery booking
+ * metrics), Investments (investment fund-date metrics). Each has its own select+compare
+ * elements identified by the rangeKey:
+ *   - 'activity'    → sel-date, sel-compare, d-from/d-to, cmp-d-from/cmp-d-to
+ *   - 'bookings'    → bk-sel-date, bk-sel-compare, bk-d-from/bk-d-to, bk-cmp-d-from/bk-cmp-d-to
+ *   - 'investments' → inv-sel-date, inv-sel-compare, inv-d-from/inv-d-to, inv-cmp-d-from/inv-cmp-d-to
+ */
+function getDateRange(rangeKey='activity'){
+  const prefixes={
+    activity:    {sel:'sel-date',     cmp:'sel-compare',     dFrom:'d-from',     dTo:'d-to',     cmpFrom:'cmp-d-from',     cmpTo:'cmp-d-to'},
+    bookings:    {sel:'bk-sel-date',  cmp:'bk-sel-compare',  dFrom:'bk-d-from',  dTo:'bk-d-to',  cmpFrom:'bk-cmp-d-from',  cmpTo:'bk-cmp-d-to'},
+    investments: {sel:'inv-sel-date', cmp:'inv-sel-compare', dFrom:'inv-d-from', dTo:'inv-d-to', cmpFrom:'inv-cmp-d-from', cmpTo:'inv-cmp-d-to'},
+    // Call Outcomes section — single shared range for both donuts
+    outcomes:    {sel:'oc-sel-date',  cmp:'oc-sel-compare',  dFrom:'oc-d-from',  dTo:'oc-d-to',  cmpFrom:'oc-cmp-d-from',  cmpTo:'oc-cmp-d-to'},
+  };
+  const ids=prefixes[rangeKey];
+  const baseKey=document.getElementById(ids.sel).value;
+  const base=resolveDateKey(baseKey, ids.dFrom, ids.dTo);
+  const cmpKey=document.getElementById(ids.cmp).value;
+
+  let prevFrom=null, prevTo=null, prevLabel='—', lengthMismatch=false;
+
+  if(cmpKey==='none'){
+    // no comparison
+  }
+  else if(cmpKey==='previous'){
+    const auto=autoPreviousPeriod(baseKey, base.from, base.to);
+    prevFrom=auto.prevFrom; prevTo=auto.prevTo; prevLabel=auto.prevLabel;
+  }
+  else if(cmpKey==='yoy'){
+    // Same period, previous year — shift base from/to back one calendar year.
+    // Wording uses "previous year" rather than "last year" so it reads correctly
+    // even when the base period is itself in a prior year (e.g., comparing 2025
+    // to 2024). Edge case: shifting Feb 29 to a non-leap year clamps to Feb 28.
+    const shiftedFrom=new Date(base.from);
+    shiftedFrom.setFullYear(shiftedFrom.getFullYear()-1);
+    const shiftedTo=new Date(base.to);
+    shiftedTo.setFullYear(shiftedTo.getFullYear()-1);
+    prevFrom=shiftedFrom;
+    prevTo=shiftedTo;
+    prevLabel='Previous year (same period)';
+  }
+  else {
+    const cmp=resolveDateKey(cmpKey, ids.cmpFrom, ids.cmpTo);
+    prevFrom=cmp.from; prevTo=cmp.to; prevLabel=cmp.label;
+    const baseDur=base.to-base.from;
+    const cmpDur=cmp.to-cmp.from;
+    if(baseDur>0 && cmpDur>0){
+      const ratio=Math.min(baseDur,cmpDur)/Math.max(baseDur,cmpDur);
+      if(ratio<0.9) lengthMismatch=true;
+    }
+  }
+
+  return {
+    rangeKey,
+    from:base.from, to:base.to,
+    prevFrom, prevTo,
+    label:base.label, prevLabel,
+    isPartial:base.isPartial,
+    lengthMismatch
+  };
+}
+
+function onDateChange(prefix){
+  // prefix: '' for activity, 'bk-' for bookings, 'inv-' for investments
+  const selId=prefix+'sel-date';
+  const cdatesId=prefix+'cdates';
+  const v=document.getElementById(selId).value;
+  document.getElementById(cdatesId).classList.toggle('on', v==='custom');
+  if(v!=='custom') applyFilters();
+}
+
+function onCompareChange(prefix){
+  const selId=prefix+'sel-compare';
+  const cdatesId=prefix+'cmp-cdates';
+  const v=document.getElementById(selId).value;
+  document.getElementById(cdatesId).classList.toggle('on', v==='custom');
+  if(v!=='custom') applyFilters();
+}
+
+// ── HubSpot API helper ────────────────────────────────────
+async function api(path, body, retryCount=0){
+  const url=(WORKER_URL+path).replace(/([^:])\/{2,}/g,'$1/');
+  const r=await fetch(url, {
+    method: body?'POST':'GET',
+    headers: {'Content-Type':'application/json'},
+    ...(body?{body:JSON.stringify(body)}:{})
+  });
+
+  // 429 = rate limit. HubSpot's secondly limit is 100 req/10s on a Private App.
+  // Parallel chunk loads can blow past this. Retry with exponential backoff.
+  if(r.status===429 && retryCount<5){
+    const waitMs=Math.min(1000*Math.pow(2, retryCount), 8000); // 1s, 2s, 4s, 8s, 8s
+    await new Promise(res=>setTimeout(res, waitMs));
+    return api(path, body, retryCount+1);
+  }
+
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'HTTP '+r.status);}
+  return r.json();
+}
+
+// ── Disposition fetch ─────────────────────────────────────
+// /crm/v3/properties/calls/hs_call_disposition returns no options array in this portal.
+// Use the calling endpoint instead — that's where the actual disposition list lives.
+//
+// "Connection" definition (per Sunrise): the setter actually got the person on the phone.
+//   - Connected
+//   - Connected - Not Engaged
+//   - Connect - Scheduled  (a connection where they also booked a discovery call;
+//                            the actual booking is verified separately via the meeting object)
+const CONNECTED_LABELS=new Set([
+  'Connected',
+  'Connected - Not Engaged',
+  'Connect - Scheduled'
+]);
+
+async function loadDispositions(){
+  try{
+    const d=await api('/calling/v1/dispositions');
+    // /calling/v1/dispositions returns an array directly, not wrapped in {options:...}
+    const opts=Array.isArray(d) ? d : (d.options || []);
+    DISPOSITIONS={};
+    opts.forEach(o=>{
+      const id=o.id || o.value;
+      const lbl=o.label;
+      if(id && lbl) DISPOSITIONS[id]=lbl;
+    });
+    // Match dispositions by exact label against the connection set
+    CONNECTED_DISPO_IDS=new Set(
+      Object.entries(DISPOSITIONS)
+        .filter(([,lbl])=>CONNECTED_LABELS.has(lbl))
+        .map(([id])=>id)
+    );
+    console.log('Dispositions loaded:', DISPOSITIONS);
+    console.log('Connected disposition IDs:', [...CONNECTED_DISPO_IDS].map(id=>`${id} (${DISPOSITIONS[id]})`));
+    if(CONNECTED_DISPO_IDS.size===0){
+      console.warn('No connected dispositions matched! Check CONNECTED_LABELS against the actual labels above.');
+    }
+  }catch(e){
+    console.warn('Could not load dispositions:', e.message);
+  }
+}
+
+// ── Cache (week-grain for calls, month-grain for meetings) ───────────────
+// Calls are high-volume (potentially 2k+/week for the full team) and need fine-grained
+// chunking to stay under HubSpot's per-search result cap. Meetings are sparse enough
+// that monthly chunks are safe.
+//
+// Cache key formats:
+//   calls:2026-W17   (ISO week, Monday-anchored)
+//   meetings:2026-04 (calendar month)
+const MONTH_CACHE={};
+const CHUNK_ASSOC_FETCHED=new Set();
+
+function monthKey(date){ return date.getFullYear()+'-'+pad(date.getMonth()+1); }
+
+/**
+ * ISO-week-style key, Monday-anchored, year=year-of-Monday.
+ * Format: YYYY-Wnn  (e.g. 2026-W17)
+ */
+function weekKey(date){
+  const monday=startOfWeek(date);
+  // Compute week-of-year by counting Mondays since Jan 1
+  const jan1=new Date(monday.getFullYear(),0,1);
+  const jan1Monday=startOfWeek(jan1);
+  const weekNum=Math.round((monday-jan1Monday)/(7*86400000))+1;
+  return monday.getFullYear()+'-W'+pad(weekNum);
+}
+
+function weekRangeFromKey(wk){
+  const [yStr, wStr]=wk.split('-W');
+  const year=+yStr, weekNum=+wStr;
+  const jan1=new Date(year,0,1);
+  const jan1Monday=startOfWeek(jan1);
+  const monday=new Date(jan1Monday.getTime()+(weekNum-1)*7*86400000);
+  const sunday=endOfDay(addDays(monday,6));
+  return [monday, sunday];
+}
+
+function monthRangeFromKey(mk){
+  const [year, mo]=mk.split('-').map(Number);
+  return [new Date(year, mo-1, 1), new Date(year, mo, 0, 23,59,59,999)];
+}
+
+/**
+ * Given a date range, return all WEEK keys it spans (for calls).
+ */
+function weeksInRange(from, to){
+  const weeks=[];
+  let cur=startOfWeek(from);
+  const end=startOfWeek(to);
+  while(cur<=end){
+    weeks.push(weekKey(cur));
+    cur=addDays(cur, 7);
+  }
+  return weeks;
+}
+
+/**
+ * Given a date range, return all MONTH keys it spans (for meetings).
+ */
+function monthsInRange(from, to){
+  const months=[];
+  let cur=new Date(from.getFullYear(), from.getMonth(), 1);
+  const end=new Date(to.getFullYear(), to.getMonth(), 1);
+  while(cur<=end){
+    months.push(monthKey(cur));
+    cur=new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  }
+  return months;
+}
+
+/**
+ * Generic chunk-fetcher. `chunkKey` is the cache key; from/to are bounds.
+ * Loud warning if a chunk hits the pagination cap — that means it needs to be subdivided.
+ */
+// Tracks chunks that errored partway. UI surfaces these.
+const FAILED_CHUNKS=[];
+
+async function fetchChunk(objectName, propsList, chunkKey, fromMs, toMs){
+  const cacheKey=`${objectName}:${chunkKey}`;
+  if(MONTH_CACHE[cacheKey]) return MONTH_CACHE[cacheKey];
+
+  // Calls: filter by setter ownership (only setter dials count).
+  // Meetings: don't filter by owner. Discoveries are closer-owned but we attribute
+  // them to setters via contact.setter_owner. Owner-based filter would exclude them.
+  const restrictByOwner = (objectName === 'calls');
+
+  // Meetings need TWO anchor views, ORed together:
+  //   - hs_timestamp (scheduled date) in range, for completion-anchored metrics
+  //     (Discoveries Completed Last Week, Decisions Completed, etc.)
+  //   - hs_createdate (booking date) in range, for booking-anchored metrics
+  //     (Discoveries Booked This Week, Decisions Booked, KPIs of work-being-done).
+  // A meeting booked Apr 27 scheduled May 15 must appear in BOTH the April chunk
+  // (so booking-anchored metrics for April see it) AND the May chunk (so completion-
+  // anchored metrics for May see it). HubSpot filterGroups OR together, so we pass
+  // two groups for meetings. Calls don't need this; hs_timestamp IS the call's
+  // anchor (when the dial happened).
+  const buildFilters = (anchor) => {
+    const f=[
+      {propertyName:anchor, operator:'GTE', value:String(fromMs)},
+      {propertyName:anchor, operator:'LTE', value:String(toMs)},
+    ];
+    if(restrictByOwner){
+      f.push({propertyName:'hubspot_owner_id', operator:'IN', values:SETTER_IDS});
+    }
+    return f;
+  };
+
+  const filterGroups = (objectName === 'meetings')
+    ? [{filters:buildFilters('hs_timestamp')}, {filters:buildFilters('hs_createdate')}]
+    : [{filters:buildFilters('hs_timestamp')}];
+
+  let all=[], after=null, page=0, errored=false;
+  const MAX_PAGES=15;
+
+  while(true){
+    page++;
+    const body={
+      filterGroups,
+      properties:propsList,
+      sorts:[{propertyName:'hs_timestamp', direction:'ASCENDING'}],
+      limit:200,
+      ...(after?{after}:{})
+    };
+    let d;
+    try{
+      d=await api(`/crm/v3/objects/${objectName}/search`, body);
+    }catch(e){
+      console.warn(`Chunk ${chunkKey} ${objectName} page ${page} error:`, e.message);
+      errored=true;
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    if(page>=MAX_PAGES){
+      console.warn(`Chunk ${chunkKey} ${objectName} hit pagination cap at ${MAX_PAGES} pages (${all.length} records). Data may be truncated.`);
+      errored=true;
+      break;
+    }
+  }
+
+  // Dedupe by ID. Most meetings are booked and scheduled in the same month, so
+  // they match BOTH filterGroups within a single chunk and appear twice in raw
+  // results. Common case, not edge case. Keep first occurrence.
+  if(objectName === 'meetings' && all.length){
+    const seen=new Set();
+    all=all.filter(r=>seen.has(r.id) ? false : (seen.add(r.id), true));
+  }
+
+  if(errored){
+    // Don't cache partial results. User should be able to retry. Track for UI surface.
+    FAILED_CHUNKS.push(`${objectName}:${chunkKey}`);
+    return all;
+  }
+
+  MONTH_CACHE[cacheKey]=all;
+  return all;
+}
+
+async function fetchChunkAssocs(objectName, chunkKey, records){
+  const tag=`${objectName}:${chunkKey}`;
+  // CHUNK_ASSOC_FETCHED is now a "successfully completed" registry. We do NOT
+  // add to it until every batch in this chunk's assoc fetch returns OK.
+  // Bug fix vs prior versions: marking the tag before the work meant any error
+  // (rate limit, Worker CPU timeout on a busy chunk) silently skipped the
+  // chunk forever. Per-chunk records would land in the cache with all-null
+  // contactId, breaking the cascade for an entire month of records.
+  if(CHUNK_ASSOC_FETCHED.has(tag)) return;
+
+  // If records is empty, the meetings haven't been cached yet. Bail WITHOUT
+  // marking the tag — caller's assumption that records are pre-cached was
+  // wrong, and we want a future call to re-attempt.
+  if(!records || records.length===0){
+    console.warn(`[fetchChunkAssocs] ${tag} called with empty records — meeting cache not populated yet, bailing without marking done`);
+    return;
+  }
+
+  const ids=records.map(r=>r.id).filter(id=>!CONTACT_ASSOC_MAP[`${objectName}:${id}`]);
+  if(ids.length===0){
+    // Nothing to fetch (already in map). Mark done so we don't retry uselessly.
+    CHUNK_ASSOC_FETCHED.add(tag);
+    return;
+  }
+
+  // Track success per batch. If any batch errors, do NOT mark the chunk done —
+  // a future call (manual refresh, render trigger) gets a chance to retry the
+  // missing portion. CONTACT_ASSOC_MAP filtering above means already-fetched
+  // IDs are skipped on retry, so re-attempts are cheap.
+  let allOk=true;
+  for(let i=0;i<ids.length;i+=100){
+    const batch=ids.slice(i,i+100);
+    try{
+      const d=await api(`/crm/v4/associations/${objectName}/contacts/batch/read`,
+        {inputs:batch.map(id=>({id:String(id)}))});
+      (d.results||[]).forEach(r=>{
+        if(r.to?.length>0){
+          CONTACT_ASSOC_MAP[`${objectName}:${r.from.id}`]=String(r.to[0].toObjectId);
+        }
+      });
+    }catch(e){
+      console.error(`[fetchChunkAssocs] ${tag} batch ${i/100+1} of ${Math.ceil(ids.length/100)} FAILED:`, e.message || e);
+      allOk=false;
+    }
+  }
+
+  if(allOk){
+    CHUNK_ASSOC_FETCHED.add(tag);
+  } else {
+    console.warn(`[fetchChunkAssocs] ${tag} had partial failures — chunk left unmarked for retry on next render`);
+  }
+}
+
+const CONTACT_ASSOC_MAP={};
+
+/**
+ * For a list of contact IDs, fetch:
+ *   - Their associated deals + each deal's setter_owner / dealstage / closedate / createdate
+ *   - The contact's own setter_owner (used as cascade fallback when no deal-side match)
+ *
+ * Cached: contacts already resolved (in either DEALS_BY_CONTACT or CONTACT_SETTER_OWNER)
+ * are skipped.
+ */
+async function fetchDealsForContacts(contactIds){
+  const need=[...new Set(contactIds.filter(id=>id && !(id in DEALS_BY_CONTACT)))];
+  if(need.length===0) return;
+
+  // ── Batch-read contact properties (setter_owner) in parallel with associations ──
+  const contactProps={};
+  const fetchContactProps=async ()=>{
+    const batches=[];
+    for(let i=0;i<need.length;i+=100) batches.push(need.slice(i,i+100));
+    const tasks=batches.map(batch=>async()=>{
+      try{
+        const d=await api('/crm/v3/objects/contacts/batch/read',
+          {inputs:batch.map(id=>({id:String(id)})), properties:['setter_owner']});
+        (d.results||[]).forEach(c=>{
+          contactProps[String(c.id)]=c.properties?.setter_owner || null;
+        });
+      }catch(e){ console.warn('Contact setter_owner error', e); }
+    });
+    await runWithConcurrency(tasks, 4);
+  };
+
+  // ── Step 1: contact→deal associations ──
+  const contactToDeals={};
+  let assocsDone=0;
+  const fetchContactDeals=async ()=>{
+    const batches=[];
+    for(let i=0;i<need.length;i+=100) batches.push(need.slice(i,i+100));
+    const tasks=batches.map(batch=>async()=>{
+      try{
+        const d=await api(`/crm/v4/associations/contacts/deals/batch/read`,
+          {inputs:batch.map(id=>({id:String(id)}))});
+        (d.results||[]).forEach(r=>{
+          contactToDeals[String(r.from.id)]=(r.to||[]).map(t=>String(t.toObjectId));
+        });
+        batch.forEach(cid=>{
+          if(!(cid in contactToDeals)) contactToDeals[cid]=[];
+        });
+      }catch(e){ console.warn('Contact→deals assoc error', e); }
+      assocsDone += batch.length;
+      lm(`Loading deals for contacts… ${assocsDone}/${need.length}`);
+    });
+    await runWithConcurrency(tasks, 4);
+  };
+
+  await Promise.all([fetchContactProps(), fetchContactDeals()]);
+
+  // ── Step 2: collect unique deal IDs and batch-read their properties ──
+  // Run batches with bounded concurrency — 4 at a time avoids rate-limiting while
+  // cutting total wall clock by ~3x for typical batch counts.
+  const allDealIds=[...new Set(Object.values(contactToDeals).flat())];
+  const dealProps={};
+  let dealsDone=0;
+  const dealBatches=[];
+  for(let i=0;i<allDealIds.length;i+=100){
+    dealBatches.push(allDealIds.slice(i,i+100));
+  }
+  const dealTasks=dealBatches.map((batch,bi)=>async()=>{
+    try{
+      const d=await api('/crm/v3/objects/deals/batch/read',
+        {inputs:batch.map(id=>({id:String(id)})), properties:DEAL_PROPS});
+      (d.results||[]).forEach(deal=>{
+        dealProps[String(deal.id)]={
+          id:String(deal.id),
+          setter_owner: deal.properties.setter_owner || null,
+          // hubspot_owner_id on a deal in the Main Sales Pipeline is the closer
+          // who owns the deal. Used as the cascade fallback for investment-level
+          // closer attribution in the closer dashboard.
+          hubspot_owner_id: deal.properties.hubspot_owner_id || null,
+          dealstage: deal.properties.dealstage || null,
+          pipeline: deal.properties.pipeline || null,
+          closedate: deal.properties.closedate ? new Date(deal.properties.closedate).getTime() : null,
+          createdate: deal.properties.createdate ? new Date(deal.properties.createdate).getTime() : null,
+        };
+      });
+    }catch(e){ console.warn('Deal batch read error', e); }
+    dealsDone += batch.length;
+    lm(`Loading deal properties… ${dealsDone}/${allDealIds.length}`);
+  });
+  await runWithConcurrency(dealTasks, 4);
+
+  // ── Step 3: write into DEALS_BY_CONTACT and CONTACT_SETTER_OWNER ──
+  for(const cid of need){
+    const dealIds=contactToDeals[cid] || [];
+    DEALS_BY_CONTACT[cid]=dealIds.map(did=>dealProps[did]).filter(Boolean);
+    CONTACT_SETTER_OWNER[cid]=contactProps[cid] || null;
+  }
+}
+
+/**
+ * Find the setter who should get credit for a meeting.
+ * Cascade:
+ *   1. Most relevant deal's setter_owner (active deal at meeting time)
+ *   2. If no deal-side setter, fall back to contact.setter_owner
+ *   3. Otherwise null (unattributed)
+ */
+function resolveMeetingSetter(meetingTs, contactId){
+  if(!contactId) return null;
+  const deals=DEALS_BY_CONTACT[contactId];
+
+  if(deals && deals.length>0){
+    // Prefer deals "active" at meeting time (created before, not yet closed)
+    const active=deals.filter(d=>{
+      if(d.createdate && d.createdate>meetingTs) return false;
+      if(d.closedate && d.closedate<meetingTs) return false;
+      return true;
+    });
+    const pool = active.length>0 ? active : deals;
+    // Among the pool, pick the deal with the most-recent createdate
+    const sorted=[...pool].sort((a,b)=>(b.createdate||0)-(a.createdate||0));
+    if(sorted[0].setter_owner) return sorted[0].setter_owner;
+  }
+
+  // Fallback: contact's setter_owner
+  return CONTACT_SETTER_OWNER[contactId] || null;
+}
+
+/**
+ * Fetch all investments and build INVESTMENT_EVENTS.
+ *
+ * An "investment event" = the contact's first investment in time, possibly
+ * spanning multiple investment records on the same funds_received date.
+ * Setter credit goes to the EARLIEST-CREATED closed-won deal for that contact
+ * whose closedate is within ±DEAL_INVESTMENT_MATCH_DAYS of the investment date.
+ */
+let INVESTMENTS_LOADED=false;
+async function fetchAllInvestments(){
+  if(INVESTMENTS_LOADED) return;
+  let all=[], after=null, page=0;
+  while(true){
+    page++;
+    lm(`Loading investments… page ${page} (${all.length} loaded)`);
+    let d;
+    try{
+      const url=`/crm/v3/objects/${INV_OBJECT_TYPE}?limit=100&properties=${INV_PROPS.join(',')}&archived=false${after?'&after='+encodeURIComponent(after):''}`;
+      d=await api(url);
+    }catch(e){
+      console.warn('Investment fetch error:', e.message);
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    if(page>30) break;
+  }
+
+  // Resolve contact associations for each investment — parallelized
+  const ids=all.map(i=>i.id);
+  const invToContact={};
+  const invAssocBatches=[];
+  for(let i=0;i<ids.length;i+=100) invAssocBatches.push(ids.slice(i,i+100));
+  const invAssocTasks=invAssocBatches.map(batch=>async()=>{
+    try{
+      const d=await api(`/crm/v4/associations/${INV_OBJECT_TYPE}/contacts/batch/read`,
+        {inputs:batch.map(id=>({id:String(id)}))});
+      (d.results||[]).forEach(r=>{
+        if(r.to?.length>0) invToContact[String(r.from.id)]=String(r.to[0].toObjectId);
+      });
+    }catch(e){ console.warn('Inv assoc error', e); }
+  });
+  await runWithConcurrency(invAssocTasks, 4);
+
+  INVESTMENTS=all.map(r=>{
+    const contactId=invToContact[r.id] || null;
+    return {
+      id:r.id,
+      ts:r.properties.funds_received ? new Date(r.properties.funds_received).getTime() : null,
+      amount:parseFloat(r.properties.investment_amount)||0,
+      // Direct closer on the Investment record (when set) — primary attribution
+      // path for the closer dashboard.
+      closer: r.properties.closer || null,
+      // Direct setter on the Investment record (when set) — Tier 0 in the setter
+      // cascade below. Only consumed by diagnostic logging today, but kept correct
+      // for consistency with the setter dashboard and to support any future
+      // setter-aware feature on this dash.
+      setter: r.properties.setter || null,
+      contactId,
+    };
+  }).filter(i=>i.ts && i.contactId);
+
+  // Resolve all deals for these contacts (so we can find closed-won matches later)
+  await fetchDealsForContacts([...new Set(INVESTMENTS.map(i=>i.contactId))]);
+
+  // Build investment event arrays — one event per raw investment record (no
+  // same-day grouping). This makes counts reconcile 1:1 with the Sunrise
+  // Investment Dashboard which counts every raw record.
+  //
+  //   ALL_INVESTMENT_EVENTS  — every raw record
+  //   INVESTMENT_EVENTS      — records on the contact's first funding date (new money)
+  //   ADDED_INVESTMENT_EVENTS — records NOT on the contact's first funding date (added money)
+  const byContact={};
+  INVESTMENTS.forEach(i=>{
+    (byContact[i.contactId]=byContact[i.contactId]||[]).push(i);
+  });
+
+  const matchWindowMs=DEAL_INVESTMENT_MATCH_DAYS*24*60*60*1000;
+  INVESTMENT_EVENTS=[];
+  ALL_INVESTMENT_EVENTS=[];
+  ADDED_INVESTMENT_EVENTS=[];
+
+  for(const contactId in byContact){
+    const records=byContact[contactId].sort((a,b)=>a.ts-b.ts);
+    const firstDate=new Date(records[0].ts).toISOString().slice(0,10);
+    const deals=DEALS_BY_CONTACT[contactId]||[];
+
+    for(const rec of records){
+      const recDate=new Date(rec.ts).toISOString().slice(0,10);
+      const isFirst=(recDate===firstDate);
+
+      // Setter attribution cascade — same three-tier shape as setter dashboard.
+      // Tier 0: investment record's own `setter` field.
+      // Tier 1: matching closed-won deal's `setter_owner` within ±MATCH_DAYS.
+      // Tier 2: contact's `setter_owner` as fallback.
+      let setter_owner=null, attribution_source=null;
+      if(rec.setter){
+        setter_owner=rec.setter;
+        attribution_source='investment';
+      } else {
+        const matchingDealsWithSetter=deals.filter(d=>{
+          if(d.dealstage!==CLOSED_WON_STAGE_ID) return false;
+          if(!d.closedate||!d.setter_owner) return false;
+          return Math.abs(d.closedate-rec.ts)<=matchWindowMs;
+        });
+        if(matchingDealsWithSetter.length>0){
+          matchingDealsWithSetter.sort((a,b)=>(a.createdate||0)-(b.createdate||0));
+          setter_owner=matchingDealsWithSetter[0].setter_owner;
+          attribution_source='deal';
+        } else {
+          const contactSetter=CONTACT_SETTER_OWNER[contactId];
+          if(contactSetter){ setter_owner=contactSetter; attribution_source='contact'; }
+        }
+      }
+
+      // Closer attribution cascade — check the individual record's closer field first
+      let closer_owner=null, closer_attribution_source=null;
+      if(rec.closer){
+        closer_owner=rec.closer;
+        closer_attribution_source='investment';
+      } else {
+        const matchingClosedWonDeals=deals.filter(d=>{
+          if(d.dealstage!==CLOSED_WON_STAGE_ID) return false;
+          if(!d.closedate||!d.hubspot_owner_id) return false;
+          return Math.abs(d.closedate-rec.ts)<=matchWindowMs;
+        });
+        if(matchingClosedWonDeals.length>0){
+          matchingClosedWonDeals.sort((a,b)=>(a.createdate||0)-(b.createdate||0));
+          closer_owner=matchingClosedWonDeals[0].hubspot_owner_id;
+          closer_attribution_source='deal';
+        }
+      }
+
+      const event={
+        contactId, ts:rec.ts,
+        totalAmount:rec.amount,
+        recordIds:[rec.id],
+        setter_owner, attribution_source,
+        closer_owner, closer_attribution_source,
+        isFirst,
+      };
+
+      ALL_INVESTMENT_EVENTS.push(event);
+      if(isFirst) INVESTMENT_EVENTS.push(event);
+      else ADDED_INVESTMENT_EVENTS.push(event);
+    }
+  }
+
+  INVESTMENTS_LOADED=true;
+}
+
+/**
+ * Fetch + normalize across whatever chunks are needed for the current range.
+ * Calls are weekly. Meetings are monthly.
+ */
+/**
+ * Run an array of async task factories with limited concurrency.
+ * HubSpot Private App tokens have a ~100 req/10s rate limit; with deep pagination
+ * inside each chunk, even 4-6 parallel chunks can blow past it. Cap at 3.
+ */
+async function runWithConcurrency(tasks, concurrency=3){
+  const results=[];
+  let idx=0;
+  async function worker(){
+    while(idx<tasks.length){
+      const myIdx=idx++;
+      results[myIdx]=await tasks[myIdx]();
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(concurrency, tasks.length)}, worker));
+  return results;
+}
+
+async function ensureChunksLoaded(callWeeks, meetingMonths){
+  const callsToFetch=callWeeks.filter(wk=>!MONTH_CACHE[`calls:${wk}`]);
+  const meetingsToFetch=meetingMonths.filter(mk=>!MONTH_CACHE[`meetings:${mk}`]);
+  const totalNew=callsToFetch.length+meetingsToFetch.length;
+
+  if(totalNew===0){
+    rebuildNormalizedFromCache();
+    return;
+  }
+
+  let done=0;
+  function progress(){
+    done++;
+    lm(`Loading data… ${done}/${totalNew} chunks`);
+  }
+
+  const fetchTasks=[
+    ...callsToFetch.map(wk=>()=>{
+      const [from,to]=weekRangeFromKey(wk);
+      return fetchChunk('calls', CALL_PROPS, wk, from.getTime(), to.getTime()).then(progress);
+    }),
+    ...meetingsToFetch.map(mk=>()=>{
+      const [from,to]=monthRangeFromKey(mk);
+      return fetchChunk('meetings', MEETING_PROPS, mk, from.getTime(), to.getTime()).then(progress);
+    }),
+  ];
+  await runWithConcurrency(fetchTasks, 3);
+
+  lm('Loading contact links…');
+  // Build the assoc-task list from BOTH:
+  //   1. Newly-fetched chunks (always need assocs)
+  //   2. Previously-cached chunks where the assoc fetch never completed
+  //      (chunks NOT in CHUNK_ASSOC_FETCHED). This recovers from prior silent
+  //      failures — without this, a chunk that failed assocs once would stay
+  //      broken across sessions until the cache was manually cleared.
+  const callAssocsToRun = callWeeks.filter(wk =>
+    MONTH_CACHE[`calls:${wk}`] && !CHUNK_ASSOC_FETCHED.has(`calls:${wk}`));
+  const meetingAssocsToRun = meetingMonths.filter(mk =>
+    MONTH_CACHE[`meetings:${mk}`] && !CHUNK_ASSOC_FETCHED.has(`meetings:${mk}`));
+
+  if(callAssocsToRun.length + meetingAssocsToRun.length > 0){
+    console.log(`[ensureChunksLoaded] running assoc fetch on ${callAssocsToRun.length} call chunks + ${meetingAssocsToRun.length} meeting chunks (incl. retries for previously-failed)`);
+  }
+
+  const assocTasks=[
+    ...callAssocsToRun.map(wk=>()=>fetchChunkAssocs('calls', wk, MONTH_CACHE[`calls:${wk}`]||[])),
+    ...meetingAssocsToRun.map(mk=>()=>fetchChunkAssocs('meetings', mk, MONTH_CACHE[`meetings:${mk}`]||[])),
+  ];
+  await runWithConcurrency(assocTasks, 3);
+
+  // Resolve deals for every contact linked to a newly-cached OR newly-assoc'd meeting chunk.
+  const newMeetingContactIds=new Set();
+  const meetingChunksToCheckForNewContacts = [...new Set([...meetingsToFetch, ...meetingAssocsToRun])];
+  meetingChunksToCheckForNewContacts.forEach(mk=>{
+    (MONTH_CACHE[`meetings:${mk}`]||[]).forEach(m=>{
+      const cid=CONTACT_ASSOC_MAP[`meetings:${m.id}`];
+      if(cid) newMeetingContactIds.add(cid);
+    });
+  });
+  if(newMeetingContactIds.size>0){
+    await fetchDealsForContacts([...newMeetingContactIds]);
+  }
+
+  // ─── Self-heal pass for the meeting-assoc race condition ───
+  // Initial-load race: when activity + bookings + investments sections call
+  // this function in parallel for overlapping meeting chunks, meeting assoc
+  // results sometimes don't make it into CONTACT_ASSOC_MAP — the chunks get
+  // marked "done" in CHUNK_ASSOC_FETCHED but no actual entries are written.
+  // Symptom: MEETINGS array fully built but every record has contactId===null,
+  // breaking attribution everywhere downstream.
+  //
+  // We detect this by sampling cached meeting chunks: if <20% of meetings
+  // in a cached chunk have an entry in CONTACT_ASSOC_MAP, the chunk's assocs
+  // failed to land. Force a refetch by removing it from CHUNK_ASSOC_FETCHED
+  // and re-running fetchChunkAssocs.
+  //
+  // Note: this also covers the current-month-chunk case where new meetings
+  // (e.g., today's bookings) get added to a cached chunk but their assocs
+  // never refetch because the chunk is already marked done.
+  const broken=[];
+  for(const mk of meetingMonths){
+    const records=MONTH_CACHE[`meetings:${mk}`];
+    if(!records || records.length===0) continue;
+    if(!CHUNK_ASSOC_FETCHED.has(`meetings:${mk}`)) continue;
+    const sampleSize=Math.min(records.length, 50);
+    const sample=records.slice(0, sampleSize);
+    const withAssoc=sample.filter(r=>CONTACT_ASSOC_MAP[`meetings:${r.id}`]).length;
+    if(withAssoc/sampleSize < 0.20){
+      broken.push(mk);
+    }
+  }
+  if(broken.length>0){
+    console.warn(`[ensureChunksLoaded] self-heal: ${broken.length} meeting chunks have <20% assoc rate — forcing retry on:`, broken);
+    broken.forEach(mk=>CHUNK_ASSOC_FETCHED.delete(`meetings:${mk}`));
+    const healTasks=broken.map(mk=>()=>fetchChunkAssocs('meetings', mk, MONTH_CACHE[`meetings:${mk}`]||[]));
+    await runWithConcurrency(healTasks, 3);
+    const healedContactIds=new Set();
+    broken.forEach(mk=>{
+      (MONTH_CACHE[`meetings:${mk}`]||[]).forEach(m=>{
+        const cid=CONTACT_ASSOC_MAP[`meetings:${m.id}`];
+        if(cid) healedContactIds.add(cid);
+      });
+    });
+    if(healedContactIds.size>0){
+      console.log(`[ensureChunksLoaded] self-heal: fetching deals for ${healedContactIds.size} newly-associated contacts`);
+      await fetchDealsForContacts([...healedContactIds]);
+    }
+  }
+
+  rebuildNormalizedFromCache();
+}
+
+function rebuildNormalizedFromCache(){
+  const callsRaw=[];
+  const meetingsRawAll=[];
+  for(const [k,arr] of Object.entries(MONTH_CACHE)){
+    if(k.startsWith('calls:')) callsRaw.push(...arr);
+    else if(k.startsWith('meetings:')) meetingsRawAll.push(...arr);
+  }
+
+  // Cross-chunk dedupe for meetings. Since fetchChunk now matches on
+  // OR(hs_timestamp, hs_createdate), a meeting booked in one month and scheduled
+  // in a later month appears in BOTH chunks. Without this dedupe, every count
+  // of that meeting would double when both chunks are loaded.
+  const meetingsRaw=[];
+  const seenIds=new Set();
+  for(const r of meetingsRawAll){
+    if(seenIds.has(r.id)) continue;
+    seenIds.add(r.id);
+    meetingsRaw.push(r);
+  }
+
+  CALLS=callsRaw.map(r=>({
+    id:r.id,
+    ts:new Date(r.properties.hs_timestamp).getTime(),
+    ownerId:r.properties.hubspot_owner_id,
+    disposition:r.properties.hs_call_disposition,
+    contactId:CONTACT_ASSOC_MAP[`calls:${r.id}`] || null
+  })).filter(c=>c.ts && c.ownerId);
+
+  MEETINGS=meetingsRaw.map(r=>{
+    const p=r.properties;
+    const rawType=(p.call_and_meeting_type || p.hs_activity_type || '');
+    const rawTypeLower=rawType.toLowerCase();
+    let type='other';
+    let typeSource='property';
+    if(rawTypeLower.includes('intro')) type='intro';
+    else if(rawTypeLower.includes('discovery')) type='discovery';
+    else if(rawTypeLower.includes('decision')) type='decision';
+
+    // Title fallback: SCI-specific synonyms confirmed with Scott:
+    //   "Investor Success Profile" / "ISP" = intro call (manually scheduled by setters)
+    if(type==='other'){
+      const title=(p.hs_meeting_title || '').toLowerCase();
+      if(title){
+        if(title.includes('introductory call') || title.includes('intro call') || title.includes('investor success profile') || title.match(/\bisp\b/)){
+          type='intro';
+          typeSource='title';
+        } else if(title.includes('discovery call') || title.includes('discovery')){
+          type='discovery';
+          typeSource='title';
+        }
+      }
+    }
+
+    // Strict discovery flag: only the official HubSpot enum values count.
+    // This is what the native HubSpot "Setter Discovery Calls Booked" report uses.
+    const isDiscovery=DISCOVERY_TYPES.has(rawType);
+
+    const contactId=CONTACT_ASSOC_MAP[`meetings:${r.id}`] || null;
+    const meetingTs=new Date(p.hs_timestamp).getTime();
+    // hs_meeting_start_time is when the meeting is/was scheduled to occur (vs hs_timestamp
+    // which is when it was logged). Used to detect "still-pending" discoveries — booked
+    // but not yet supposed to have happened.
+    const startTs=p.hs_meeting_start_time ? new Date(p.hs_meeting_start_time).getTime() : null;
+    // hs_createdate is when the meeting record was created in HubSpot — i.e., when
+    // the booking was actually made. Used for booking-anchored metrics where the
+    // closer's activity should be credited to the day they (or their setter) booked,
+    // not the day the call is scheduled to happen. Falls back to hs_timestamp.
+    const createdTs=p.hs_createdate ? new Date(p.hs_createdate).getTime() : meetingTs;
+    const setterViaDeal=resolveMeetingSetter(meetingTs, contactId);
+
+    return {
+      id:r.id,
+      ts:meetingTs,
+      startTs,
+      createdTs,
+      ownerId:p.hubspot_owner_id,
+      outcome:p.hs_meeting_outcome,
+      type,
+      isDiscovery,
+      typeSource,
+      title:p.hs_meeting_title || '',
+      rawType,
+      contactId,
+      setter_owner_via_deal: setterViaDeal,
+      hadPriorCompletedIntro: false,  // populated below
+    };
+  }).filter(m=>m.ts);
+
+  // Post-pass: flag each discovery with whether its contact had a COMPLETED intro
+  // strictly before the discovery's booking timestamp. Used to segment Bookings
+  // section into "from intro" vs "no intro" cohorts.
+  // Build a map: contactId → sorted array of completed-intro timestamps.
+  const completedIntroTsByContact={};
+  MEETINGS.forEach(m=>{
+    if(m.type==='intro' && m.outcome==='COMPLETED' && m.contactId){
+      (completedIntroTsByContact[m.contactId]=completedIntroTsByContact[m.contactId]||[]).push(m.ts);
+    }
+  });
+  // Sort each contact's intro timestamps so we can binary-search if needed
+  // (linear here is fine — typical contact has 1-2 intros).
+  for(const cid in completedIntroTsByContact){
+    completedIntroTsByContact[cid].sort((a,b)=>a-b);
+  }
+  // Now flag discoveries
+  MEETINGS.forEach(m=>{
+    if(m.isDiscovery && m.contactId){
+      const introTs=completedIntroTsByContact[m.contactId];
+      if(introTs && introTs[0]<m.ts){
+        // At least one completed intro exists strictly before this discovery's booking
+        m.hadPriorCompletedIntro=true;
+      }
+    }
+  });
+}
+
+/**
+ * Determine which weeks (for calls) and which months (for meetings) need to be loaded
+ * for the currently selected ranges. v14: three independent ranges (activity, bookings,
+ * investments). We take the UNION of all three to ensure data is loaded for whatever
+ * any section needs.
+ */
+function chunksNeededForCurrentRange(){
+  const ranges=['activity','bookings','investments'].map(getDateRange);
+
+  const fromCandidates=[], toCandidates=[];
+  ranges.forEach(r=>{
+    fromCandidates.push(r.from);
+    toCandidates.push(r.to);
+    if(r.prevFrom){
+      fromCandidates.push(r.prevFrom);
+      toCandidates.push(r.prevTo);
+    }
+  });
+  const minFrom=new Date(Math.min(...fromCandidates.map(d=>d.getTime())));
+  const maxTo=new Date(Math.min(Math.max(...toCandidates.map(d=>d.getTime())), Date.now()));
+
+  return {
+    callWeeks: weeksInRange(minFrom, maxTo),
+    meetingMonths: monthsInRange(minFrom, maxTo),
+  };
+}
+
+/**
+ * Per-range chunk calculator — returns just the chunks needed for ONE section's range
+ * (current period + comparison if any). Used by the parallel section loaders so that
+ * each section only blocks on the chunks it actually needs.
+ */
+function chunksForRange(rangeKey){
+  const r=getDateRange(rangeKey);
+  const fromCandidates=[r.from], toCandidates=[r.to];
+  if(r.prevFrom){
+    fromCandidates.push(r.prevFrom);
+    toCandidates.push(r.prevTo);
+  }
+  const minFrom=new Date(Math.min(...fromCandidates.map(d=>d.getTime())));
+  const maxTo=new Date(Math.min(Math.max(...toCandidates.map(d=>d.getTime())), Date.now()));
+  return {
+    callWeeks: weeksInRange(minFrom, maxTo),
+    meetingMonths: monthsInRange(minFrom, maxTo),
+  };
+}
+
+// ── Load orchestrator ─────────────────────────────────────
+let DISPOSITIONS_LOADED=false;
+let LOADING=false;
+// LOAD_QUEUED is the trailing-call flag. If load() is called while a load is
+// already in progress (LOADING=true), we set this flag and return. When the
+// in-progress load finishes, the finally block checks the flag and re-runs
+// load() once. This collapses rapid dropdown changes into one trailing fetch
+// rather than silently dropping them — which was the v36+ behavior that made
+// section range changes look broken until the user hit Refresh.
+let LOAD_QUEUED=false;
+
+/**
+ * Clear all in-memory caches and re-fetch everything from HubSpot.
+ * Bound to the Refresh button. Without this, the button effectively
+ * just re-renders since cached data is reused.
+ */
+async function forceRefresh(){
+  if(LOADING) return;
+
+  // Clear month-keyed call/meeting cache and the contact-assoc map
+  for(const k of Object.keys(MONTH_CACHE)) delete MONTH_CACHE[k];
+  for(const k of Object.keys(CONTACT_ASSOC_MAP)) delete CONTACT_ASSOC_MAP[k];
+
+  // Clear deal/contact caches
+  for(const k of Object.keys(DEALS_BY_CONTACT)) delete DEALS_BY_CONTACT[k];
+  for(const k of Object.keys(CONTACT_SETTER_OWNER)) delete CONTACT_SETTER_OWNER[k];
+
+  // Reset normalized arrays
+  CALLS.length=0;
+  MEETINGS.length=0;
+  INVESTMENTS.length=0;
+  INVESTMENT_EVENTS.length=0;
+  ALL_INVESTMENT_EVENTS.length=0;
+  ADDED_INVESTMENT_EVENTS.length=0;
+
+  // Force re-fetch on next load() call
+  INVESTMENTS_LOADED=false;
+  // Note: dispositions rarely change; leave DISPOSITIONS_LOADED alone.
+
+  // Reset all section states so they show "Loading…" placeholders again
+  SECTION_STATE.activity='idle';
+  SECTION_STATE.bookings='idle';
+  SECTION_STATE.investments='idle';
+
+  await load();
+}
+
+/**
+ * Section state. Each section ('activity', 'bookings', 'investments') tracks
+ * whether its data has been loaded. render() reads this to draw "Loading…"
+ * placeholders for sections that aren't ready yet.
+ */
+const SECTION_STATE={activity:'idle', bookings:'idle', investments:'idle'};
+
+async function load(){
+  if(LOADING){
+    // A load is already running — queue a trailing re-run instead of dropping
+    // this call. Multiple queued requests collapse into one (we just set the
+    // flag, no queue depth).
+    LOAD_QUEUED=true;
+    return;
+  }
+  LOADING=true;
+  FAILED_CHUNKS.length=0;
+  document.getElementById('btn').disabled=true;
+  st('Loading…','sd');
+  clr();
+  document.getElementById('dash').style.display='block';
+
+  // For each section, check whether it has the data it actually needs.
+  // - Activity: needs calls + meetings in its range
+  // - Bookings: needs meetings only (no calls)
+  // - Investments: needs the global investment+deal data only (no calls/meetings)
+  const sectionNeedsLoad={};
+  for(const rk of ['activity','bookings','investments']){
+    let missing=false;
+    if(rk==='activity'){
+      const c=chunksForRange('activity');
+      missing = c.callWeeks.some(wk=>!MONTH_CACHE[`calls:${wk}`])
+            || c.meetingMonths.some(mk=>!MONTH_CACHE[`meetings:${mk}`]);
+    } else if(rk==='bookings'){
+      const c=chunksForRange('bookings');
+      missing = c.meetingMonths.some(mk=>!MONTH_CACHE[`meetings:${mk}`]);
+    } else if(rk==='investments'){
+      missing = !INVESTMENTS_LOADED;
+    }
+    sectionNeedsLoad[rk] = missing || SECTION_STATE[rk]==='idle' || SECTION_STATE[rk]==='error';
+    if(sectionNeedsLoad[rk]) SECTION_STATE[rk]='loading';
+  }
+
+  // Render now — sections already-cached keep their data; loading sections show skeleton.
+  render();
+
+  try{
+    if(!DISPOSITIONS_LOADED){
+      await loadDispositions();
+      DISPOSITIONS_LOADED=true;
+    }
+
+    // Fire only the sections that actually need work. Already-cached sections
+    // were already rendered with real data above and don't need reloading.
+    const tasks=[];
+    if(sectionNeedsLoad.activity) tasks.push(loadActivitySection());
+    if(sectionNeedsLoad.bookings) tasks.push(loadBookingsSection());
+    if(sectionNeedsLoad.investments) tasks.push(loadInvestmentsSection());
+    const results=await Promise.allSettled(tasks);
+
+    // Final status line — count failures across sections plus any chunk failures.
+    const failedSections=results.filter(r=>r.status==='rejected');
+    if(FAILED_CHUNKS.length>0 || failedSections.length>0){
+      const parts=[];
+      if(FAILED_CHUNKS.length>0) parts.push(`⚠ ${FAILED_CHUNKS.length} chunk${FAILED_CHUNKS.length>1?'s':''} failed`);
+      if(failedSections.length>0) parts.push(`${failedSections.length} section${failedSections.length>1?'s':''} failed`);
+      st(`${CALLS.length.toLocaleString()} calls · ${MEETINGS.length.toLocaleString()} meetings · ${INVESTMENTS.length} investments · ${parts.join(' · ')} — click Refresh to retry`, 'se');
+      results.forEach((r,i)=>{
+        if(r.status==='rejected') console.error(`Section ${['activity','bookings','investments'][i]} failed:`, r.reason);
+      });
+    } else {
+      st(`${CALLS.length.toLocaleString()} calls · ${MEETINGS.length.toLocaleString()} meetings · ${INVESTMENTS.length} investments`,'so');
+    }
+    document.getElementById('ts').textContent='Live · updated '+new Date().toLocaleTimeString();
+
+    // Diagnostics — emitted after everything loads
+    logDiagnostics();
+  }catch(e){
+    st('Error: '+e.message,'se');
+    console.error(e);
+  }finally{
+    LOADING=false;
+    document.getElementById('btn').disabled=false;
+    // Trailing re-run: if any range changes happened while we were loading,
+    // pick them up now. Clear the flag BEFORE re-running so the new load can
+    // queue further changes if they arrive during it.
+    if(LOAD_QUEUED){
+      LOAD_QUEUED=false;
+      // Use setTimeout to break the call chain — without this, the trailing
+      // load runs synchronously inside the current load's promise resolution,
+      // which can make stack traces confusing during debugging.
+      setTimeout(()=>load(), 0);
+    }
+  }
+}
+
+/**
+ * Load meeting chunks needed for Discovery range. The closer dashboard does not
+ * use call data anywhere (closers don't dial — that's setter activity), so
+ * we pass empty callWeeks to skip the calls fetch entirely.
+ * Re-renders the Discovery Activity section when ready.
+ */
+async function loadActivitySection(){
+  try{
+    const chunks=chunksForRange('activity');
+    await ensureChunksLoaded([], chunks.meetingMonths);
+    SECTION_STATE.activity='ready';
+    render();
+  }catch(e){
+    SECTION_STATE.activity='error';
+    render();
+    throw e;
+  }
+}
+
+/**
+ * Load chunks for Bookings range. Bookings metrics (Discovery Booked/Completed/No-Shows)
+ * are derived from MEETINGS only — calls are not needed. Discoveries need deal+contact
+ * attribution, which ensureChunksLoaded handles via the meetings path.
+ */
+async function loadBookingsSection(){
+  try{
+    const chunks=chunksForRange('bookings');
+    // Pass empty callWeeks — Bookings doesn't read CALLS.
+    await ensureChunksLoaded([], chunks.meetingMonths);
+    SECTION_STATE.bookings='ready';
+    render();
+  }catch(e){
+    SECTION_STATE.bookings='error';
+    render();
+    throw e;
+  }
+}
+
+/**
+ * Load data for Investments section. Investment metrics come from the global
+ * investment custom-object pull — no calls or meetings needed. The deal cascade
+ * is built inside fetchAllInvestments, so once that completes, render is ready.
+ */
+async function loadInvestmentsSection(){
+  try{
+    if(!INVESTMENTS_LOADED){
+      await fetchAllInvestments();
+      rebuildNormalizedFromCache();
+    }
+    SECTION_STATE.investments='ready';
+    render();
+  }catch(e){
+    SECTION_STATE.investments='error';
+    render();
+    throw e;
+  }
+}
+
+function logDiagnostics(){
+  const meetingTypes=MEETINGS.reduce((a,m)=>{a[m.type]=(a[m.type]||0)+1;return a;},{});
+  const discoveries=MEETINGS.filter(m=>m.isDiscovery);
+  const discBySetter={};
+  discoveries.forEach(d=>{
+    const s=d.setter_owner_via_deal;
+    const name=SETTERS[s]||(s?`Other (${s})`:'(no setter)');
+    discBySetter[name]=(discBySetter[name]||0)+1;
+  });
+  console.log('═══ v16 Diagnostics ═══');
+  console.log('Meeting types:', meetingTypes);
+  console.log(`Discoveries (strict): ${discoveries.length}`);
+  console.log('Discoveries by setter (deal→contact cascade):', discBySetter);
+  console.log(`Investments loaded: ${INVESTMENTS.length}, New Money events: ${INVESTMENT_EVENTS.length}, All Money events: ${ALL_INVESTMENT_EVENTS.length}, Added Money events: ${ADDED_INVESTMENT_EVENTS.length}`);
+  const sourceBreakdown={deal:0, contact:0, unattributed:0};
+  const eventsBySetter={};
+  const dollarsBySetter={};
+  INVESTMENT_EVENTS.forEach(e=>{
+    if(e.attribution_source==='deal') sourceBreakdown.deal++;
+    else if(e.attribution_source==='contact') sourceBreakdown.contact++;
+    else sourceBreakdown.unattributed++;
+    const name=SETTERS[e.setter_owner]||(e.setter_owner?`Other (${e.setter_owner})`:'(no setter)');
+    eventsBySetter[name]=(eventsBySetter[name]||0)+1;
+    dollarsBySetter[name]=(dollarsBySetter[name]||0)+e.totalAmount;
+  });
+  console.log('Investment attribution source:', sourceBreakdown);
+  console.log('Investment events by setter (after cascade):', eventsBySetter);
+  console.log('Investment dollars by setter:', Object.fromEntries(Object.entries(dollarsBySetter).map(([k,v])=>[k,'$'+Math.round(v).toLocaleString()])));
+}
+
+// ── Metric calculation ────────────────────────────────────
+
+/**
+ * Calculate every metric for a given closer ID (or 'all', or 'unattributed') over a date window.
+ *
+ * Closer attribution differs from setter attribution by being much simpler:
+ *   - Discoveries / Decisions: meeting.hubspot_owner_id directly.
+ *     A diagnostic on live data showed 99% of decision meetings and 99% of
+ *     discovery meetings are owned directly by one of the three closer IDs,
+ *     so no deal-cascade is needed for activity rows.
+ *   - Investments: cascade —
+ *       (a) investment.closer field if set,
+ *       (b) matching closed-won deal's hubspot_owner_id (deal owner = closer),
+ *       (c) otherwise unattributed.
+ *
+ * The "Unattributed" column captures records where this resolves to null OR to
+ * a non-current-closer ID (Alex Z, Daniel A — both AMs on a different dashboard,
+ * or any historical/admin owner).
+ */
+
+function calcMetrics(setterId, fromMs, toMs){
+  if(!fromMs || !toMs) return null;
+
+  const isUnattributed = setterId==='unattributed';
+  // matchSetter is named for legacy compatibility with rendering code, but here
+  // it's matching closer IDs.
+  const matchSetter = (id)=>{
+    if(setterId==='all') return !!id && SETTER_IDS.indexOf(id)>=0;
+    if(isUnattributed) return !id || SETTER_IDS.indexOf(id)<0;
+    return id===setterId;
+  };
+
+  const nowMs=Date.now();
+
+  // ─── Section 1: Discovery Activity ───
+  // Direct meeting-owner attribution. Cohort anchored on booking creation date
+  // (createdTs) — the closer's activity is credited to when they got assigned
+  // the discovery, not when the call is scheduled to happen. Outcome resolution
+  // (pending vs resolved, completed vs no-show) still uses scheduled time.
+  const discInWin=MEETINGS.filter(m=>{
+    const anchorTs=m.createdTs||m.ts;
+    if(anchorTs<fromMs||anchorTs>toMs) return false;
+    if(!m.isDiscovery) return false;
+    return matchSetter(m.ownerId);
+  });
+
+  function meetingCohort(subset){
+    const booked=subset.length;
+    const pending=subset.filter(m=>m.startTs && m.startTs>nowMs).length;
+    const resolved=booked-pending;
+    const completed=subset.filter(m=>m.outcome==='COMPLETED').length;
+    const noShow=subset.filter(m=>m.outcome==='NO_SHOW').length;
+    const rescheduled=subset.filter(m=>m.outcome==='RESCHEDULED').length;
+    // Held = past meetings whose outcome is NOT explicitly a failure
+    // (NO_SHOW / RESCHEDULED / CANCELED / DISQUALIFIED). Includes
+    // un-dispositioned past meetings — they probably happened but weren't
+    // tagged. More permissive than COMPLETED (which requires explicit
+    // dispositioning) and more meaningful than just "resolved" (which lumps
+    // failures with successes). Same definition as setter-v45.
+    const held=subset.filter(m=>{
+      const ts = m.startTs || m.ts;
+      if(!ts || ts>nowMs) return false; // future-scheduled doesn't count
+      if(m.outcome && NON_HAPPENED_OUTCOMES.has(m.outcome)) return false;
+      return true;
+    }).length;
+    return {booked, pending, resolved, completed, noShow, rescheduled, held};
+  }
+
+  const disc=meetingCohort(discInWin);
+  const discFromIntro=meetingCohort(discInWin.filter(m=>m.hadPriorCompletedIntro));
+  const discNoIntro=meetingCohort(discInWin.filter(m=>!m.hadPriorCompletedIntro));
+
+  // ─── Section 2: Decision Activity ───
+  // Same direct meeting-owner attribution. Cohort anchored on booking creation
+  // date (createdTs) so the closer is credited for when the decision was booked.
+  // Decisions have a meaningful RESCHEDULED count (real friction signal) so we
+  // surface that as its own row.
+  const decInWin=MEETINGS.filter(m=>{
+    const anchorTs=m.createdTs||m.ts;
+    if(anchorTs<fromMs||anchorTs>toMs) return false;
+    if(m.type!=='decision') return false;
+    return matchSetter(m.ownerId);
+  });
+  const dec=meetingCohort(decInWin);
+
+  // ─── Section 3: Funded Investments ───
+  // Closer-cascade attribution via INVESTMENT_EVENTS[].closer_owner.
+  // Investment section uses the wider INV_PERSON_IDS roster (closers + AMs).
+  // "Overall" (setterId==='all') = grand total of ALL records, including unattributed.
+  const matchInvPerson = (id)=>{
+    if(setterId==='all') return true;
+    if(isUnattributed) return !id || INV_PERSON_IDS.indexOf(id)<0;
+    return id===setterId;
+  };
+
+  // New Money (first investment per contact)
+  const invEventsInWin=INVESTMENT_EVENTS.filter(e=>{
+    if(e.ts<fromMs||e.ts>toMs) return false;
+    return matchInvPerson(e.closer_owner);
+  });
+  const newMoneyContacts=new Set(invEventsInWin.map(e=>e.contactId)).size;
+  const investmentsFunded=newMoneyContacts;
+  const investmentAmount=invEventsInWin.reduce((s,e)=>s+e.totalAmount,0);
+  const avgInvestmentAmount=newMoneyContacts>0 ? Math.round(investmentAmount/newMoneyContacts) : 0;
+
+  // All Money (every investment — first + repeat)
+  const allInvInWin=ALL_INVESTMENT_EVENTS.filter(e=>{
+    if(e.ts<fromMs||e.ts>toMs) return false;
+    return matchInvPerson(e.closer_owner);
+  });
+  const allInvContacts=new Set(allInvInWin.map(e=>e.contactId)).size;
+  const allInvFunded=allInvContacts;
+  const allInvAmount=allInvInWin.reduce((s,e)=>s+e.totalAmount,0);
+  const allInvAvg=allInvContacts>0 ? Math.round(allInvAmount/allInvContacts) : 0;
+
+  // Added Money (repeat/follow-on only — not first per contact)
+  const addedInvInWin=ADDED_INVESTMENT_EVENTS.filter(e=>{
+    if(e.ts<fromMs||e.ts>toMs) return false;
+    return matchInvPerson(e.closer_owner);
+  });
+  const addedInvContacts=new Set(addedInvInWin.map(e=>e.contactId)).size;
+  const addedInvFunded=addedInvContacts;
+  const addedInvAmount=addedInvInWin.reduce((s,e)=>s+e.totalAmount,0);
+  const addedInvAvg=addedInvContacts>0 ? Math.round(addedInvAmount/addedInvContacts) : 0;
+
+  return {
+    // Discovery activity (Section 1)
+    discBooked: disc.booked,
+    discCompleted: disc.completed,
+    discNoShow: disc.noShow,
+    discPending: disc.pending,
+    discResolved: disc.resolved,
+    discHeld: disc.held,
+
+    discBookedFromIntro: discFromIntro.booked,
+    discCompletedFromIntro: discFromIntro.completed,
+    discNoShowFromIntro: discFromIntro.noShow,
+    discPendingFromIntro: discFromIntro.pending,
+    discResolvedFromIntro: discFromIntro.resolved,
+    discHeldFromIntro: discFromIntro.held,
+
+    discBookedNoIntro: discNoIntro.booked,
+    discCompletedNoIntro: discNoIntro.completed,
+    discNoShowNoIntro: discNoIntro.noShow,
+    discPendingNoIntro: discNoIntro.pending,
+    discResolvedNoIntro: discNoIntro.resolved,
+    discHeldNoIntro: discNoIntro.held,
+
+    // Decision activity (Section 2)
+    decBooked: dec.booked,
+    decCompleted: dec.completed,
+    decNoShow: dec.noShow,
+    decRescheduled: dec.rescheduled,
+    decPending: dec.pending,
+    decResolved: dec.resolved,
+    decHeld: dec.held,
+
+    // Funded investments (Section 3)
+    investmentsFunded,
+    investmentAmount,
+    avgInvestmentAmount,
+
+    // All money (first + repeat)
+    allInvFunded,
+    allInvAmount,
+    allInvAvg,
+
+    // Added money (repeat/follow-on only)
+    addedInvFunded,
+    addedInvAmount,
+    addedInvAvg,
+  };
+}
+
+// ── Drill-down helpers ────────────────────────────────────
+// canDrillMetric(metric, curRow, colId) → bool
+//   Returns true if a cell for `metric` in column `colId` should be clickable.
+//   Currency average has no underlying event list of its own, so don't drill it.
+//   Cells with no records (count is 0 / null) stay unclickable.
+function canDrillMetric(metric, curRow, colId){
+  if(!curRow) return false;
+  // Don't drill the averages — they're derived statistics, not event counts.
+  if(metric.key==='avgInvestmentAmount' || metric.key==='allInvAvg' || metric.key==='addedInvAvg') return false;
+  const v=curRow[metric.key];
+  if(v===null || v===undefined || v===0) return false;
+  return true;
+}
+
+// Return the records that contributed to the cell at (metric, columnId, rangeKey).
+// Mirrors the filtering inside calcMetrics so the drill-down list is exactly the
+// records that produced the displayed number.
+function getRecordsForCell(metricKey, columnId, rangeKey, period='cur'){
+  const range=getDateRange(rangeKey);
+  if(!range) return {records:[], type:null};
+  // Pick window — current period uses from/to; previous uses prevFrom/prevTo.
+  const winFrom = period==='prev' ? range.prevFrom : range.from;
+  const winTo   = period==='prev' ? range.prevTo   : range.to;
+  if(!winFrom || !winTo) return {records:[], type:null};
+  const fromMs=winFrom.getTime(), toMs=winTo.getTime();
+
+  const isUnattributed=columnId==='unattributed';
+  const matchOwner=(id)=>{
+    if(columnId==='all'||columnId==='overall') return !!id && SETTER_IDS.indexOf(id)>=0;
+    if(isUnattributed) return !id || SETTER_IDS.indexOf(id)<0;
+    return id===columnId;
+  };
+
+  // Discovery metrics — filter MEETINGS by isDiscovery + meeting.ownerId
+  // Cohort anchored on booking creation date (createdTs), matching Section 1.
+  if(metricKey.startsWith('disc')){
+    let recs=MEETINGS.filter(m=>{
+      const anchorTs=m.createdTs||m.ts;
+      if(anchorTs<fromMs||anchorTs>toMs) return false;
+      if(!m.isDiscovery) return false;
+      return matchOwner(m.ownerId);
+    });
+    // Subset filters: From Intro / No Intro
+    if(metricKey.includes('FromIntro')) recs=recs.filter(m=>m.hadPriorCompletedIntro);
+    else if(metricKey.includes('NoIntro')) recs=recs.filter(m=>!m.hadPriorCompletedIntro);
+    // Outcome filters: Completed / NoShow / Held
+    if(metricKey.includes('Completed')) recs=recs.filter(m=>m.outcome==='COMPLETED');
+    else if(metricKey.includes('NoShow')) recs=recs.filter(m=>m.outcome==='NO_SHOW');
+    else if(metricKey.includes('Held')){
+      // Same definition as meetingCohort.held — past + not explicitly failed.
+      const nowMsHeld = Date.now();
+      recs=recs.filter(m=>{
+        const ts = m.startTs || m.ts;
+        if(!ts || ts > nowMsHeld) return false;
+        if(m.outcome && NON_HAPPENED_OUTCOMES.has(m.outcome)) return false;
+        return true;
+      });
+    }
+    return {records:recs, type:'meeting'};
+  }
+
+  // Decision metrics — filter MEETINGS by type==='decision' + meeting.ownerId
+  // Cohort anchored on booking creation date (createdTs), matching Section 2.
+  if(metricKey.startsWith('dec')){
+    let recs=MEETINGS.filter(m=>{
+      const anchorTs=m.createdTs||m.ts;
+      if(anchorTs<fromMs||anchorTs>toMs) return false;
+      if(m.type!=='decision') return false;
+      return matchOwner(m.ownerId);
+    });
+    if(metricKey==='decCompleted') recs=recs.filter(m=>m.outcome==='COMPLETED');
+    else if(metricKey==='decNoShow') recs=recs.filter(m=>m.outcome==='NO_SHOW');
+    else if(metricKey==='decRescheduled') recs=recs.filter(m=>m.outcome==='RESCHEDULED');
+    else if(metricKey==='decHeld'){
+      const nowMsHeld = Date.now();
+      recs=recs.filter(m=>{
+        const ts = m.startTs || m.ts;
+        if(!ts || ts > nowMsHeld) return false;
+        if(m.outcome && NON_HAPPENED_OUTCOMES.has(m.outcome)) return false;
+        return true;
+      });
+    }
+    return {records:recs, type:'meeting'};
+  }
+
+  // Investment metrics — filter by closer_owner cascade using INV_PERSON_IDS roster.
+  // Overall = grand total (all records including unattributed).
+  const matchInvOwner=(id)=>{
+    if(columnId==='all'||columnId==='overall') return true;
+    if(isUnattributed) return !id || INV_PERSON_IDS.indexOf(id)<0;
+    return id===columnId;
+  };
+
+  // New Money metrics
+  if(metricKey==='investmentsFunded' || metricKey==='investmentAmount'){
+    const recs=INVESTMENT_EVENTS.filter(e=>{
+      if(e.ts<fromMs||e.ts>toMs) return false;
+      return matchInvOwner(e.closer_owner);
+    });
+    return {records:recs, type:'investment'};
+  }
+
+  // All Money metrics
+  if(metricKey==='allInvFunded' || metricKey==='allInvAmount'){
+    const recs=ALL_INVESTMENT_EVENTS.filter(e=>{
+      if(e.ts<fromMs||e.ts>toMs) return false;
+      return matchInvOwner(e.closer_owner);
+    });
+    return {records:recs, type:'investment'};
+  }
+
+  // Added Money metrics
+  if(metricKey==='addedInvFunded' || metricKey==='addedInvAmount'){
+    const recs=ADDED_INVESTMENT_EVENTS.filter(e=>{
+      if(e.ts<fromMs||e.ts>toMs) return false;
+      return matchInvOwner(e.closer_owner);
+    });
+    return {records:recs, type:'investment'};
+  }
+
+  return {records:[], type:null};
+}
+
+// Look up the column display label (closer name / Overall / Unattributed)
+function columnDisplayLabel(c){
+  if(c==='overall'||c==='all') return 'Overall';
+  if(c==='unattributed') return 'Unattributed';
+  return INV_PERSONS[c] || SETTERS[c] || c;
+}
+
+// Look up a metric's display label across all groups
+function findMetricLabel(metricKey){
+  for(const g of METRIC_GROUPS){
+    for(const m of g.metrics){
+      if(m.key===metricKey) return m.label;
+    }
+  }
+  return metricKey;
+}
+
+// Build the HubSpot Contact record URL.
+const HS_PORTAL_ID='23126809';
+function hubspotContactUrl(contactId){
+  if(!contactId) return null;
+  return `https://app.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-1/${contactId}`;
+}
+
+// Currency-fmt for drill-down rows (slightly more granular than the cell formatter)
+function fmtCurrencyExact(n){
+  if(n===null||n===undefined) return '$0';
+  if(Math.abs(n)>=1e6) return '$'+(n/1e6).toFixed(2)+'M';
+  if(Math.abs(n)>=1e3) return '$'+(n/1e3).toFixed(1)+'K';
+  return '$'+Math.round(n).toLocaleString();
+}
+
+// Format a date for display in drill-down rows
+function fmtDate(ms){
+  if(!ms) return '—';
+  const d=new Date(ms);
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+}
+
+// Outcome → CSS class for the small status tag
+function outcomeTagClass(outcome){
+  if(outcome==='COMPLETED') return 'completed';
+  if(outcome==='NO_SHOW') return 'no-show';
+  if(outcome==='RESCHEDULED') return 'rescheduled';
+  if(outcome==='SCHEDULED') return 'scheduled';
+  if(outcome==='CANCELED') return 'canceled';
+  if(outcome==='DISQUALIFIED') return 'disqualified';
+  return 'scheduled';
+}
+function outcomeTagLabel(outcome){
+  if(!outcome) return 'No outcome';
+  return outcome.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+// Lookup whether a contact has a funded investment (by checking INVESTMENT_EVENTS).
+// Used to show a "funded" / "unfunded" tag on decision-call drill-downs.
+const FUNDED_CONTACT_INDEX={};
+function rebuildFundedContactIndex(){
+  for(const k in FUNDED_CONTACT_INDEX) delete FUNDED_CONTACT_INDEX[k];
+  ALL_INVESTMENT_EVENTS.forEach(e=>{
+    if(!e.contactId) return;
+    const existing=FUNDED_CONTACT_INDEX[e.contactId];
+    if(existing){
+      existing.amount+=e.totalAmount;
+      if(e.ts<existing.ts) existing.ts=e.ts;
+    } else {
+      FUNDED_CONTACT_INDEX[e.contactId]={ts:e.ts, amount:e.totalAmount};
+    }
+  });
+}
+
+// Cache for contact name lookups (firstname, lastname). Populated lazily on
+// drill-down open. Once a contact is loaded, never re-fetched.
+const CONTACT_NAME_CACHE={};
+async function fetchContactNames(contactIds){
+  const need=contactIds.filter(id=>id && !(id in CONTACT_NAME_CACHE));
+  if(need.length===0) return;
+  for(let i=0;i<need.length;i+=100){
+    const batch=need.slice(i,i+100);
+    try{
+      const d=await api('/crm/v3/objects/contacts/batch/read', {
+        inputs:batch.map(id=>({id:String(id)})),
+        properties:['firstname','lastname','email']
+      });
+      (d.results||[]).forEach(c=>{
+        const p=c.properties||{};
+        const name=[p.firstname,p.lastname].filter(Boolean).join(' ').trim();
+        CONTACT_NAME_CACHE[String(c.id)] = {
+          name: name || (p.email || `Contact ${c.id}`),
+          email: p.email || null
+        };
+      });
+      // Mark requested-but-missing contacts so we don't keep re-asking
+      batch.forEach(id=>{
+        if(!(id in CONTACT_NAME_CACHE)) CONTACT_NAME_CACHE[id]={name:`Contact ${id}`, email:null};
+      });
+    }catch(e){
+      console.warn('Contact name fetch error', e);
+      batch.forEach(id=>{
+        if(!(id in CONTACT_NAME_CACHE)) CONTACT_NAME_CACHE[id]={name:`Contact ${id}`, email:null};
+      });
+    }
+  }
+}
+
+// State for the drill-down panel
+let DD_OPEN=false;
+
+async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
+  const panel=document.getElementById('dd-panel');
+  const backdrop=document.getElementById('dd-backdrop');
+  const body=document.getElementById('dd-body');
+
+  // Header text
+  document.getElementById('dd-title').textContent =
+    findMetricLabel(metricKey) + ' — ' + columnDisplayLabel(columnId);
+  const range=getDateRange(rangeKey);
+  // Pick which window to drill into. The current period uses range.from/to;
+  // the previous period uses range.prevFrom/prevTo, with prevLabel for context.
+  const useFrom = period==='prev' ? range.prevFrom : range.from;
+  const useTo   = period==='prev' ? range.prevTo   : range.to;
+  const periodLabel = period==='prev'
+    ? (range.prevLabel || 'Previous period')
+    : range.label;
+  document.getElementById('dd-sub').textContent =
+    useFrom && useTo ? `${periodLabel} (${ymd(useFrom)} → ${ymd(useTo)})` : '';
+
+  // Show panel + loading state
+  body.innerHTML='<div class="dd-loading"><div class="spin"></div><div>Loading records…</div></div>';
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  backdrop.classList.add('open');
+  DD_OPEN=true;
+
+  // Resolve records for this cell, using the requested period
+  const {records, type}=getRecordsForCell(metricKey, columnId, rangeKey, period);
+
+  if(records.length===0){
+    body.innerHTML='<div class="dd-empty">No records to show for this cell.</div>';
+    return;
+  }
+
+  // Lazy-fetch contact names for any records we don't have cached
+  rebuildFundedContactIndex();
+  const contactIds=[...new Set(records.map(r=>r.contactId).filter(Boolean))];
+  await fetchContactNames(contactIds);
+
+  // Sort records by date descending (most recent first)
+  records.sort((a,b)=>b.ts-a.ts);
+
+  // Render each record as a row. Format depends on record type.
+  let html='';
+  if(type==='meeting'){
+    records.forEach(m=>{
+      const cn=m.contactId ? CONTACT_NAME_CACHE[m.contactId] : null;
+      const url=m.contactId ? hubspotContactUrl(m.contactId) : null;
+      const name=cn ? cn.name : (m.title || 'Unknown contact');
+      const nameHtml=url
+        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
+      const owner=m.ownerId && INV_PERSONS[m.ownerId] ? INV_PERSONS[m.ownerId] : (m.ownerId ? 'Other owner' : 'No owner');
+      const isPending=m.startTs && m.startTs>Date.now();
+      const outcomeForTag = isPending ? 'SCHEDULED' : (m.outcome || null);
+      const tagClass=outcomeTagClass(outcomeForTag);
+      const tagLabel=isPending ? 'Pending' : outcomeTagLabel(m.outcome);
+      // Funded indicator — useful for spotting "completed but unfunded"
+      const fundedInfo=m.contactId ? FUNDED_CONTACT_INDEX[m.contactId] : null;
+      const fundedTag=fundedInfo
+        ? `<span class="dd-tag funded">Funded ${fmtCurrencyExact(fundedInfo.amount)}</span>`
+        : (m.outcome==='COMPLETED' ? '<span class="dd-tag unfunded">Not funded</span>' : '');
+      // Date display: show "Booked X · Scheduled Y" when those differ; single
+      // date otherwise. createdTs is when the booking was made (cohort anchor),
+      // m.ts/startTs is when the call is/was scheduled. They differ when a setter
+      // books a future-dated call.
+      const bookedDay = m.createdTs ? fmtDate(m.createdTs) : null;
+      const schedDay = m.startTs ? fmtDate(m.startTs) : fmtDate(m.ts);
+      const dateDisplay = (bookedDay && bookedDay !== schedDay)
+        ? `Booked ${bookedDay} · Scheduled ${schedDay}`
+        : schedDay;
+      html+=`<div class="dd-row">
+        <div class="dd-row-main">
+          ${nameHtml}
+          <div class="dd-row-meta">${dateDisplay} · ${escapeHtml(owner)}${m.title?` · ${escapeHtml(m.title)}`:''}</div>
+        </div>
+        <div class="dd-row-tags">
+          <span class="dd-tag ${tagClass}">${tagLabel}</span>
+          ${fundedTag}
+        </div>
+      </div>`;
+    });
+  }
+  else if(type==='investment'){
+    records.forEach(e=>{
+      const cn=e.contactId ? CONTACT_NAME_CACHE[e.contactId] : null;
+      const url=e.contactId ? hubspotContactUrl(e.contactId) : null;
+      const name=cn ? cn.name : 'Unknown contact';
+      const nameHtml=url
+        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
+      const owner=e.closer_owner && INV_PERSONS[e.closer_owner]
+        ? INV_PERSONS[e.closer_owner]
+        : (e.closer_owner ? 'Other closer' : 'No closer');
+      const source=e.closer_attribution_source==='investment'
+        ? 'attributed via investment.closer'
+        : (e.closer_attribution_source==='deal' ? 'attributed via deal owner' : 'unattributed');
+      html+=`<div class="dd-row">
+        <div class="dd-row-main">
+          ${nameHtml}
+          <div class="dd-row-meta">${fmtDate(e.ts)} · ${escapeHtml(owner)} · ${escapeHtml(source)}</div>
+        </div>
+        <div class="dd-row-tags">
+          <span class="dd-tag amount">${fmtCurrencyExact(e.totalAmount)}</span>
+          <span class="dd-tag funded">Funded</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  body.innerHTML=html;
+}
+
+function closeDrilldown(){
+  document.getElementById('dd-panel').classList.remove('open');
+  document.getElementById('dd-panel').setAttribute('aria-hidden','true');
+  document.getElementById('dd-backdrop').classList.remove('open');
+  DD_OPEN=false;
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// Esc closes drill-down or guide panel (whichever is open)
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(GUIDE_OPEN) closeHelp();
+    else if(DD_OPEN) closeDrilldown();
+  }
+});
+
+// ── Guide panel ───────────────────────────────────────────
+let GUIDE_OPEN=false;
+function openHelp(){
+  // If the drill-down panel is open, close it first so the two panels don't overlap.
+  if(DD_OPEN) closeDrilldown();
+  document.getElementById('guide-panel').classList.add('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','false');
+  document.getElementById('guide-backdrop').classList.add('open');
+  GUIDE_OPEN=true;
+}
+function closeHelp(){
+  document.getElementById('guide-panel').classList.remove('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','true');
+  document.getElementById('guide-backdrop').classList.remove('open');
+  GUIDE_OPEN=false;
+}
+
+// ── Metric definitions for rendering ──────────────────────
+// `rate` config drives ratio displays:
+//   {of: 'denominatorKey', as: 'headline'|'subtext'}
+//   - 'headline' shows the % as the big number, raw count as subtext
+//   - 'subtext'  shows the raw count as the big number, % as a smaller line
+const METRIC_GROUPS=[
+  {
+    title:'Discovery Activity',
+    rangeKey:'activity',
+    cls:'section-activity',
+    note:'Discovery calls owned directly by the closer in the activity range. Closer credit follows meeting.hubspot_owner_id (a diagnostic on live data confirmed 99% of discovery meetings are owned directly by a closer). Completion and no-show rates are computed against the resolved cohort (bookings whose scheduled meeting time has passed); pending bookings are reported separately. The "From Intro" / "No Intro" subsets segment by whether the contact had a completed intro before the discovery booking.',
+    metrics:[
+      // All discoveries
+      {key:'discBooked', label:'Discovery Calls Booked', sub:'discoveries owned by the closer', lowerIsBetter:false,
+        pendingKey:'discPending', subgroup:'all'},
+      // Held rate — past + not explicitly failed. The "did the booking
+      // translate into an actual meeting" signal, independent of strict
+      // dispositioning. A low held rate suggests confirmation-workflow or
+      // lead-quality issues regardless of how the meeting was dispositioned.
+      {key:'discHeld', label:'Discovery Calls Held', sub:'held rate of bookings', lowerIsBetter:false,
+        rate:{of:'discBooked', as:'headline'}, subgroup:'all'},
+      {key:'discCompleted', label:'Discovery Calls Completed', sub:'completion rate of resolved bookings', lowerIsBetter:false,
+        rate:{of:'discResolved', as:'headline'}, subgroup:'all'},
+      {key:'discNoShow', label:'Discovery No-Shows', sub:'no-show rate of resolved bookings', lowerIsBetter:true,
+        rate:{of:'discResolved', as:'headline'}, subgroup:'all'},
+
+      // From-intro subset
+      {key:'discBookedFromIntro', label:'From Intro: Discovery Calls Booked', sub:'subset with prior completed intro', lowerIsBetter:false,
+        pendingKey:'discPendingFromIntro', subgroup:'fromIntro'},
+      {key:'discHeldFromIntro', label:'From Intro: Discovery Calls Held', sub:'held rate of subset', lowerIsBetter:false,
+        rate:{of:'discBookedFromIntro', as:'headline'}, subgroup:'fromIntro'},
+      {key:'discCompletedFromIntro', label:'From Intro: Discovery Calls Completed', sub:'completion rate of resolved subset', lowerIsBetter:false,
+        rate:{of:'discResolvedFromIntro', as:'headline'}, subgroup:'fromIntro'},
+      {key:'discNoShowFromIntro', label:'From Intro: Discovery No-Shows', sub:'no-show rate of resolved subset', lowerIsBetter:true,
+        rate:{of:'discResolvedFromIntro', as:'headline'}, subgroup:'fromIntro'},
+
+      // No-intro subset
+      {key:'discBookedNoIntro', label:'No Intro: Discovery Calls Booked', sub:'subset with no prior completed intro', lowerIsBetter:false,
+        pendingKey:'discPendingNoIntro', subgroup:'noIntro'},
+      {key:'discHeldNoIntro', label:'No Intro: Discovery Calls Held', sub:'held rate of subset', lowerIsBetter:false,
+        rate:{of:'discBookedNoIntro', as:'headline'}, subgroup:'noIntro'},
+      {key:'discCompletedNoIntro', label:'No Intro: Discovery Calls Completed', sub:'completion rate of resolved subset', lowerIsBetter:false,
+        rate:{of:'discResolvedNoIntro', as:'headline'}, subgroup:'noIntro'},
+      {key:'discNoShowNoIntro', label:'No Intro: Discovery No-Shows', sub:'no-show rate of resolved subset', lowerIsBetter:true,
+        rate:{of:'discResolvedNoIntro', as:'headline'}, subgroup:'noIntro'},
+    ]
+  },
+  {
+    title:'Decision Activity',
+    rangeKey:'bookings',
+    cls:'section-conn',
+    note:'Decision calls owned by the closer in the decision range. Closer credit follows meeting.hubspot_owner_id directly. Completion / no-show rates use the resolved cohort denominator (booked minus pending). Reschedules are tracked as their own metric — they are not no-shows, but they are real friction signal.',
+    metrics:[
+      {key:'decBooked', label:'Decision Calls Booked', sub:'decisions owned by the closer', lowerIsBetter:false,
+        pendingKey:'decPending'},
+      {key:'decHeld', label:'Decision Calls Held', sub:'held rate of bookings', lowerIsBetter:false,
+        rate:{of:'decBooked', as:'headline'}},
+      {key:'decCompleted', label:'Decision Calls Completed', sub:'completion rate of resolved bookings', lowerIsBetter:false,
+        rate:{of:'decResolved', as:'headline'}},
+      {key:'decNoShow', label:'Decision No-Shows', sub:'no-show rate of resolved bookings', lowerIsBetter:true,
+        rate:{of:'decResolved', as:'headline'}},
+      {key:'decRescheduled', label:'Decision Reschedules', sub:'rescheduled decision calls', lowerIsBetter:true,
+        rate:{of:'decResolved', as:'subtext', subLabel:'of resolved bookings'}},
+    ]
+  },
+  {
+    title:'Funded Investments',
+    rangeKey:'investments',
+    cls:'section-conn',
+    note:'Investment activity in the selected range — three views of the same data. All Money is every funded contact. New Money is first-time fundings only (investor acquisition). Added Money is repeat/follow-on fundings from existing investors. Counts are per unique contact; dollar totals sum every investment record. A contact who splits $200K across two fund classes on the same date is one investor in the count, $200K in the dollar total. Dollar totals reconcile with the Sunrise Investment Dashboard; investor counts may differ because Sunrise counts records, not contacts. Closer credit follows investment.closer if set, otherwise the matching closed-won deal\'s owner (within ±30 days of funds received). Daniel A. and Alex Z. (AMs) appear as columns here because they own relationship management for many repeat fundings, but closers also retain some clients for added money.',
+    metrics:[
+      // All Money subgroup
+      {key:'allInvFunded', label:'All Investors Active', sub:'unique contacts with any funding in range', lowerIsBetter:false, subgroup:'allMoney'},
+      {key:'allInvAmount', label:'All Money Raised', sub:'total dollars from all investment records', lowerIsBetter:false, format:'currency', subgroup:'allMoney'},
+      {key:'allInvAvg', label:'Avg Ticket (all money)', sub:'per unique contact', lowerIsBetter:false, format:'currency', subgroup:'allMoney'},
+
+      // New Money subgroup
+      {key:'investmentsFunded', label:'New Investors Acquired', sub:'unique contacts with first-ever funding in range', lowerIsBetter:false, subgroup:'newMoney'},
+      {key:'investmentAmount', label:'New Money Raised', sub:'total dollars from first-time fundings', lowerIsBetter:false, format:'currency', subgroup:'newMoney'},
+      {key:'avgInvestmentAmount', label:'Avg Ticket (new money)', sub:'per new investor (contact)', lowerIsBetter:false, format:'currency', subgroup:'newMoney'},
+
+      // Added Money subgroup
+      {key:'addedInvFunded', label:'Repeat Investors Active', sub:'unique contacts with repeat funding in range', lowerIsBetter:false, subgroup:'addedMoney'},
+      {key:'addedInvAmount', label:'Added Money Raised', sub:'total dollars from repeat fundings', lowerIsBetter:false, format:'currency', subgroup:'addedMoney'},
+      {key:'addedInvAvg', label:'Avg Ticket (added money)', sub:'per repeat contact', lowerIsBetter:false, format:'currency', subgroup:'addedMoney'},
+    ]
+  }
+];
+
+// ── Render ────────────────────────────────────────────────
+function applyFilters(){
+  // Re-render immediately with current data using the new range/filter values.
+  // Then trigger load() to fetch any chunks the new range needs that aren't
+  // cached. Without this immediate render, changing a section's range
+  // dropdown to a window whose chunks are already cached produces no visible
+  // update because load() short-circuits and the LOADING guard can swallow
+  // the call entirely.
+  render();
+  // load() now handles the in-progress case via LOAD_QUEUED — calling it
+  // during a load queues a trailing re-run. Always call it; the prior
+  // `if(!LOADING)` guard caused range changes to be silently dropped while
+  // a load was running.
+  load();
+}
+
+// ── Call Outcomes — donut renderer ──────────────────────────────
+// Two donuts at the top of the dash, one for Discovery (uses 'activity' range)
+// and one for Decision (uses 'bookings' range). Both respect the global Closer
+// picker (#sel-setter) and the comparison picker. Slices/legend rows are
+// clickable — they open a drill-down panel filtered to that outcome.
+
+const OUTCOME_ORDER = ['COMPLETED','NO_SHOW','RESCHEDULED','CANCELED','DISQUALIFIED'];
+// "Not happened" set — outcomes that explicitly indicate the meeting did NOT
+// occur as scheduled. Used to compute the "Held" metric: past meetings whose
+// outcome is NOT in this set are presumed to have happened, including
+// un-dispositioned ones. (Matches the conversion-v15 / setter-v45 definition.)
+const NON_HAPPENED_OUTCOMES = new Set(['NO_SHOW','RESCHEDULED','CANCELED','DISQUALIFIED']);
+const OUTCOME_LABELS = {
+  COMPLETED: 'Completed',
+  NO_SHOW: 'No-Show',
+  RESCHEDULED: 'Rescheduled',
+  CANCELED: 'Canceled',
+  DISQUALIFIED: 'Disqualified',
+};
+const OUTCOME_COLOR = {
+  COMPLETED: '#16a34a',
+  NO_SHOW: '#dc2626',
+  RESCHEDULED: '#d97706',
+  CANCELED: '#737373',
+  DISQUALIFIED: '#7c3aed',
+};
+const OUTCOME_CLASS = {
+  COMPLETED: 'oc-completed',
+  NO_SHOW: 'oc-noshow',
+  RESCHEDULED: 'oc-rescheduled',
+  CANCELED: 'oc-canceled',
+  DISQUALIFIED: 'oc-disqualified',
+};
+
+// Filter MEETINGS for a call type + window + closer. Anchored on createdTs
+// to match the Discovery/Decision Activity sections (closer is credited for
+// when they were assigned the booking, not when the call is scheduled).
+function filterMeetingsForOutcomes(callType, fromMs, toMs, setterFilter){
+  const matchSetter = setterFilter === 'all'
+    ? () => true
+    : (id) => id === setterFilter;
+  return MEETINGS.filter(m => {
+    const anchorTs = m.createdTs || m.ts;
+    if(anchorTs < fromMs || anchorTs > toMs) return false;
+    if(callType === 'discovery' && !m.isDiscovery) return false;
+    if(callType === 'decision' && m.type !== 'decision') return false;
+    return matchSetter(m.ownerId);
+  });
+}
+
+// Bucket meetings into outcome counts + pending. Pending = scheduled in the
+// future (m.startTs > now). Meetings without an outcome and not future-scheduled
+// are bucketed as 'unresolvedNoOutcome' — they're excluded from the donut so
+// the resolved-cohort percentages aren't dragged down by un-dispositioned data.
+function tallyOutcomes(meetings){
+  const nowMs = Date.now();
+  const counts = {COMPLETED:0, NO_SHOW:0, RESCHEDULED:0, CANCELED:0, DISQUALIFIED:0};
+  let pending = 0, unresolvedNoOutcome = 0;
+  meetings.forEach(m => {
+    if(m.startTs && m.startTs > nowMs){ pending++; return; }
+    if(!m.outcome){ unresolvedNoOutcome++; return; }
+    if(counts.hasOwnProperty(m.outcome)) counts[m.outcome]++;
+  });
+  const resolved = OUTCOME_ORDER.reduce((s,k) => s + counts[k], 0);
+  return {counts, pending, unresolvedNoOutcome, resolved, total: meetings.length};
+}
+
+// Toggle visibility of the custom date inputs when the date picker changes.
+// Calls render() if the new value isn't 'custom' (custom waits for Apply button).
+function onOutcomeDateChange(){
+  const v = document.getElementById('oc-sel-date').value;
+  document.getElementById('oc-cdates').classList.toggle('on', v === 'custom');
+  if(v !== 'custom') render();
+}
+function onOutcomeCompareChange(){
+  const v = document.getElementById('oc-sel-compare').value;
+  document.getElementById('oc-cmp-cdates').classList.toggle('on', v === 'custom');
+  if(v !== 'custom') render();
+}
+
+// Render one donut + legend + subtitle into the given card. Both donuts share
+// the same date+compare picker (in the section header) — only the call type
+// differs. Closer picker (#sel-setter) also lives in the section header and
+// only affects these donuts.
+function renderOutcomeDonut(callType){
+  const cardPrefix = callType === 'discovery' ? 'oc-disc' : 'oc-deci';
+  const body = document.getElementById(`${cardPrefix}-body`);
+  if(!body) return;
+
+  // Both donuts read from MEETINGS — which loads with the activity section.
+  if(SECTION_STATE.activity !== 'ready'){
+    body.innerHTML = '<div class="outcome-empty">Loading meetings…</div>';
+    return;
+  }
+
+  const range = getDateRange('outcomes');
+  const setterFilter = document.getElementById('sel-setter').value;
+
+  if(!range.from || !range.to){
+    body.innerHTML = '<div class="outcome-empty">No date range selected</div>';
+    return;
+  }
+
+  const meetings = filterMeetingsForOutcomes(callType, range.from.getTime(), range.to.getTime(), setterFilter);
+  const tally = tallyOutcomes(meetings);
+
+  let prevTally = null;
+  if(range.prevFrom && range.prevTo){
+    const prevMeetings = filterMeetingsForOutcomes(callType, range.prevFrom.getTime(), range.prevTo.getTime(), setterFilter);
+    prevTally = tallyOutcomes(prevMeetings);
+  }
+
+  if(tally.total === 0){
+    body.innerHTML = '<div class="outcome-empty">No ' + callType + ' calls in this range</div>';
+    return;
+  }
+
+  // SVG donut — slices on a 200×200 viewBox.
+  const cx = 100, cy = 100, r = 70, sw = 32;
+  const C = 2 * Math.PI * r;
+  let cumulative = 0;
+  let slicesHtml = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="${sw}"/>`;
+
+  if(tally.resolved > 0){
+    OUTCOME_ORDER.forEach(outcome => {
+      const count = tally.counts[outcome];
+      if(count === 0) return;
+      const pct = count / tally.resolved;
+      const dasharray = `${(pct * C).toFixed(2)} ${C.toFixed(2)}`;
+      const dashoffset = (-cumulative * C).toFixed(2);
+      const label = `${OUTCOME_LABELS[outcome]}: ${count} (${Math.round(pct*100)}%)`;
+      slicesHtml += `<circle class="slice ${OUTCOME_CLASS[outcome]}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${OUTCOME_COLOR[outcome]}" stroke-width="${sw}" stroke-dasharray="${dasharray}" stroke-dashoffset="${dashoffset}" onclick="openOutcomeDrilldown('${callType}','${outcome}')"><title>${label}</title></circle>`;
+      cumulative += pct;
+    });
+  }
+
+  const donutHtml = `<div class="outcome-donut">
+    <svg viewBox="0 0 200 200">${slicesHtml}</svg>
+    <div class="outcome-donut-center">
+      <div class="outcome-donut-center-num">${tally.resolved}</div>
+      <div class="outcome-donut-center-lbl">resolved</div>
+    </div>
+  </div>`;
+
+  // Legend with current AND previous columns per row.
+  const hasPrev = !!prevTally;
+  let legendHtml = '<div class="outcome-legend">';
+  if(hasPrev){
+    legendHtml += `<div class="outcome-legend-header">
+      <div></div><div></div>
+      <div class="outcome-legend-header-cur">current</div>
+      <div></div>
+      <div class="outcome-legend-header-prev">previous</div>
+    </div>`;
+  }
+  OUTCOME_ORDER.forEach(outcome => {
+    const count = tally.counts[outcome];
+    const pct = tally.resolved > 0 ? Math.round((count / tally.resolved) * 100) : 0;
+    const prevCount = hasPrev ? prevTally.counts[outcome] : null;
+    const prevPct = hasPrev && prevTally.resolved > 0 ? Math.round((prevCount / prevTally.resolved) * 100) : 0;
+    const clickable = count > 0
+      ? `onclick="openOutcomeDrilldown('${callType}','${outcome}')"`
+      : 'style="cursor:default;opacity:.55"';
+    const prevCells = hasPrev
+      ? `<div class="outcome-legend-sep">·</div>
+         <div class="outcome-legend-prev-val">${prevCount}</div>
+         <div class="outcome-legend-prev-pct">${prevPct}%</div>`
+      : '<div></div><div></div><div></div>';
+    legendHtml += `<div class="outcome-legend-row" ${clickable} title="${count>0?'Click to view records':'No records'}">
+      <div class="outcome-legend-swatch" style="background:${OUTCOME_COLOR[outcome]}"></div>
+      <div class="outcome-legend-lbl">${OUTCOME_LABELS[outcome]}</div>
+      <div class="outcome-legend-val">${count}</div>
+      <div class="outcome-legend-pct">${pct}%</div>
+      ${prevCells}
+    </div>`;
+  });
+  legendHtml += '</div>';
+
+  // Subtitle — concise range summary
+  const completedPct = tally.resolved > 0 ? Math.round((tally.counts.COMPLETED / tally.resolved) * 100) : 0;
+  const excluded = tally.pending + tally.unresolvedNoOutcome;
+  let excludedNote = '';
+  if(excluded > 0){
+    const parts = [];
+    if(tally.pending > 0) parts.push(`${tally.pending} pending`);
+    if(tally.unresolvedNoOutcome > 0) parts.push(`${tally.unresolvedNoOutcome} no outcome`);
+    excludedNote = ` · ${parts.join(' + ')} excluded`;
+  }
+  const rangeLabel = range.label || '—';
+  const prevRangeLabel = hasPrev ? (range.prevLabel || 'previous') : '';
+  let subHtml = `<div class="outcome-sub"><span class="outcome-sub-cur"><strong>${rangeLabel}</strong> · <strong>${tally.resolved}</strong> resolved · <strong>${completedPct}%</strong> completed${excludedNote}`;
+  if(hasPrev) subHtml += ` &nbsp;·&nbsp; <span style="color:var(--text2)">vs ${prevRangeLabel}</span>`;
+  subHtml += `</span></div>`;
+
+  body.innerHTML = donutHtml + legendHtml + subHtml;
+}
+
+// Drill-down for a clicked outcome slice/legend row. Opens the same panel
+// used by metric cell drill-downs, but with a meeting list filtered to one
+// outcome value instead of one metric. Uses the unified 'outcomes' rangeKey.
+async function openOutcomeDrilldown(callType, outcome){
+  const panel = document.getElementById('dd-panel');
+  const backdrop = document.getElementById('dd-backdrop');
+  const body = document.getElementById('dd-body');
+
+  const range = getDateRange('outcomes');
+  const setterFilter = document.getElementById('sel-setter').value;
+  const closerLabel = setterFilter === 'all'
+    ? 'All Closers'
+    : (SETTERS[setterFilter] || INV_PERSONS[setterFilter] || setterFilter);
+  const callLabel = callType === 'discovery' ? 'Discovery' : 'Decision';
+
+  document.getElementById('dd-title').textContent =
+    `${callLabel} — ${OUTCOME_LABELS[outcome]} — ${closerLabel}`;
+  document.getElementById('dd-sub').textContent =
+    range.from && range.to ? `${range.label} (${ymd(range.from)} → ${ymd(range.to)})` : '';
+
+  body.innerHTML = '<div class="dd-loading"><div class="spin"></div><div>Loading records…</div></div>';
+  panel.classList.add('open');
+  panel.setAttribute('aria-hidden','false');
+  backdrop.classList.add('open');
+  DD_OPEN = true;
+
+  const meetings = filterMeetingsForOutcomes(callType, range.from.getTime(), range.to.getTime(), setterFilter);
+  // Apply outcome filter — same logic as tallyOutcomes (exclude pending + no-outcome).
+  const nowMs = Date.now();
+  const records = meetings.filter(m => {
+    if(m.startTs && m.startTs > nowMs) return false;  // pending
+    return m.outcome === outcome;
+  });
+
+  if(records.length === 0){
+    body.innerHTML = '<div class="dd-empty">No ' + callType + ' calls with this outcome.</div>';
+    return;
+  }
+
+  // Lazy-fetch contact names
+  rebuildFundedContactIndex();
+  const contactIds = [...new Set(records.map(r => r.contactId).filter(Boolean))];
+  await fetchContactNames(contactIds);
+
+  records.sort((a,b) => b.ts - a.ts);
+
+  let html = '';
+  records.forEach(m => {
+    const cn = m.contactId ? CONTACT_NAME_CACHE[m.contactId] : null;
+    const url = m.contactId ? hubspotContactUrl(m.contactId) : null;
+    const name = cn ? cn.name : (m.title || 'Unknown contact');
+    const nameHtml = url
+      ? `<span class="dd-row-name">${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+      : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
+    const owner = m.ownerId && INV_PERSONS[m.ownerId] ? INV_PERSONS[m.ownerId] : (m.ownerId ? 'Other owner' : 'No owner');
+    const tagClass = outcomeTagClass(m.outcome);
+    const tagLabel = outcomeTagLabel(m.outcome);
+    const fundedInfo = m.contactId ? FUNDED_CONTACT_INDEX[m.contactId] : null;
+    const fundedTag = fundedInfo
+      ? `<span class="dd-tag funded">Funded ${fmtCurrencyExact(fundedInfo.amount)}</span>`
+      : (m.outcome==='COMPLETED' ? '<span class="dd-tag unfunded">Not funded</span>' : '');
+    const dateStr = m.ts ? ymd(new Date(m.ts)) : '—';
+    html += `<div class="dd-row">
+      <div class="dd-row-main">${nameHtml}<span class="dd-tag ${tagClass}">${tagLabel}</span>${fundedTag}</div>
+      <div class="dd-row-meta">${dateStr} · ${owner}${m.title ? ' · ' + escapeHtml(m.title) : ''}</div>
+    </div>`;
+  });
+
+  body.innerHTML = `<div class="dd-summary">${records.length} record${records.length===1?'':'s'}</div>${html}`;
+}
+
+function render(){
+  // The closer picker now ONLY affects the Call Outcomes donuts (read inside
+  // renderOutcomeDonut). Activity, Bookings, and Investments sections always
+  // show every closer/AM as a column — filtering hides info, doesn't add any.
+
+  // Resolve a range per section. Each METRIC_GROUPS entry knows which range it uses.
+  const ranges={
+    activity: getDateRange('activity'),
+    bookings: getDateRange('bookings'),
+    investments: getDateRange('investments'),
+  };
+
+  // Column lists — always show all closers (+ AMs in investments).
+  // Column order convention: persons, then Unattributed, then Overall (grand total).
+  // For Discovery + Decision (direct-owner attribution), Overall = team total only —
+  // a non-closer's meeting isn't "closer activity," so Unattributed shows non-team
+  // edge cases (~1% of discoveries) and Overall = sum of closer columns. The column
+  // order matches the rest of the dashboard family for visual consistency, even
+  // though Unattributed + persons doesn't sum to Overall here the way it does in
+  // the Funded Investments section.
+  const cols=[...SETTER_IDS, 'unattributed', 'overall'];
+  const invCols=[...CLOSER_IDS, ...AM_IDS, 'unattributed', 'overall'];
+
+  // Pre-compute metrics for each (range × column) pair, only for sections that are ready.
+  const colDataByRange={};
+  for(const rk of Object.keys(ranges)){
+    if(SECTION_STATE[rk]!=='ready') continue;
+    const r=ranges[rk];
+    const fromMs=r.from.getTime(), toMs=r.to.getTime();
+    const prevFromMs=r.prevFrom?r.prevFrom.getTime():null;
+    const prevToMs=r.prevTo?r.prevTo.getTime():null;
+    const cd={};
+    const activeCols = rk==='investments' ? invCols : cols;
+    activeCols.forEach(c=>{
+      const setterArg = (c==='overall') ? 'all' : c;
+      cd[c]={
+        cur:calcMetrics(setterArg, fromMs, toMs) || {},
+        prev:prevFromMs?calcMetrics(setterArg, prevFromMs, prevToMs) || {} : null
+      };
+    });
+    colDataByRange[rk]=cd;
+  }
+
+  // Top summary pills — slim recap of each section's range. Per-section warnings
+  // (partial period, length mismatch) live inside their sections, not here.
+  const pills=[];
+  const rangeLabels={activity:'Discovery', bookings:'Decision', investments:'Investments'};
+  for(const rk of ['activity','bookings','investments']){
+    const r=ranges[rk];
+    pills.push(`<div class="fpill range-${rk}"><strong>${rangeLabels[rk]}:</strong> ${r.label}</div>`);
+  }
+  document.getElementById('fpills').innerHTML=pills.join('');
+
+  // Render each section block. Group entries are matched to sections by rangeKey.
+  for(const group of METRIC_GROUPS){
+    const rk=group.rangeKey;
+    const activeCols = rk==='investments' ? invCols : cols;
+    renderSection(group, ranges[rk], colDataByRange[rk], activeCols, 'all');
+  }
+
+  // Render the Call Outcomes section donuts (top of dashboard). They use the
+  // unified outcomes range/compare picker and the closer picker — all three
+  // live in the Call Outcomes section header.
+  renderOutcomeDonut('discovery');
+  renderOutcomeDonut('decision');
+}
+
+/**
+ * Render one section block — header (title + controls + status + note) and table body.
+ * The range-controls element (containing the date-picker selects) lives in #range-controls-store
+ * and is moved into the section header via DOM appendChild, preserving its state across renders.
+ */
+function renderSection(group, range, colData, cols, setterFilter){
+  const rk=group.rangeKey;
+  const sectionEl=document.getElementById(`section-${rk}`);
+  const status=SECTION_STATE[rk] || 'ready';
+  const isLoading=status==='loading' || status==='idle';
+  const isError=status==='error';
+
+  // Detach the range-controls element BEFORE we overwrite the section's innerHTML —
+  // otherwise innerHTML replacement destroys it. Move it back to the off-screen
+  // store; it'll get re-appended into the new section header below.
+  const ctrlEl=document.getElementById(`range-controls-${rk}`);
+  if(ctrlEl){
+    document.getElementById('range-controls-store').appendChild(ctrlEl);
+  }
+
+  // Header — title row, controls placeholder, optional note, optional warnings, status
+  let statusBadge='';
+  if(isLoading) statusBadge='<span class="sec-status loading">Loading…</span>';
+  else if(isError) statusBadge='<span class="sec-status error">Failed — click Refresh to retry</span>';
+
+  // Per-section warning pills — partial period, length mismatch
+  const warnings=[];
+  const cmpId = (rk==='activity'?'':rk==='bookings'?'bk-':'inv-')+'sel-compare';
+  const cmpEl = document.getElementById(cmpId);
+  if(range.isPartial && cmpEl && cmpEl.value==='previous'){
+    warnings.push(`<div class="fpill" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">Partial period — comparison truncated to same elapsed</div>`);
+  }
+  if(range.lengthMismatch){
+    warnings.push(`<div class="fpill" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">⚠ Comparing periods of different lengths</div>`);
+  }
+
+  // Pre-2026 disposition warning. Disposition tracking (Completed / No-Show /
+  // Rescheduled) wasn't enforced until 2026-01-01, so any window that includes
+  // earlier dates will have suppressed completion and no-show rates. Only the
+  // sections that read from disposition outcomes care — Discovery Activity (rk
+  // 'activity') and Decision Activity (rk 'bookings'). Funded Investments
+  // doesn't read dispositions, so we skip it there.
+  const DISPO_CUTOFF=new Date('2026-01-01').getTime();
+  if(rk==='activity' || rk==='bookings'){
+    const baseFromMs=range.from?range.from.getTime():null;
+    const cmpFromMs=range.prevFrom?range.prevFrom.getTime():null;
+    const baseTouchesPre = baseFromMs!==null && baseFromMs<DISPO_CUTOFF;
+    const cmpTouchesPre  = cmpFromMs!==null && cmpFromMs<DISPO_CUTOFF;
+    if(baseTouchesPre || cmpTouchesPre){
+      const which = baseTouchesPre && cmpTouchesPre ? 'Both periods include'
+        : baseTouchesPre ? 'This period includes'
+        : 'The comparison period includes';
+      warnings.push(`<div class="fpill" style="background:#fef3c7;color:#92400e;border-color:#fcd34d" title="Disposition tracking (Completed / No-Show / Rescheduled) wasn't enforced until 2026. Completion and no-show rates for earlier dates reflect data hygiene, not actual performance. Volume metrics (booked counts) are still trustworthy.">⚠ Pre-2026 dispositions sparse — ${which} dates before 2026, completion/no-show rates may understate</div>`);
+    }
+  }
+
+  // Segment-consistency sanity check (Discovery Activity section only — that's
+  // where the All / From Intro / No Intro segmentation lives in the closer
+  // dashboard). For each column: the All rate must lie within [min, max] of
+  // the FromIntro and NoIntro rates, since All is a weighted average of the
+  // two segments. If it doesn't, something's inconsistent in the underlying
+  // data — flag it. Skips columns where any segment has zero resolved bookings
+  // (false-positive risk).
+  if(rk==='activity' && !isLoading && !isError && colData){
+    const inconsistent=[];
+    const labelFor = c =>
+      c==='overall' ? 'Overall' :
+      c==='unattributed' ? 'Unattributed' :
+      (SETTERS[c] || c);
+    const rate = (num, denom) => denom>0 ? (num/denom)*100 : null;
+
+    for(const c of cols){
+      const r=colData[c]?.cur;
+      if(!r) continue;
+      const allRes=r.discResolved, fiRes=r.discResolvedFromIntro, niRes=r.discResolvedNoIntro;
+      if(!allRes || !fiRes || !niRes) continue;  // skip when any segment has 0 resolved
+
+      const checks=[
+        {name:'completion', all:rate(r.discCompleted, allRes), fi:rate(r.discCompletedFromIntro, fiRes), ni:rate(r.discCompletedNoIntro, niRes)},
+        {name:'no-show',    all:rate(r.discNoShow, allRes),    fi:rate(r.discNoShowFromIntro, fiRes),    ni:rate(r.discNoShowNoIntro, niRes)},
+      ];
+      for(const ch of checks){
+        if(ch.all===null || ch.fi===null || ch.ni===null) continue;
+        const lo=Math.min(ch.fi, ch.ni), hi=Math.max(ch.fi, ch.ni);
+        // Tiny tolerance for floating-point; integer-math makes this rare anyway
+        if(ch.all<lo-0.001 || ch.all>hi+0.001){
+          inconsistent.push(`${labelFor(c)} ${ch.name}: All ${Math.round(ch.all)}%, From Intro ${Math.round(ch.fi)}%, No Intro ${Math.round(ch.ni)}%`);
+        }
+      }
+    }
+    if(inconsistent.length>0){
+      const display = inconsistent.length<=3
+        ? inconsistent.join(' · ')
+        : inconsistent.slice(0,3).join(' · ') + ` · and ${inconsistent.length-3} more`;
+      warnings.push(`<div class="fpill" style="background:#fef3c7;color:#92400e;border-color:#fcd34d" title="The All rate must mathematically lie between the From Intro and No Intro rates. A violation suggests data inconsistency.">⚠ Segment math inconsistency — ${display}</div>`);
+    }
+  }
+
+  const headerHtml=`
+    <div class="sec-header">
+      <div class="sec-title-row">
+        <span class="sec-title">${group.title}</span>
+        <span class="sec-range">${range.label} (${ymd(range.from)} → ${ymd(range.to)})${range.prevFrom?` · vs ${range.prevLabel}`:''}</span>
+        ${statusBadge}
+      </div>
+      <div class="sec-controls" id="sec-controls-${rk}">
+        <!-- range controls appendChild'd here -->
+      </div>
+      ${group.note ? `<div class="sec-note">${group.note}</div>` : ''}
+      ${warnings.length ? `<div class="fpills" style="margin:0">${warnings.join('')}</div>` : ''}
+    </div>
+    <div class="tbl-wrap" style="border:none;border-radius:0">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th class="col-metric">Metric</th>
+            ${cols.map(c=>{
+              if(c==='overall') return '<th class="col-overall">Overall</th>';
+              if(c==='unattributed') return '<th class="col-unattributed" title="Records owned by someone outside the current roster — historical/admin owners or unset closer fields.">Unattributed</th>';
+              return `<th class="col-setter">${INV_PERSONS[c]||SETTERS[c]||c}</th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody id="sec-body-${rk}"></tbody>
+      </table>
+    </div>
+  `;
+  sectionEl.innerHTML=headerHtml;
+
+  // Now move the (still-alive) range-controls element from the store into the
+  // freshly-rendered section header.
+  if(ctrlEl){
+    document.getElementById(`sec-controls-${rk}`).appendChild(ctrlEl);
+  }
+
+  // Body rows — skeleton when loading, real cells when ready.
+  // Insert a subgroup divider row whenever a metric's `subgroup` differs from
+  // the previous one, so e.g. the All / From Intro / No Intro blocks read as
+  // visually distinct three-row groups within the same section.
+  const body=document.getElementById(`sec-body-${rk}`);
+  let bodyHtml='';
+  let lastSubgroup=null;
+  if(isLoading){
+    for(const m of group.metrics){
+      if(m.subgroup && lastSubgroup!==null && m.subgroup!==lastSubgroup){
+        bodyHtml+=`<tr class="subgroup-divider"><td colspan="${cols.length+1}"></td></tr>`;
+      }
+      lastSubgroup=m.subgroup||lastSubgroup;
+      bodyHtml+=`<tr class="metric-row range-${rk} skeleton-row">`;
+      bodyHtml+=`<td class="cell-metric">${m.label}<div class="metric-sub">${m.sub}</div></td>`;
+      for(const c of cols){
+        const cellCls = c==='overall' ? 'col-overall' : (c==='unattributed' ? 'col-unattributed' : '');
+        bodyHtml+=`<td class="cell-val ${cellCls}"><div class="skeleton-bar"></div></td>`;
+      }
+      bodyHtml+='</tr>';
+    }
+  } else {
+    // Pre-compute cross-credit residuals for unique-contact rows in the Funded
+    // Investments section. A contact whose investments in this range are
+    // attributed to multiple people (closers/AMs) counts in each person's
+    // column but only ONCE in Overall (Set-dedup), so sum(persons) +
+    // Unattributed > Overall by exactly the number of cross-credited contacts.
+    // We surface that discrepancy as a small footnote on the Overall cell so
+    // the row math is honest about why the visible columns sum higher.
+    //
+    // Only applies to rows that count UNIQUE CONTACTS:
+    //   - allInvFunded     (All Investors Active)      — repeat possible
+    //   - addedInvFunded   (Repeat Investors Active)   — repeat possible
+    // NOT investmentsFunded (New Investors Acquired) — first-investment is
+    // unique per contact, so cross-credit is impossible for that row.
+    // Dollar rows (amount/avg) just add, no dedup involved.
+    const uniqueContactMetricKeys = new Set(['allInvFunded','addedInvFunded']);
+    const crossCreditByMetric = {};
+    if(rk==='investments'){
+      const personCols = cols.filter(c => c!=='overall' && c!=='unattributed');
+      for(const m of group.metrics){
+        if(!uniqueContactMetricKeys.has(m.key)) continue;
+        const personSum = personCols.reduce((s,c)=>s+(colData[c]?.cur?.[m.key]||0),0);
+        const unattr = colData['unattributed']?.cur?.[m.key]||0;
+        const overall = colData['overall']?.cur?.[m.key]||0;
+        const cur = (personSum + unattr) - overall;
+        let prev = 0;
+        if(range.prevFrom !== null){
+          const prevPersonSum = personCols.reduce((s,c)=>s+(colData[c]?.prev?.[m.key]||0),0);
+          const prevUnattr = colData['unattributed']?.prev?.[m.key]||0;
+          const prevOverall = colData['overall']?.prev?.[m.key]||0;
+          prev = (prevPersonSum + prevUnattr) - prevOverall;
+        }
+        crossCreditByMetric[m.key] = {cur, prev};
+      }
+    }
+    const CROSS_CREDIT_TOOLTIP = 'A contact whose investments are attributed to multiple closers or AMs in this date range counts once in each person\'s column but only once in Overall (unique contacts are deduplicated). The number shown is how many contacts are cross-credited — the difference between summing the visible columns and the true Overall count.';
+
+    for(const m of group.metrics){
+      if(m.subgroup && lastSubgroup!==null && m.subgroup!==lastSubgroup){
+        bodyHtml+=`<tr class="subgroup-divider"><td colspan="${cols.length+1}"></td></tr>`;
+      }
+      lastSubgroup=m.subgroup||lastSubgroup;
+      bodyHtml+=`<tr class="metric-row range-${rk}">`;
+      bodyHtml+=`<td class="cell-metric">${m.label}<div class="metric-sub">${m.sub}</div></td>`;
+      for(const c of cols){
+        const curRow=colData[c].cur;
+        const prevRow=colData[c].prev;
+        const cellCls = c==='overall' ? 'col-overall' : (c==='unattributed' ? 'col-unattributed' : '');
+        // Pass drill-down context to renderCell so it can wire up inner clickable
+        // elements (headline → current period, delta line → prev period).
+        const ctx={metricKey:m.key, columnId:c, rangeKey:rk, hasPrev:range.prevFrom!==null, prevHasData: !!(prevRow && canDrillMetric(m, prevRow, c))};
+        // Cross-credit footnote — only on Overall cell of unique-contact rows
+        // when sum-of-columns differs from Overall. Stays empty otherwise so
+        // cells where the row sums cleanly stay uncluttered.
+        let crossNote = '';
+        if(c==='overall' && crossCreditByMetric[m.key]){
+          const cc = crossCreditByMetric[m.key];
+          if(cc.cur > 0){
+            crossNote += `<span class="cell-cross-credit" title="${CROSS_CREDIT_TOOLTIP}">(${cc.cur} cross-credited)</span>`;
+          }
+          if(range.prevFrom !== null && cc.prev > 0){
+            crossNote += `<span class="cell-cross-credit" title="${CROSS_CREDIT_TOOLTIP}">prev: (${cc.prev} cross-credited)</span>`;
+          }
+        }
+        bodyHtml+=`<td class="cell-val ${cellCls}">${renderCell(m, curRow, prevRow, range.prevFrom!==null, ctx)}${crossNote}</td>`;
+      }
+      bodyHtml+='</tr>';
+    }
+  }
+  body.innerHTML=bodyHtml;
+}
+
+/**
+ * Format a percentage. Returns '—' if denominator is 0 or missing.
+ */
+function pctFmt(num, denom){
+  if(!denom || denom===0) return '—';
+  return Math.round((num/denom)*100)+'%';
+}
+
+/**
+ * Render a single metric cell. Handles three display modes:
+ *  - default      : count headline, delta vs prior
+ *  - rate.headline: percentage headline, raw count subtext, delta on the percentage
+ *  - rate.subtext : count headline (with delta), percentage as a small subtext line
+ */
+function renderCell(metric, curRow, prevRow, hasComparison, ctx){
+  const curCount=curRow ? curRow[metric.key] : null;
+  const prevCount=prevRow ? prevRow[metric.key] : null;
+  const lowerIsBetter=metric.lowerIsBetter;
+
+  // If the metric isn't applicable to this column (e.g. activity metrics for the
+  // Unattributed column), calcMetrics returns null. Render a muted dash, no delta.
+  if(curCount===null){
+    return `<div class="val-num muted">—</div><div class="delta na">N/A</div>`;
+  }
+
+  // ── Click-target wrapping helpers ─────────────────────────────────────
+  // Headline → drills the CURRENT period.
+  // Delta line (containing "prev: N") → drills the PREVIOUS period.
+  // Each is independently click-eligible based on whether its period has data.
+  const curIsClickable = ctx && curRow != null && canDrillMetric(metric, curRow, ctx.columnId);
+  const prevIsClickable = ctx && ctx.hasPrev && ctx.prevHasData;
+  const wrapCur = (inner) => curIsClickable
+    ? `<span class="dd-click cur" onclick="openDrilldown('${ctx.metricKey}','${ctx.columnId}','${ctx.rangeKey}','cur')" title="Click to view underlying records">${inner}</span>`
+    : inner;
+  const wrapPrev = (inner) => prevIsClickable
+    ? `<span class="dd-click prev" onclick="openDrilldown('${ctx.metricKey}','${ctx.columnId}','${ctx.rangeKey}','prev')" title="Click to view comparison-period records">${inner}</span>`
+    : inner;
+
+  if(metric.rate){
+    const denomKey=metric.rate.of;
+    const curDenom=curRow ? curRow[denomKey] : null;
+    const prevDenom=prevRow ? prevRow[denomKey] : null;
+
+    if(metric.rate.as==='headline'){
+      // Big number = the rate, subtext = count fraction, delta = rate change
+      const curRate=(curDenom>0) ? (curCount/curDenom)*100 : null;
+      const prevRate=(prevDenom>0) ? (prevCount/prevDenom)*100 : null;
+
+      const headlineDisp = curRate===null ? '—' : Math.round(curRate)+'%';
+      const muted = curRate===null || curRate===0;
+      const subtextLine = (curCount!=null && curDenom!=null) ?
+        `<div class="rate-sub">${Number(curCount).toLocaleString()} of ${Number(curDenom).toLocaleString()}</div>` : '';
+
+      // Delta: use percentage-point change (not relative %), since we're already showing a %
+      const deltaHtml=deltaForRate(curRate, prevRate, lowerIsBetter, hasComparison, prevCount, prevDenom);
+      const headline=`<div class="val-pct${muted?' muted':''}">${headlineDisp}</div>`;
+      return `${wrapCur(headline)}${subtextLine}${wrapPrev(deltaHtml)}`;
+    }
+    else if(metric.rate.as==='subtext'){
+      // Big number = the count (with delta), small subtext line = the rate
+      const curRate=(curDenom>0) ? (curCount/curDenom)*100 : null;
+      const subLabel = metric.rate.subLabel || `of ${denomKey}`;
+      const subtextLine = (curRate!=null) ?
+        `<div class="rate-sub">${Math.round(curRate)}% ${subLabel}</div>` : '';
+
+      const curDisp=(curCount===0||curCount) ? Number(curCount).toLocaleString() : '—';
+      const deltaHtml=deltaForCount(curCount, prevCount, lowerIsBetter, hasComparison);
+      const headline=`<div class="val-num${curCount===0?' muted':''}">${curDisp}</div>`;
+      return `${wrapCur(headline)}${subtextLine}${wrapPrev(deltaHtml)}`;
+    }
+  }
+
+  // Default: count headline + count delta. Honor `format:'currency'` for dollar amounts.
+  const fmtNum = metric.format==='currency' ? fmtCurrency : (n=>Number(n).toLocaleString());
+  const curDisp=(curCount===0||curCount) ? fmtNum(curCount) : '—';
+  const deltaHtml=deltaForCount(curCount, prevCount, lowerIsBetter, hasComparison, metric.format==='currency');
+  // Optional pending subtext — surfaces "X still pending" beneath bookings counts
+  // when the metric has a pendingKey defined and the current row has pending bookings.
+  let pendingHtml='';
+  if(metric.pendingKey && curRow && curRow[metric.pendingKey]>0){
+    pendingHtml=`<div class="rate-sub">${curRow[metric.pendingKey]} still pending</div>`;
+  }
+  const headline=`<div class="val-num${curCount===0?' muted':''}">${curDisp}</div>`;
+  return `${wrapCur(headline)}${pendingHtml}${wrapPrev(deltaHtml)}`;
+}
+
+function fmtCurrency(n){
+  if(!n) return '$0';
+  if(n>=1e6) return '$'+(n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return '$'+(n/1e3).toFixed(1)+'K';
+  return '$'+Math.round(n).toLocaleString();
+}
+
+function deltaForCount(cur, prev, lowerIsBetter, hasComparison, isCurrency=false){
+  if(!hasComparison) return `<div class="delta na">N/A</div>`;
+  if(prev===null||prev===undefined) return `<div class="delta flat">—</div>`;
+  if(prev===0 && cur===0) return `<div class="delta flat">no activity</div>`;
+  if(prev===0) return `<div class="delta up">new activity</div><span class="delta-prev">prev: 0</span>`;
+  const pct=Math.round(((cur-prev)/prev)*100);
+  let cls='flat', arrow='→';
+  if(pct>0){ cls=lowerIsBetter?'dn':'up'; arrow='↑'; }
+  else if(pct<0){ cls=lowerIsBetter?'up':'dn'; arrow='↓'; }
+  const prevDisp = isCurrency ? fmtCurrency(prev) : prev.toLocaleString();
+  return `<div class="delta ${cls}">${arrow} ${Math.abs(pct)}%</div><span class="delta-prev">prev: ${prevDisp}</span>`;
+}
+
+function deltaForRate(curRate, prevRate, lowerIsBetter, hasComparison, prevCount, prevDenom){
+  if(!hasComparison) return `<div class="delta na">N/A</div>`;
+  if(curRate===null && prevRate===null) return `<div class="delta flat">no activity</div>`;
+  if(prevRate===null) return `<div class="delta up">new activity</div>`;
+  if(curRate===null) return `<div class="delta dn">no current data</div>`;
+  // Percentage-point delta (not relative %)
+  const pp=Math.round(curRate-prevRate);
+  let cls='flat', arrow='→';
+  if(pp>0){ cls=lowerIsBetter?'dn':'up'; arrow='↑'; }
+  else if(pp<0){ cls=lowerIsBetter?'up':'dn'; arrow='↓'; }
+  const sign = pp>0 ? '+' : (pp<0 ? '' : '±');
+  return `<div class="delta ${cls}">${arrow} ${sign}${Math.abs(pp)}pp</div><span class="delta-prev">prev: ${Math.round(prevRate)}%</span>`;
+}
+
+// ── UI helpers ────────────────────────────────────────────
+function st(m,c){const e=document.getElementById('st');e.textContent=m;e.className=c}
+// lm() is repurposed in v16: updates the status text in the top bar but does NOT
+// show the full-page overlay. Section-level skeletons handle "this is loading"
+// communication now, so a blocking overlay is wrong UX.
+function lm(m){const el=document.getElementById('st');if(el){el.textContent=m;el.className='sd';}}
+function clr(){document.getElementById('ov').classList.remove('on')}
+
+// ── Boot ──────────────────────────────────────────────────
+load();
+
+// ── Drill-down link helper ───────────────────────────────
+// Name click: try window.top.open (escapes iframe), fall back to prompt.
+// Copy button: try clipboard API, then execCommand fallback, show toast on success.
+// openDdLink removed — name is plain text, copy button handles HubSpot links
+function copyDdLink(btn, url){
+  const done=()=>{
+    if(!btn) return;
+    const orig=btn.textContent;
+    btn.textContent='✓ Copied!';
+    btn.style.background='var(--green-bg)';
+    btn.style.color='var(--green)';
+    btn.style.borderColor='var(--green)';
+    setTimeout(()=>{
+      btn.textContent=orig;
+      btn.style.background='';
+      btn.style.color='';
+      btn.style.borderColor='';
+    }, 2000);
+  };
+  const fail=()=>{
+    if(!btn) return;
+    const orig=btn.textContent;
+    btn.textContent='✗ Failed';
+    btn.style.background='var(--red-bg)';
+    btn.style.color='var(--red)';
+    setTimeout(()=>{
+      btn.textContent=orig;
+      btn.style.background='';
+      btn.style.color='';
+    }, 2000);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>_ddExecCopy(url, done, fail));
+  } else {
+    _ddExecCopy(url, done, fail);
+  }
+}
+function _ddExecCopy(url, done, fail){
+  const ta=document.createElement('textarea');
+  ta.value=url;
+  ta.style.cssText='position:fixed;opacity:0;pointer-events:none;top:0;left:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok=false;
+  try{ ok=document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  if(ok){ done(); } else { fail(); }
+}
+</script>
+</body>
+</html>

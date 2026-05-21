@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Investment Dashboard v29</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--dcb:#1d4ed8;--dcb-bg:#eff6ff;--inv:#6d28d9;--inv-bg:#f5f3ff;--green:#065f46;--green-bg:#ecfdf5;--red:#991b1b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+.logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#c44a1e,#e07a5f);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:white}
+header h1{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400}
+#ts{font-size:11px;color:#9e9789}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+select:focus{outline:none;border-color:var(--dcb)}
+input[type=date]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text)}
+input[type=date]:focus{outline:none;border-color:var(--dcb)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+.apply-btn{background:var(--bk);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.apply-btn:hover{background:#1e40af}
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px}
+.sl{color:var(--text3)}.sd{color:var(--dcb)}.so{color:var(--green);font-weight:500}.se{color:var(--red);font-weight:500}
+
+#ov{display:none;position:fixed;inset:0;background:rgba(245,243,239,.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--dcb);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lm{font-size:13px;color:var(--text2)}
+
+#dash{padding:20px 28px 48px}
+
+.fpills{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fpill{background:var(--inv-bg);color:var(--inv);border:1px solid #c4b5fd;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500}
+
+.krow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.kl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);font-weight:600;margin-bottom:6px}
+.kv{font-family:'DM Serif Display',serif;font-size:28px;line-height:1}
+.ks{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* Platform spend row — 3 tiles */
+.spend-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.spend-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+.spend-kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.spend-meta::after{background:#1877f2}
+.spend-google::after{background:#ea4335}
+.spend-linkedin::after{background:#0a66c2}
+.spend-label{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.spend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.spend-meta-dot{background:#1877f2}
+.spend-google-dot{background:#ea4335}
+.spend-linkedin-dot{background:#0a66c2}
+.spend-label .kl{margin-bottom:0}
+
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}
+.chd{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;padding:7px;border-radius:8px 8px 0 0;border-bottom:2px solid}
+.chd.dcb{background:var(--dcb-bg);color:var(--dcb);border-color:var(--dcb)}
+.chd.inv{background:var(--inv-bg);color:var(--inv);border-color:var(--inv)}
+
+.stag{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;background:var(--green-bg);color:var(--green);border-radius:6px;padding:5px;margin-bottom:6px}
+
+.cr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.ct{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);margin-bottom:10px}
+.cn{font-size:10px;color:var(--text3);margin-top:6px}
+
+.leg{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.br{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bn{font-size:11px;color:var(--text2);width:80px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{flex:1;background:var(--surface2);border-radius:3px;height:21px;overflow:hidden}
+.bf{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 7px}
+.bv{font-size:11px;font-weight:500}
+
+.vr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.vn{font-size:11px;color:var(--text2);width:80px;flex-shrink:0;text-align:right}
+.vt{flex:1;background:var(--surface2);border-radius:3px;height:21px;overflow:hidden}
+.vf{height:100%;border-radius:3px;display:flex;align-items:center;gap:5px;padding:0 7px}
+.vp{font-size:11px;font-weight:500}
+.vd{font-size:10px;color:var(--text3)}
+
+.na{font-size:12px;color:var(--text3);padding:10px 0;font-style:italic}
+
+/* Source table */
+.src-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.src-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+
+/* ── All Money table ─────────────────────────────────────
+   Sits between the KPI cards and the funnel sections. Shows the same data
+   from a person-by-person angle: count of unique investors, total dollars,
+   avg ticket per investor. Counts are per unique contact; dollar totals
+   sum every investment record (so they reconcile with Total Capital Raised). */
+.am-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;border-left:4px solid #6d28d9}
+.am-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:6px;flex-wrap:wrap}
+.am-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text)}
+.am-controls{display:flex;align-items:center;gap:6px}
+.am-controls label{font-size:11px;font-weight:600;color:var(--text2)}
+.am-note{font-size:11px;color:var(--text2);font-style:italic;line-height:1.5;margin-bottom:10px}
+.am-table{width:100%;border-collapse:collapse;margin-top:6px}
+.am-table thead th{background:var(--surface2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text2);padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+.am-table thead th:first-child{text-align:left}
+.am-table thead th.am-col-overall{background:#eff6ff;color:#1d4ed8;border-left:2px solid #1d4ed8}
+.am-table thead th.am-col-unattributed{background:#f5f3ef;color:#6b6558;border-left:2px solid #6b6558}
+.am-table tbody td{padding:12px;text-align:center;border-bottom:1px solid var(--surface2);vertical-align:top}
+.am-table tbody td:first-child{text-align:left;font-size:13px;color:var(--text);font-weight:500;min-width:200px}
+.am-table tbody td.am-col-overall{background:#eff6ff;border-left:2px solid #1d4ed8}
+.am-table tbody td.am-col-unattributed{background:#f5f3ef;border-left:2px solid #6b6558}
+.am-table tbody tr:last-child td{border-bottom:none}
+.am-metric-sub{font-size:10px;color:var(--text3);font-weight:400;margin-top:2px}
+.am-val{font-family:'DM Serif Display',serif;font-size:20px;line-height:1.05;color:var(--text)}
+.am-val.muted{color:var(--text3)}
+.am-delta{font-size:10px;margin-top:5px;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-weight:600;line-height:1.2}
+.am-delta.up{color:#065f46;background:#ecfdf5}
+.am-delta.dn{color:#991b1b;background:#fef2f2}
+.am-delta.flat{color:#6b6558;background:var(--surface2)}
+.am-delta.na{color:var(--text3);background:transparent;font-weight:400;font-style:italic}
+.am-delta-prev{font-size:9px;color:var(--text3);margin-top:3px;display:block}
+.am-cross-credit{font-size:9px;color:#6b6558;margin-top:3px;display:block;font-style:italic;cursor:help;border-bottom:1px dotted #c4bfb4;padding-bottom:1px}
+.am-cross-credit:hover{color:#1d4ed8;border-bottom-color:#1d4ed8}
+.src-inner{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.src-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:2px}
+.src-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border)}
+.src-table td{padding:5px 6px;color:var(--text2);border-bottom:1px solid var(--surface2)}
+.src-table td:last-child{text-align:right;font-weight:500;color:var(--text)}
+.src-table tr:last-child td{border-bottom:none}
+.src-table .pct-bar{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;margin-right:6px}
+
+/* LTV section */
+.ltv-stag{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;background:#fefce8;color:#854d0e;border:1px solid #fde68a;border-radius:6px;padding:5px;margin-bottom:6px;margin-top:8px}
+.ltv-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.ltv-sort{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.ltv-sort-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+.ltv-sort button{font-family:'DM Sans',sans-serif;font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 9px;background:white;color:var(--text2);cursor:pointer}
+.ltv-sort button.active{background:var(--text);color:white;border-color:var(--text)}
+.ltv-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.ltv-tbl th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.ltv-tbl th:not(:first-child){text-align:right}
+.ltv-tbl th:hover{color:var(--text2)}
+.ltv-tbl th.sort-asc::after{content:' ↑'}
+.ltv-tbl th.sort-desc::after{content:' ↓'}
+.ltv-tbl td{padding:6px 8px;border-bottom:1px solid var(--surface2);color:var(--text2)}
+.ltv-tbl td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.ltv-tbl tr:last-child td{border-bottom:none}
+.ltv-tbl .tfoot-row td{font-weight:600;color:var(--text);background:var(--surface2);border-top:2px solid var(--border)}
+.ltv-name{color:var(--text);font-weight:500}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500;margin-left:5px;vertical-align:middle}
+.badge-new{background:var(--green-bg);color:var(--green)}
+.badge-f3{background:#fefce8;color:#854d0e}
+.ltv-krow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:12px}
+
+/* ── Drill-down panel (slide-in from right) ──────────────── */
+.dd-backdrop{position:fixed;inset:0;background:rgba(26,24,20,.32);z-index:90;opacity:0;pointer-events:none;transition:opacity .18s ease}
+.dd-backdrop.open{opacity:1;pointer-events:auto}
+.dd-panel{position:fixed;top:0;right:0;bottom:0;width:min(700px,94vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.dd-panel.open{transform:translateX(0)}
+.dd-header{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface)}
+.dd-header-text{flex:1;min-width:0}
+.dd-title{font-family:'DM Serif Display',serif;font-size:18px;line-height:1.25;color:var(--text)}
+.dd-sub{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4}
+.dd-close{flex-shrink:0;background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.dd-close:hover{background:var(--surface2);color:var(--text)}
+
+/* Top zone: aggregated breakdown */
+.dd-breakdown-wrap{display:flex;flex-direction:column;height:30%;min-height:180px;border-bottom:2px solid var(--border);background:#fafaf6}
+.dd-breakdown-controls{display:flex;align-items:center;gap:10px;padding:10px 22px;border-bottom:1px solid var(--surface2);font-size:11px;color:var(--text2);flex-shrink:0}
+.dd-breakdown-controls label{font-weight:500;color:var(--text2)}
+.dd-breakdown-controls select{font-family:'DM Sans',sans-serif;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:white;color:var(--text);cursor:pointer}
+.dd-filter-state{margin-left:auto;font-size:10px;color:var(--text2);font-style:italic}
+.dd-filter-state .clear-btn{font-style:normal;font-weight:500;color:var(--dcb);cursor:pointer;text-decoration:underline;margin-left:6px}
+.dd-breakdown-body{flex:1;overflow-y:auto}
+.dd-bd-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:7px 22px;border-bottom:1px solid var(--surface2);align-items:center;cursor:pointer;font-size:12px}
+.dd-bd-row:hover{background:white}
+.dd-bd-row.selected{background:var(--dcb-bg);font-weight:500}
+.dd-bd-name{color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-bd-count{color:var(--text2);font-variant-numeric:tabular-nums;font-size:11px}
+.dd-bd-amount{color:var(--text);font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;min-width:70px;text-align:right}
+.dd-bd-empty{padding:16px 22px;text-align:center;color:var(--text3);font-size:11px;font-style:italic}
+
+/* Bottom zone: records */
+.dd-records-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.dd-records-header{padding:8px 22px 4px;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--surface);flex-shrink:0}
+.dd-body{flex:1;overflow-y:auto;padding:6px 0}
+.dd-empty{padding:32px 22px;text-align:center;color:var(--text3);font-size:12px;font-style:italic}
+.dd-row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 22px;border-bottom:1px solid var(--surface2);align-items:start}
+.dd-row:hover{background:var(--surface2)}
+.dd-row-main{min-width:0}
+.dd-row-name{font-size:13px;font-weight:500;color:var(--text);display:inline-block;line-height:1.3;cursor:default}
+
+/* Drill-down copy button — used in place of an anchor link because the HubSpot iframe
+   sandbox blocks both target="_blank" and window.open. Clicking copies the contact
+   URL to clipboard; the user pastes into a new browser tab. */
+.dd-copy-btn{display:inline-block;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--text2);padding:2px 6px;margin-left:5px;border-radius:4px;vertical-align:middle;line-height:1.4;font-family:'DM Sans',sans-serif;font-weight:500;transition:background .12s,color .12s}
+.dd-copy-btn:hover{background:var(--bk-bg);border-color:var(--bk);color:var(--bk)}
+.dd-copy-btn.copied{background:#dcfce7;border-color:#16a34a;color:#15803d}
+.dd-row-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+.dd-row-tags{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dd-tag{font-size:10px;font-weight:500;letter-spacing:.04em;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.dd-tag.amount{background:var(--dcb-bg);color:var(--dcb);border:1px solid #bfdbfe}
+.dd-tag.type-new{background:var(--green-bg);color:var(--green);border:1px solid #a7f3d0}
+.dd-tag.type-repeat{background:var(--inv-bg);color:var(--inv);border:1px solid #c4b5fd}
+.dd-tag.type-bolt{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.dd-footer{padding:12px 22px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);background:#fef9eb}
+
+/* Make clickable surfaces visibly clickable */
+.kpi.clickable{cursor:pointer;transition:box-shadow .12s ease}
+.kpi.clickable:hover{box-shadow:0 0 0 2px var(--dcb-bg) inset}
+
+/* KPI delta indicators — appear below the headline value in each card */
+.kpi-delta{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.3}
+.kpi-delta-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-weight:600;font-size:10px}
+.kpi-delta-badge.up{color:#065f46;background:#ecfdf5}
+.kpi-delta-badge.dn{color:#991b1b;background:#fef2f2}
+.kpi-delta-badge.flat{color:#6b6558;background:var(--surface2)}
+.kpi-delta-badge.na{color:#9e9789;background:transparent;font-weight:400;font-style:italic;padding:0}
+.kpi-delta-prev{font-size:10px;color:#9e9789}
+.dd-clickable{cursor:pointer}
+.dd-clickable:hover{filter:brightness(0.96)}
+.tbl-row-clickable{cursor:pointer}
+.tbl-row-clickable:hover{background:var(--surface2)}
+
+/* ── Guide panel (slide-in from right, separate from drill-down) ──────── */
+.guide-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:#f5f3ef;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-left:10px}
+.guide-btn:hover{background:rgba(255,255,255,.14)}
+.guide-btn-icon{font-size:13px;line-height:1}
+.guide-panel{position:fixed;top:0;right:0;bottom:0;width:min(560px,94vw);background:var(--surface);box-shadow:-8px 0 28px rgba(26,24,20,.18);z-index:91;transform:translateX(100%);transition:transform .22s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.guide-panel.open{transform:translateX(0)}
+.guide-header{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border);gap:14px;background:var(--surface)}
+.guide-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);line-height:1.2}
+.guide-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.guide-close{background:none;border:none;font-size:24px;line-height:1;color:var(--text3);cursor:pointer;padding:0 6px;border-radius:4px}
+.guide-close:hover{background:var(--surface2);color:var(--text)}
+.guide-body{flex:1;overflow-y:auto;padding:18px 22px 24px}
+.guide-body h3{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin:18px 0 8px;padding-top:12px;border-top:1px solid var(--surface2)}
+.guide-body h3:first-child{border-top:none;padding-top:0;margin-top:0}
+.guide-body p{font-size:13px;line-height:1.5;color:var(--text);margin:0 0 10px}
+.guide-body ul{font-size:13px;line-height:1.5;color:var(--text);margin:0 0 10px;padding-left:20px}
+.guide-body li{margin-bottom:5px}
+.guide-body strong{font-weight:600;color:var(--text)}
+.guide-body code{font-family:ui-monospace,monospace;font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--text2)}
+.guide-body .gtip{background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:9px 12px;font-size:12px;color:#713f12;margin:8px 0 10px;line-height:1.45}
+.guide-body .gtip strong{color:#713f12}
+.guide-body .gnote{background:var(--dcb-bg);border:1px solid #bfdbfe;border-radius:6px;padding:9px 12px;font-size:12px;color:#1e3a8a;margin:8px 0 10px;line-height:1.45}
+.guide-body .gnote strong{color:#1e3a8a}
+.guide-body dl{margin:0 0 10px;font-size:13px;line-height:1.5}
+.guide-body dt{font-weight:600;color:var(--text);margin-top:6px}
+.guide-body dd{margin:0 0 4px 12px;color:var(--text2)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div class="logo">S</div>
+    <h1>Sunrise Capital — Investment Dashboard</h1>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v29</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="guide-btn" onclick="openHelp()" aria-label="Open guide"><span class="guide-btn-icon">ⓘ</span>Guide</button>
+    <span id="ts">—</span>
+  </div>
+</header>
+
+<!-- Drill-down panel (slide-in from right) — opens when user clicks any
+     KPI tile, source row, donut segment, bar chart segment, or LTV element. -->
+<div id="dd-backdrop" class="dd-backdrop" onclick="closeDrilldown()"></div>
+<aside id="dd-panel" class="dd-panel" aria-hidden="true">
+  <header class="dd-header">
+    <div class="dd-header-text">
+      <div class="dd-title" id="dd-title">—</div>
+      <div class="dd-sub" id="dd-sub">—</div>
+    </div>
+    <button class="dd-close" onclick="closeDrilldown()" aria-label="Close">×</button>
+  </header>
+  <div class="dd-breakdown-wrap">
+    <div class="dd-breakdown-controls">
+      <label>View by:</label>
+      <select id="dd-dim" onchange="onDimensionChange()"></select>
+      <span class="dd-filter-state" id="dd-filter-state"></span>
+    </div>
+    <div class="dd-breakdown-body" id="dd-breakdown-body"></div>
+  </div>
+  <div class="dd-records-wrap">
+    <div class="dd-records-header" id="dd-records-header">Individual records</div>
+    <div class="dd-body" id="dd-body"></div>
+    <div class="dd-footer" id="dd-footer" style="display:none"></div>
+  </div>
+</aside>
+
+<!-- Guide panel (slide-in from right) — opens via the Guide button.
+     Contains user-facing instructions on how to read the dashboard. -->
+<div id="guide-backdrop" class="dd-backdrop" onclick="closeHelp()"></div>
+<aside id="guide-panel" class="guide-panel" aria-hidden="true">
+  <header class="guide-header">
+    <div>
+      <div class="guide-title">How to read this dashboard</div>
+      <div class="guide-sub">A field guide to the Sunrise Capital Investment Dashboard</div>
+    </div>
+    <button class="guide-close" onclick="closeHelp()" aria-label="Close">×</button>
+  </header>
+  <div class="guide-body">
+
+    <h3>What this dashboard shows</h3>
+    <p>This dashboard combines three data sources into a single operational view:</p>
+    <ul>
+      <li><strong>HubSpot Investment object</strong> — every funded investment (the source of truth for committed capital)</li>
+      <li><strong>HubSpot Deal pipeline</strong> — discovery calls booked through the sales process</li>
+      <li><strong>Google Sheet ad spend</strong> — daily Meta, Google, and LinkedIn ad spend</li>
+    </ul>
+    <p>Most charts respect the <strong>Date / Fund / Class / Type</strong> filters at the top of the page. The <strong>LTV section at the bottom is the exception</strong> — it always reflects all loaded investments, because LTV is a lifetime metric.</p>
+
+    <h3>Period-over-period comparison</h3>
+    <p>The <strong>"vs"</strong> picker next to the date range turns on period-over-period deltas on every KPI card and in the All Money table:</p>
+    <dl>
+      <dt>Previous Period (default)</dt>
+      <dd>The window immediately before the base period, sized to match. For "This Quarter" mid-quarter, the comparison is the same number of elapsed days in the prior quarter — so partial periods compare apples-to-apples.</dd>
+      <dt>Same period previous year</dt>
+      <dd>The base window shifted back 12 months. Useful for seasonality checks.</dd>
+      <dt>None</dt>
+      <dd>Hide deltas; cards show current period only.</dd>
+      <dt>Preset / Custom</dt>
+      <dd>Pick any preset window (This Week, Last Month, etc.) or specify custom dates to anchor the comparison.</dd>
+    </dl>
+    <p>Each card shows a colored pill: <strong>green up</strong> = better, <strong>red down</strong> = worse, <strong>grey</strong> = flat or no activity. Cost per DCB, Cost per Investment, and other "lower is better" metrics invert the color logic — a green pill means the cost went down. The "prev: X" line below each pill shows the comparison value for context.</p>
+
+    <h3>All Money — by Closer / AM</h3>
+    <p>The purple-bordered card between the KPI rows and the funnel divider breaks <em>all money raised</em> in the date range down by closer (Kelvin, Bronson, Jonny) and AM (Daniel, Alex Z.), plus Unattributed and Overall columns. Three rows: total investors active (unique contacts), total dollars (sums every investment record), and average ticket per investor.</p>
+    <p>The dollar totals reconcile 1:1 with <strong>Total Capital Raised</strong> above; investor counts will differ from the <strong>Funded Investments</strong> count because a single contact may have multiple investment records in the same window. Attribution uses the <code>closer</code> field on each investment record; if it's blank or doesn't match the roster, the record lands in Unattributed.</p>
+    <p><strong>Unique-contact dedup on the "All Investors Active" row.</strong> The investor-count row is a count of <em>unique contacts</em>, not investment records. A contact whose investments are attributed to two different people in the same range (e.g. Q1 funded by Kelvin, Q2 funded by Alex Z.) counts in both person columns but only <em>once</em> in Overall. So summing the visible columns can exceed the Overall count — the math is honest, just based on distinct people, not record additions. When that mismatch exists, a small "(N cross-credited)" footnote appears under the Overall cell to make the discrepancy legible. Dollar and avg-ticket rows don't have this issue (dollars just add).</p>
+
+    <h3>Top KPIs</h3>
+    <dl>
+      <dt>Funded investments</dt>
+      <dd>Count of Investment records whose <code>funds_received</code> falls inside the date filter. Click to drill in.</dd>
+      <dt>Total capital raised</dt>
+      <dd>Sum of <code>investment_amount</code> across those funded investments.</dd>
+      <dt>Avg investment size</dt>
+      <dd>Total capital raised ÷ funded investments. Includes New, Repeat, and Bolt-On investments.</dd>
+      <dt>Discovery calls booked</dt>
+      <dd>Count of deals that entered the DCB stage during the window. Click to drill in.</dd>
+    </dl>
+
+    <h3>Ad spend KPIs</h3>
+    <p>Pulled daily from the SCI ad-spend Google Sheet. Each platform tab is read separately and summed by date.</p>
+    <dl>
+      <dt>Total ad spend</dt><dd>Meta + Google + LinkedIn for the date window.</dd>
+      <dt>Cost per DCB</dt><dd>Total ad spend ÷ discovery calls booked in the window.</dd>
+      <dt>Cost per investment</dt><dd>Total ad spend ÷ funded investments in the window.</dd>
+      <dt>ROAS</dt><dd>Capital raised ÷ ad spend in the window.</dd>
+    </dl>
+    <div class="gnote"><strong>Note:</strong> Cost per DCB and Cost per Investment are most meaningful for windows of a quarter or longer. Short windows can produce volatile ratios when timing of investments and ad spend don't align.</div>
+
+    <h3>Source breakdown (DCB and Funded)</h3>
+    <p>Two columns of charts side-by-side:</p>
+    <ul>
+      <li><strong>Discovery Call Booked side</strong> uses the deal's <code>hs_analytics_source</code> (the source captured at the time of the call).</li>
+      <li><strong>Funded Investment side</strong> uses the <em>contact's</em> <code>hs_latest_source</code> — i.e. wherever that investor most recently came from.</li>
+    </ul>
+    <div class="gtip"><strong>Why the difference matters:</strong> Discovery Call source tells you "where did the booking come from"; Funded source tells you "what do we know about this investor's overall attribution." For investors who have multiple touchpoints, these can differ.</div>
+
+    <h3>Closer / Setter performance</h3>
+    <p>Four bar charts:</p>
+    <ul>
+      <li><strong>Calls Booked by Closer / Setter</strong> — counts of deals attributed to that owner via <code>hubspot_owner_id</code> (closer) or <code>setter_owner</code> (setter).</li>
+      <li><strong>Investments Funded by Closer / Setter</strong> — same logic, on Investment records via <code>closer</code> / <code>setter</code> properties.</li>
+    </ul>
+    <p>Click any bar to see the underlying records.</p>
+
+    <h3>Conversion rate</h3>
+    <p>For each closer/setter: <code>investments funded ÷ calls booked</code>, expressed as a percentage. Sorted by rate, descending.</p>
+    <div class="gnote"><strong>Caveat:</strong> The numerator and denominator come from different windows of activity. A call booked in October might fund in December, and we count both within the same date filter. For very recent date windows, conversion will look artificially low because pending deals haven't had time to close.</div>
+
+    <h3>Funded by Fund</h3>
+    <p>Two-bar chart per fund: <span style="color:var(--inv);font-weight:500">funded count</span> and <span style="color:var(--dcb);font-weight:500">DCB count</span>. The funded count uses Investment records' <code>fund_invested</code> property. DCB count uses a date cutoff to approximate which fund a call belongs to (since deals don't carry fund info directly).</p>
+
+    <h3>Monthly trend charts</h3>
+    <p>Bar charts of activity by month of <code>funds_received</code> (for funded) and DCB-stage entry date (for discovery calls). Click any bar to see that month's records.</p>
+
+    <h3>Investor LTV section</h3>
+    <p>Tracks investor lifetime value across Fund 4 and Fund 5 Investment records, plus a backfilled aggregate for Fund 3 contacts.</p>
+    <div class="gtip"><strong>Important:</strong> This section <strong>ignores all dashboard filters</strong> (date, fund, class, type). LTV is a lifetime metric — it doesn't make sense to compute it within a date range.</div>
+    <p>Six tiles:</p>
+    <dl>
+      <dt>First-time investors</dt>
+      <dd>Count of contacts with at least one New-type Investment, OR a non-zero <code>fund_3_total_investment_amount</code>.</dd>
+      <dt>Total first-invest capital</dt>
+      <dd>Sum of each first-time investor's first investment amount. For Fund 3 contacts, this is their backfilled lifetime total.</dd>
+      <dt>Avg first investment</dt>
+      <dd>Total first-invest capital ÷ first-time investors. <em>Currently inflated by Fund 3 lifetime totals — this will normalize once Fund 1/2/3 get proper Investment object records.</em></dd>
+      <dt>Portfolio LTV</dt>
+      <dd>Sum of all investments across all investors.</dd>
+      <dt>Avg LTV per investor</dt>
+      <dd>Portfolio LTV ÷ count of investors with any investment.</dd>
+      <dt>LTV / first investment</dt>
+      <dd>The average multiplier — how many dollars of total LTV does each first-investment dollar produce?</dd>
+    </dl>
+    <p>The three distribution charts below the tiles bucket investors by total LTV — count, capital concentration, and first-investment vs follow-on share within each bucket.</p>
+
+    <h3>Drill-downs</h3>
+    <p>Most surfaces on this dashboard are clickable. Clicking opens a slide-in panel with two zones:</p>
+    <ul>
+      <li><strong>Top zone (breakdown)</strong> — aggregates the cohort by a chosen dimension (Source, First Conversion, Recent Conversion, Source detail, Closer, Setter, Fund, Type, Month, Class).</li>
+      <li><strong>Bottom zone (records)</strong> — individual investments or deals.</li>
+    </ul>
+    <p>Click any breakdown row to filter the records below to that subgroup. Click again or "clear" to remove the filter. Press <strong>Esc</strong> to close.</p>
+    <p>Each record row has a small <strong>⧉ copy button</strong> next to the contact or deal name — click it to copy the HubSpot URL to your clipboard. The button turns green and shows <strong>✓ Copied!</strong> to confirm. Paste into a new browser tab to open the record in HubSpot. (Direct link-opening is blocked by the HubSpot iframe sandbox, so copy-and-paste is the reliable path.)</p>
+
+    <h3>Glossary</h3>
+    <dl>
+      <dt>DCB</dt><dd>Discovery Call Booked — when a prospect schedules an intro call, the deal moves to the DCB stage.</dd>
+      <dt>Closer</dt><dd>The team member who runs the closing call.</dd>
+      <dt>Setter</dt><dd>The team member who books the discovery call (often via outreach).</dd>
+      <dt>New / Repeat / Bolt-On</dt><dd>Investment types. <strong>New</strong> = investor's first investment. <strong>Repeat</strong> = an investor coming back. <strong>Bolt-On</strong> = an additional commitment to an existing position.</dd>
+      <dt>First Conversion</dt><dd>The first form a contact filled out, captured by HubSpot's analytics tracking.</dd>
+      <dt>Recent Conversion</dt><dd>The most recent form a contact filled out.</dd>
+    </dl>
+
+  </div>
+</aside>
+
+<div id="bar">
+  <div class="fg">
+    <label>Date range</label>
+    <select id="sel-date" onchange="onDateChange()">
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+      <option value="this_quarter" selected>This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12">Last 12 months</option>
+      <option value="all">All Time</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="cdates" id="cdates">
+    <input type="date" id="d-from" />
+    <span>to</span>
+    <input type="date" id="d-to" />
+  </div>
+  <div class="fg">
+    <label>vs</label>
+    <select id="sel-compare" onchange="onCompareChange()">
+      <option value="previous" selected>Previous Period</option>
+      <option value="yoy">Same period previous year</option>
+      <option value="none">None</option>
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12">Last 12 months</option>
+      <option value="custom">Custom dates…</option>
+    </select>
+  </div>
+  <div class="cdates" id="cmp-cdates">
+    <input type="date" id="cmp-d-from" />
+    <span>to</span>
+    <input type="date" id="cmp-d-to" />
+    <button onclick="applyFilters()" class="apply-btn">Apply</button>
+  </div>
+  <div class="fg">
+    <label>Fund</label>
+    <select id="sel-fund" onchange="applyFilters()">
+      <option value="all">All funds</option>
+      <option value="Fund 4">Fund 4</option>
+      <option value="Fund 5" selected>Fund 5</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Class</label>
+    <select id="sel-class" onchange="applyFilters()">
+      <option value="all">All classes</option>
+      <option value="A">Class A</option>
+      <option value="B">Class B</option>
+      <option value="C">Class C</option>
+      <option value="T">Class T</option>
+      <option value="X">Class X</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Type</label>
+    <select id="sel-type" onchange="applyFilters()">
+      <option value="all">All types</option>
+      <option value="New">New</option>
+      <option value="Repeat">Repeat</option>
+      <option value="Bolt-On">Bolt-On</option>
+    </select>
+  </div>
+  <button id="btn" onclick="load()">↻ Refresh data</button>
+  <span id="st" class="sl">Loading…</span>
+</div>
+
+<div id="ov" class="on">
+  <div class="spin"></div>
+  <div id="lm">Connecting to HubSpot…</div>
+</div>
+
+<div id="dash" style="display:none">
+  <div class="fpills" id="fpills"></div>
+
+  <!-- Row 1: core investment KPIs -->
+  <div class="krow">
+    <div class="kpi clickable" onclick="ddFundedKpi()"><div class="kl">Funded investments</div><div class="kv" id="k1">—</div><div class="ks" id="k1s">—</div><div class="kpi-delta" id="k1-delta"></div></div>
+    <div class="kpi clickable" onclick="ddFundedKpi()"><div class="kl">Total capital raised</div><div class="kv" id="k2">—</div><div class="ks">sum of investment amounts</div><div class="kpi-delta" id="k2-delta"></div></div>
+    <div class="kpi"><div class="kl">Avg investment size</div><div class="kv" id="k3">—</div><div class="ks">per funded investment</div><div class="kpi-delta" id="k3-delta"></div></div>
+    <div class="kpi clickable" onclick="ddDcbKpi()"><div class="kl">Discovery calls booked</div><div class="kv" id="k4">—</div><div class="ks" id="k4s">—</div><div class="kpi-delta" id="k4-delta"></div></div>
+  </div>
+
+  <!-- Row 2: ad spend efficiency KPIs -->
+  <div class="krow">
+    <div class="kpi"><div class="kl">Total ad spend</div><div class="kv" id="k5">—</div><div class="ks" id="k5s">Meta + Google + LinkedIn</div><div class="kpi-delta" id="k5-delta"></div></div>
+    <div class="kpi"><div class="kl">Cost per DCB</div><div class="kv" id="k6">—</div><div class="ks">ad spend ÷ discovery calls</div><div class="kpi-delta" id="k6-delta"></div></div>
+    <div class="kpi"><div class="kl">Cost per investment</div><div class="kv" id="k7">—</div><div class="ks">ad spend ÷ funded investments</div><div class="kpi-delta" id="k7-delta"></div></div>
+    <div class="kpi"><div class="kl">ROAS</div><div class="kv" id="k8">—</div><div class="ks">capital raised ÷ ad spend</div><div class="kpi-delta" id="k8-delta"></div></div>
+  </div>
+
+  <!-- Row 3: per-platform spend tiles -->
+  <div class="spend-row">
+    <div class="spend-kpi spend-meta">
+      <div class="spend-label"><div class="spend-dot spend-meta-dot"></div><div class="kl">Meta ad spend</div></div>
+      <div class="kv" id="sp-meta">—</div>
+      <div class="ks" id="sp-meta-s">filtered date range</div>
+      <div class="kpi-delta" id="sp-meta-delta"></div>
+    </div>
+    <div class="spend-kpi spend-google">
+      <div class="spend-label"><div class="spend-dot spend-google-dot"></div><div class="kl">Google ad spend</div></div>
+      <div class="kv" id="sp-google">—</div>
+      <div class="ks" id="sp-google-s">filtered date range</div>
+      <div class="kpi-delta" id="sp-google-delta"></div>
+    </div>
+    <div class="spend-kpi spend-linkedin">
+      <div class="spend-label"><div class="spend-dot spend-linkedin-dot"></div><div class="kl">LinkedIn ad spend</div></div>
+      <div class="kv" id="sp-linkedin">—</div>
+      <div class="ks" id="sp-linkedin-s">filtered date range</div>
+      <div class="kpi-delta" id="sp-linkedin-delta"></div>
+    </div>
+  </div>
+
+  <!-- All Money breakdown — investors and dollars by closer/AM, in the same
+       date range as the KPI cards. Uses the global 'vs' comparison picker. -->
+  <section class="am-section" id="am-section" style="display:none">
+    <div class="am-header">
+      <div class="am-title">All Money — by Closer / AM</div>
+    </div>
+    <div class="am-note">Counts are <strong>unique investors</strong> (per contact); dollar totals sum every investment record so they reconcile with Total Capital Raised. Closer credit follows the <code>closer</code> field on each investment record. Daniel A. and Alex Z. (AMs) own most repeat fundings; closers also retain some clients. Date range and filters above apply.</div>
+    <div style="overflow-x:auto"><table class="am-table" id="am-table"></table></div>
+  </section>
+
+  <div class="ch">
+    <div class="chd dcb">Discovery Call Booked — deals pipeline</div>
+    <div class="chd inv">Funded Investments — investment object</div>
+  </div>
+
+  <!-- Source breakdown with donut + table -->
+  <div class="src-layout">
+    <div class="src-card">
+      <div class="ct">Source breakdown</div>
+      <div class="src-inner">
+        <div>
+          <div class="leg" id="dsl"></div>
+          <div style="position:relative;height:180px"><canvas id="dsc"></canvas></div>
+        </div>
+        <table class="src-table">
+          <thead><tr><th>Source</th><th>%</th></tr></thead>
+          <tbody id="dcb-src-tbl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="src-card">
+      <div class="ct">Source breakdown</div>
+      <div class="src-inner">
+        <div>
+          <div class="leg" id="isl"></div>
+          <div style="position:relative;height:180px"><canvas id="isc"></canvas></div>
+        </div>
+        <table class="src-table">
+          <thead><tr><th>Source</th><th>%</th></tr></thead>
+          <tbody id="inv-src-tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cr">
+    <div class="card"><div class="ct">Calls booked by closer</div><div id="dcl"></div></div>
+    <div class="card"><div class="ct">Investments funded by closer</div><div id="icl"></div></div>
+  </div>
+
+  <div class="cr">
+    <div class="card"><div class="ct">Calls booked by setter</div><div id="dsl2"></div></div>
+    <div class="card"><div class="ct">Investments funded by setter</div><div id="isl2"></div></div>
+  </div>
+
+  <div class="stag">Conversion rate — discovery call booked → funded investment (by closer)</div>
+  <div class="cr" style="margin-top:6px">
+    <div class="card"><div class="ct">Conversion rate by closer</div><div id="ccl"></div><div class="cn">DCB from deals · Funded from investment object</div></div>
+    <div class="card"><div class="ct">Funded by fund</div><div id="ifd"></div></div>
+  </div>
+
+  <div class="stag">Conversion rate — discovery call booked → funded investment (by setter)</div>
+  <div class="cr" style="margin-top:6px;margin-bottom:12px">
+    <div class="card"><div class="ct">Conversion rate by setter</div><div id="csl"></div><div class="cn">DCB setter from deals · Funded setter from investment object</div></div>
+    <div class="card" style="background:transparent;border:none"></div>
+  </div>
+
+  <div class="cr">
+    <div class="card"><div class="ct">Discovery calls booked by month</div><div style="position:relative;height:180px"><canvas id="dcm"></canvas></div></div>
+    <div class="card"><div class="ct">Investments funded by month (funds received)</div><div style="position:relative;height:180px"><canvas id="icm"></canvas></div></div>
+  </div>
+
+  <!-- LTV Section -->
+  <div class="ltv-stag">Investor LTV — First-time investors &amp; lifetime capital (Fund 4 + 5 · Investment object)</div>
+  <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;margin-top:-2px">LTV is a lifetime metric — this section always reflects <strong style="color:var(--text2)">all loaded investments</strong> and is not affected by the date, fund, or class filters above.</div>
+
+  <!-- LTV KPI tiles -->
+  <div class="ltv-krow">
+    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">First-time investors</div><div class="kv" id="ltv-k1">—</div><div class="ks">New-type investment or Fund 3 record</div></div>
+    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">Total first-invest capital</div><div class="kv" id="ltv-k2">—</div><div class="ks">sum of New-type amounts</div></div>
+    <div class="kpi"><div class="kl">Avg first investment</div><div class="kv" id="ltv-k6">—</div><div class="ks" id="ltv-k6s">total first-invest capital ÷ first-time investors</div></div>
+    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Portfolio LTV</div><div class="kv" id="ltv-k3">—</div><div class="ks">all investments · all investors</div></div>
+    <div class="kpi"><div class="kl">Avg LTV per investor</div><div class="kv" id="ltv-k4">—</div><div class="ks">across investors with any investment</div></div>
+    <div class="kpi"><div class="kl">LTV / first investment</div><div class="kv" id="ltv-k5">—</div><div class="ks">portfolio LTV ÷ first-invest capital</div></div>
+  </div>
+
+  <!-- LTV Distribution Charts -->
+  <div class="cr">
+    <div class="card"><div class="ct">Investor count by LTV bucket</div><div style="position:relative;height:200px"><canvas id="ltv-dist"></canvas></div></div>
+    <div class="card"><div class="ct">Capital concentration by LTV bucket</div><div style="position:relative;height:200px"><canvas id="ltv-cap"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="ct" style="margin-bottom:0">First investment vs follow-on by LTV bucket</div>
+      <div style="display:flex;gap:12px">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:2px;background:rgba(109,40,217,0.65)"></div>First investment</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><div style="width:10px;height:10px;border-radius:2px;background:rgba(6,95,70,0.65)"></div>Follow-on</div>
+      </div>
+    </div>
+    <div style="position:relative;height:180px"><canvas id="ltv-stack"></canvas></div>
+  </div>
+</div>
+
+<script>
+const DC='#1d4ed8',IC='#6d28d9',GC='#065f46';
+const SC=['#1d4ed8','#065f46','#b45309','#6d28d9','#0e7490','#be185d','#4b5563','#92400e','#1e3a5f','#3b0764'];
+const CM={'650567768':'Alex Z','266072428':'Kelvin E.','601355604':'Jonny C','424254278':'Bronson P.'};
+const SM={'80677823':'Cierra M.','1750115047':'Kayla D.','85017246':'Aidan C.','82187398':'Alex W.','321805099':'Jamie W.'};
+
+// All Money table roster — closers + AMs. Matches closer dashboard's investments section.
+// Order matters: explicit arrays (not Object.keys, which returns integer keys in
+// numeric ascending order — would put Daniel A. first).
+const INV_CLOSERS={
+  '266072428':'Kelvin E.',
+  '424254278':'Bronson P.',
+  '601355604':'Jonny C.',
+};
+const INV_CLOSER_IDS=['266072428','424254278','601355604'];
+const INV_AMS={
+  '85544039':'Daniel A.',
+  '650567768':'Alex Z.',
+};
+const INV_AM_IDS=['85544039','650567768'];
+const INV_PERSONS={...INV_CLOSERS, ...INV_AMS};
+const INV_PERSON_IDS=[...INV_CLOSER_IDS, ...INV_AM_IDS];
+const PID='134921120', INV='2-59402465';
+const IPROPS='investment_amount,funds_received,closer,setter,fund_invested,class,type_of_investment';
+const DPROPS='hubspot_owner_id,setter_owner,hs_analytics_source,hs_v2_date_entered_233853873,dealstage,closedate';
+const FUND_CUTOFF='2025-12-01';
+const TOKEN=''; // handled by Cloudflare Worker
+const SHEETS_ID='1C3dz-zR4S0UsnVCOpQS1KhBovc0vyTlUz37ht2E29xA';
+const SHEETS_TABS=['Meta','Google','LinkedIn'];
+const WORKER_URL='https://sunrise-hubspot-proxy.billing-d58.workers.dev/hs-api';
+const CACHE_BASE_URL = WORKER_URL.replace(/\/hs-api$/, '');
+
+// Cache-first read. Returns array of records on success, throws on cache miss.
+async function fetchFromCache(endpoint, label){
+  const r = await fetch(`${CACHE_BASE_URL}/${endpoint}`);
+  if(r.status === 404) throw new Error(`${label} cache not yet populated`);
+  if(!r.ok) throw new Error(`${label} cache read failed: ${r.status}`);
+  const d = await r.json();
+  if(!d || !Array.isArray(d.results)) throw new Error(`${label} cache returned unexpected shape`);
+  return d.results;
+}
+
+async function fetchCacheMeta(){
+  try {
+    const r = await fetch(`${CACHE_BASE_URL}/cache-meta`);
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e){ return null; }
+}
+
+let ch={};
+let ALL_FUNDED=[], ALL_DEALS=[], CONTACT_SRC={};
+let ALL_ADSPEND=[];
+let CONTACT_DATA={}; // contactId -> {name, fund3}
+let INV_CONTACT_MAP={}; // invId -> contactId
+// Contact attribution properties indexed by contactId. Populated by fetchContactSources
+// (extended in v20 to also pull conversion + source-data fields).
+// Used for drill-down breakdowns (First Conversion, Recent Conversion, source data 1/2).
+let CONTACT_ATTRIB={};
+// LTV bucket → contact IDs mapping, set by renderLTV; used by bucket-chart drill-downs
+let LTV_BUCKETS_CACHE={labels:[], bucketContactIds:[]};
+
+function fmt(n){if(!n)return'—';if(n>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(2)+'K';return'$'+n.toLocaleString()}
+function st(m,c){const e=document.getElementById('st');e.textContent=m;e.className=c}
+function lm(m){document.getElementById('lm').textContent=m;document.getElementById('ov').classList.add('on')}
+function clr(){document.getElementById('ov').classList.remove('on')}
+
+// ── Date range helpers ────────────────────────────────────
+function subtractOneMonth(ds){
+  if(!ds) return null;
+  const d=new Date(ds); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,10);
+}
+function dateToMs(ds){ return ds ? new Date(ds).getTime() : null; }
+
+function getDateRange(){
+  const v=document.getElementById('sel-date').value;
+  const now=new Date();
+  const pad=(n)=>String(n).padStart(2,'0');
+  const ymd=(d)=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const startOfWeek=(d)=>{const x=new Date(d);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;};
+  const startOfMonth=(d)=>new Date(d.getFullYear(),d.getMonth(),1);
+  const startOfQuarter=(d)=>new Date(d.getFullYear(),Math.floor(d.getMonth()/3)*3,1);
+  const endOfMonth=(d)=>new Date(d.getFullYear(),d.getMonth()+1,0);
+  const endOfQuarter=(d)=>new Date(d.getFullYear(),Math.floor(d.getMonth()/3)*3+3,0);
+  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+
+  let from=null, to=null;
+  if(v==='yesterday'){const y=addDays(now,-1); from=ymd(y); to=ymd(y);}
+  else if(v==='this_week'){from=ymd(startOfWeek(now)); to=ymd(now);}
+  else if(v==='last_week'){const sow=startOfWeek(now); from=ymd(addDays(sow,-7)); to=ymd(addDays(sow,-1));}
+  else if(v==='this_month'){from=ymd(startOfMonth(now)); to=ymd(now);}
+  else if(v==='last_month'){const som=startOfMonth(now); from=ymd(startOfMonth(addDays(som,-1))); to=ymd(addDays(som,-1));}
+  else if(v==='this_quarter'){from=ymd(startOfQuarter(now)); to=ymd(now);}
+  else if(v==='last_quarter'){const soq=startOfQuarter(now); from=ymd(startOfQuarter(addDays(soq,-1))); to=ymd(addDays(soq,-1));}
+  else if(v==='this_year'){from=now.getFullYear()+'-01-01'; to=ymd(now);}
+  else if(v==='last_year'){from=(now.getFullYear()-1)+'-01-01'; to=(now.getFullYear()-1)+'-12-31';}
+  else if(v==='last_12'){const d=new Date(now);d.setFullYear(d.getFullYear()-1);from=ymd(d); to=ymd(now);}
+  else if(v==='all'){from=null;to=null;}
+  else if(v==='custom'){from=document.getElementById('d-from').value||null;to=document.getElementById('d-to').value||null;}
+
+  const dcbFrom=subtractOneMonth(from);
+  const dcbTo=to?subtractOneMonth(to):null;
+  return {from, to, dcbFrom, dcbTo};
+}
+
+function onDateChange(){
+  const v=document.getElementById('sel-date').value;
+  document.getElementById('cdates').classList.toggle('on', v==='custom');
+  if(v!=='custom') applyFilters();
+}
+
+function onCompareChange(){
+  const v=document.getElementById('sel-compare').value;
+  document.getElementById('cmp-cdates').classList.toggle('on', v==='custom');
+  if(v!=='custom') applyFilters();
+}
+
+// Resolve a date-range key (e.g. 'this_week') to {from, to} as YYYY-MM-DD strings.
+// Used both by getDateRange (base) and computePrevRange (preset comparisons).
+function resolveDateKey(key, fromInputId, toInputId){
+  const now=new Date();
+  const pad=(n)=>String(n).padStart(2,'0');
+  const ymd=(d)=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const startOfWeek=(d)=>{const x=new Date(d);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;};
+  const startOfMonth=(d)=>new Date(d.getFullYear(),d.getMonth(),1);
+  const startOfQuarter=(d)=>new Date(d.getFullYear(),Math.floor(d.getMonth()/3)*3,1);
+  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+
+  let from=null, to=null;
+  if(key==='yesterday'){const y=addDays(now,-1); from=ymd(y); to=ymd(y);}
+  else if(key==='this_week'){from=ymd(startOfWeek(now)); to=ymd(now);}
+  else if(key==='last_week'){const sow=startOfWeek(now); from=ymd(addDays(sow,-7)); to=ymd(addDays(sow,-1));}
+  else if(key==='this_month'){from=ymd(startOfMonth(now)); to=ymd(now);}
+  else if(key==='last_month'){const som=startOfMonth(now); from=ymd(startOfMonth(addDays(som,-1))); to=ymd(addDays(som,-1));}
+  else if(key==='this_quarter'){from=ymd(startOfQuarter(now)); to=ymd(now);}
+  else if(key==='last_quarter'){const soq=startOfQuarter(now); from=ymd(startOfQuarter(addDays(soq,-1))); to=ymd(addDays(soq,-1));}
+  else if(key==='this_year'){from=now.getFullYear()+'-01-01'; to=ymd(now);}
+  else if(key==='last_year'){from=(now.getFullYear()-1)+'-01-01'; to=(now.getFullYear()-1)+'-12-31';}
+  else if(key==='last_12'){const d=new Date(now);d.setFullYear(d.getFullYear()-1);from=ymd(d); to=ymd(now);}
+  else if(key==='all'){from=null;to=null;}
+  else if(key==='custom'){
+    from=fromInputId?(document.getElementById(fromInputId).value||null):null;
+    to=toInputId?(document.getElementById(toInputId).value||null):null;
+  }
+  return {from, to};
+}
+
+// Compute previous-period range based on the global comparison picker.
+// Supports: 'previous' (smart auto-prev based on base key), 'yoy' (-1 year),
+// 'none' (no comparison), preset keys ('this_week', etc.) and 'custom'.
+function computePrevRange(from, to){
+  const cmp=document.getElementById('sel-compare')?.value || 'previous';
+  const baseKey=document.getElementById('sel-date')?.value || 'this_quarter';
+  if(cmp==='none' || !from || !to) return {prevFrom:null, prevTo:null, cmp};
+
+  if(cmp==='yoy'){
+    const fromD=new Date(from), toD=new Date(to);
+    fromD.setFullYear(fromD.getFullYear()-1);
+    toD.setFullYear(toD.getFullYear()-1);
+    return {prevFrom:fromD.toISOString().slice(0,10), prevTo:toD.toISOString().slice(0,10), cmp};
+  }
+
+  if(cmp==='previous'){
+    // Smart auto-prev: matches the rhythm of the base period for clean comparisons.
+    // Partial periods (this_*) use "same elapsed time" against the previous full period.
+    const now=new Date();
+    const pad=(n)=>String(n).padStart(2,'0');
+    const ymd=(d)=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    const startOfWeek=(d)=>{const x=new Date(d);x.setHours(0,0,0,0);const day=x.getDay();x.setDate(x.getDate()+(day===0?-6:1-day));return x;};
+    const startOfMonth=(d)=>new Date(d.getFullYear(),d.getMonth(),1);
+    const startOfQuarter=(d)=>new Date(d.getFullYear(),Math.floor(d.getMonth()/3)*3,1);
+    const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+    const baseFromD=new Date(from), baseToD=new Date(to);
+    const elapsedMs=baseToD-baseFromD;
+    let prevFromD, prevToD;
+
+    if(baseKey==='yesterday'){const dby=addDays(now,-2); prevFromD=dby; prevToD=dby;}
+    else if(baseKey==='this_week'){const lastSow=addDays(startOfWeek(now),-7); prevFromD=lastSow; prevToD=new Date(lastSow.getTime()+elapsedMs);}
+    else if(baseKey==='last_week'){const sow=startOfWeek(now); prevFromD=addDays(sow,-14); prevToD=addDays(sow,-8);}
+    else if(baseKey==='this_month'){const lastSom=startOfMonth(addDays(startOfMonth(now),-1)); prevFromD=lastSom; prevToD=new Date(lastSom.getTime()+elapsedMs);}
+    else if(baseKey==='last_month'){prevFromD=startOfMonth(addDays(baseFromD,-1)); prevToD=addDays(baseFromD,-1);}
+    else if(baseKey==='this_quarter'){const lastSoq=startOfQuarter(addDays(startOfQuarter(now),-1)); prevFromD=lastSoq; prevToD=new Date(lastSoq.getTime()+elapsedMs);}
+    else if(baseKey==='last_quarter'){prevFromD=startOfQuarter(addDays(baseFromD,-1)); prevToD=addDays(baseFromD,-1);}
+    else if(baseKey==='this_year'){const lastSoy=new Date(now.getFullYear()-1,0,1); const elapsedFromSoy=baseToD-new Date(now.getFullYear(),0,1); prevFromD=lastSoy; prevToD=new Date(lastSoy.getTime()+elapsedFromSoy);}
+    else if(baseKey==='last_year'){prevFromD=new Date(now.getFullYear()-2,0,1); prevToD=new Date(now.getFullYear()-2,11,31);}
+    else if(baseKey==='last_12'){prevToD=addDays(baseFromD,-1); prevFromD=addDays(prevToD,-365);}
+    else {
+      // custom or unknown — fall back to duration before from
+      prevToD=addDays(baseFromD,-1);
+      prevFromD=new Date(prevToD.getTime()-elapsedMs);
+    }
+    return {prevFrom:ymd(prevFromD), prevTo:ymd(prevToD), cmp};
+  }
+
+  // Preset key (this_week, last_quarter, etc.) or 'custom'
+  const resolved=resolveDateKey(cmp, 'cmp-d-from', 'cmp-d-to');
+  return {prevFrom:resolved.from, prevTo:resolved.to, cmp};
+}
+
+// ── Filter + render ───────────────────────────────────────
+// Filter ALL_FUNDED by a date window + the current fund/class/type filters.
+// Extracted so the same logic can be re-used for previous-period comparison
+// in the All Money table.
+function filterFundedRange(from, to){
+  const fund=document.getElementById('sel-fund').value;
+  const cls=document.getElementById('sel-class').value;
+  const typ=document.getElementById('sel-type').value;
+  return ALL_FUNDED.filter(i=>{
+    const fr=i.properties.funds_received;
+    if(!fr) return false;
+    if(from && fr<from) return false;
+    if(to && fr>to) return false;
+    if(fund!=='all' && i.properties.fund_invested!==fund) return false;
+    if(cls!=='all' && (i.properties.class||'').toUpperCase()!==cls) return false;
+    if(typ!=='all' && i.properties.type_of_investment!==typ) return false;
+    return true;
+  });
+}
+
+// Compute previous-period range based on the global comparison picker.
+// Used by both the KPI cards and the All Money table.
+// Filter ALL_DEALS by a DCB date window + the current fund filter.
+// Extracted so the same logic can be re-used for previous-period comparison.
+function filterDealsRange(dcbFrom, dcbTo){
+  const fund=document.getElementById('sel-fund').value;
+  return ALL_DEALS.filter(d=>{
+    const dt=d.properties.hs_v2_date_entered_233853873;
+    if(!dt) return false;
+    const ds=dt.slice(0,10);
+    if(dcbFrom && ds<dcbFrom) return false;
+    if(dcbTo && ds>dcbTo) return false;
+    if(fund!=='all'){
+      const dealFund=ds<FUND_CUTOFF?'Fund 4':'Fund 5';
+      if(dealFund!==fund) return false;
+    }
+    return true;
+  });
+}
+
+// Current funded subset — stashed by applyFilters so renderAllMoney can re-render
+// without re-filtering when only the comparison dropdown changes.
+let CURRENT_FUNDED_FOR_AM=[];
+let CURRENT_PREV_FUNDED_FOR_AM=[];
+let CURRENT_AM_RANGE={from:null,to:null,prevFrom:null,prevTo:null,cmp:'previous'};
+
+function applyFilters(){
+  if(!ALL_FUNDED.length) return;
+  const {from,to,dcbFrom,dcbTo}=getDateRange();
+  const fund=document.getElementById('sel-fund').value;
+
+  // Current period
+  const funded=filterFundedRange(from, to);
+  const deals=filterDealsRange(dcbFrom, dcbTo);
+
+  // Previous period (from global compare picker)
+  const {prevFrom, prevTo, cmp}=computePrevRange(from, to);
+  const prevFunded = prevFrom ? filterFundedRange(prevFrom, prevTo) : [];
+  // DCB filter dates lag by one month — apply same shift to prev range
+  const prevDcbFrom = subtractOneMonth(prevFrom);
+  const prevDcbTo = prevTo ? subtractOneMonth(prevTo) : null;
+  const prevDeals = prevFrom ? filterDealsRange(prevDcbFrom, prevDcbTo) : [];
+
+  CURRENT_FUNDED_FOR_AM=funded;
+  CURRENT_PREV_FUNDED_FOR_AM=prevFunded;
+  CURRENT_AM_RANGE={from, to, prevFrom, prevTo, cmp};
+
+  const pills=[];
+  if(from||to) pills.push((from||'…')+' → '+(to||'today'));
+  if(fund!=='all') pills.push(fund);
+  const _cls=document.getElementById('sel-class').value;
+  if(_cls!=='all') pills.push('Class '+_cls);
+  const _typ=document.getElementById('sel-type').value;
+  if(_typ!=='all') pills.push(_typ);
+  if(cmp!=='none' && prevFrom){
+    const cmpLabel = cmp==='yoy' ? 'vs Same period prev year' : 'vs Previous Period';
+    pills.push(cmpLabel+' ('+prevFrom+' → '+prevTo+')');
+  }
+  document.getElementById('fpills').innerHTML=pills.map(p=>`<div class="fpill">${p}</div>`).join('');
+
+  renderAll(funded, deals, prevFunded, prevDeals);
+}
+
+// Render a KPI delta cell with up/down arrow, percent change, and prev value.
+// Matches the closer-dash deltaForCount/deltaForDollars convention.
+function renderKpiDelta(elemId, cur, prev, opts){
+  const el=document.getElementById(elemId);
+  if(!el) return;
+  const {lowerIsBetter=false, formatFn=(n=>n.toLocaleString()), hasComparison=true}=opts||{};
+  if(!hasComparison){ el.innerHTML=''; return; }
+  if(prev===null||prev===undefined){
+    el.innerHTML='<span class="kpi-delta-badge na">no comparison data</span>';
+    return;
+  }
+  let badgeHtml;
+  if(prev===0 && cur===0){
+    badgeHtml='<span class="kpi-delta-badge flat">no activity</span>';
+  } else if(prev===0){
+    badgeHtml='<span class="kpi-delta-badge up">new activity</span>';
+  } else {
+    const pct=Math.round(((cur-prev)/prev)*100);
+    let cls='flat', arrow='→';
+    if(pct>0){ cls=lowerIsBetter?'dn':'up'; arrow='↑'; }
+    else if(pct<0){ cls=lowerIsBetter?'up':'dn'; arrow='↓'; }
+    badgeHtml=`<span class="kpi-delta-badge ${cls}">${arrow} ${Math.abs(pct)}%</span>`;
+  }
+  const prevHtml = prev!==null && prev!==undefined
+    ? `<span class="kpi-delta-prev">prev: ${formatFn(prev)}</span>`
+    : '';
+  el.innerHTML = badgeHtml + prevHtml;
+}
+
+function renderAll(funded, deals, prevFunded, prevDeals){
+  prevFunded = prevFunded || [];
+  prevDeals = prevDeals || [];
+  const hasComparison = prevFunded.length>0 || prevDeals.length>0
+    || (CURRENT_AM_RANGE.cmp!=='none' && CURRENT_AM_RANGE.prevFrom);
+
+  // Current totals
+  const total=funded.reduce((s,i)=>s+(parseFloat(i.properties.investment_amount)||0),0);
+  const avgTicket = funded.length>0 ? Math.round(total/funded.length) : 0;
+
+  // Previous totals
+  const prevTotal=prevFunded.reduce((s,i)=>s+(parseFloat(i.properties.investment_amount)||0),0);
+  const prevAvgTicket = prevFunded.length>0 ? Math.round(prevTotal/prevFunded.length) : 0;
+
+  // Row 1 headline values
+  document.getElementById('k1').textContent=funded.length.toLocaleString();
+  document.getElementById('k1s').textContent='funded investments';
+  document.getElementById('k2').textContent=fmt(total);
+  document.getElementById('k3').textContent=funded.length>0?fmt(avgTicket):'—';
+  document.getElementById('k4').textContent=deals.length.toLocaleString();
+  const _r=getDateRange(); document.getElementById('k4s').textContent=_r.dcbFrom?'From '+_r.dcbFrom:'All time';
+
+  // Row 1 deltas
+  const intFmt = n => n.toLocaleString();
+  renderKpiDelta('k1-delta', funded.length, hasComparison ? prevFunded.length : null, {formatFn:intFmt, hasComparison});
+  renderKpiDelta('k2-delta', total, hasComparison ? prevTotal : null, {formatFn:fmt, hasComparison});
+  renderKpiDelta('k3-delta', avgTicket, hasComparison ? prevAvgTicket : null, {formatFn:fmt, hasComparison});
+  renderKpiDelta('k4-delta', deals.length, hasComparison ? prevDeals.length : null, {formatFn:intFmt, hasComparison});
+
+  // Ad spend KPIs (row 2 + row 3) — pass prev period for deltas
+  const spend=calcAdSpend(_r.from, _r.to);
+  const prevSpend = hasComparison && CURRENT_AM_RANGE.prevFrom
+    ? calcAdSpend(CURRENT_AM_RANGE.prevFrom, CURRENT_AM_RANGE.prevTo)
+    : null;
+  renderAdSpend(spend, deals.length, funded.length, total, prevSpend, prevDeals.length, prevFunded.length, prevTotal, hasComparison);
+
+  const invSrcMap={};
+  funded.forEach(i=>{
+    const src=CONTACT_SRC[String(i.id)]||'Unknown';
+    invSrcMap[src]=(invSrcMap[src]||0)+1;
+  });
+
+  const dcbSrcMap={};
+  deals.forEach(d=>{
+    const s=d.properties.hs_analytics_source||'Unknown';
+    dcbSrcMap[s]=(dcbSrcMap[s]||0)+1;
+  });
+
+  const invCloser={},invSetter={},invMonth={},invFund={};
+  funded.forEach(i=>{
+    const p=i.properties;
+    const c=p.closer; if(c) invCloser[c]=(invCloser[c]||0)+1;
+    const s=p.setter; if(s) invSetter[s]=(invSetter[s]||0)+1;
+    const mo=p.funds_received?.slice(0,7); if(mo) invMonth[mo]=(invMonth[mo]||0)+1;
+    const f=p.fund_invested||'Unknown'; invFund[f]=(invFund[f]||0)+1;
+  });
+
+  const dcbCloser={},dcbSetter={},dcbMonth={},dcbFund={};
+  deals.forEach(d=>{
+    const p=d.properties;
+    const c=p.hubspot_owner_id; if(c) dcbCloser[c]=(dcbCloser[c]||0)+1;
+    const sv=p.setter_owner; if(sv) dcbSetter[sv]=(dcbSetter[sv]||0)+1;
+    const mo=p.hs_v2_date_entered_233853873?.slice(0,7); if(mo) dcbMonth[mo]=(dcbMonth[mo]||0)+1;
+    const ds=p.hs_v2_date_entered_233853873?.slice(0,10);
+    const df=ds?(ds<FUND_CUTOFF?'Fund 4':'Fund 5'):'Unknown';
+    dcbFund[df]=(dcbFund[df]||0)+1;
+  });
+
+  donut('dsc','dsl',dcbSrcMap);
+  donut('isc','isl',invSrcMap);
+  srcTable('dcb-src-tbl', dcbSrcMap, deals.length, DC);
+  srcTable('inv-src-tbl', invSrcMap, funded.length, IC);
+  bars('dcl',dcbCloser,CM,DC);
+  bars('icl',invCloser,CM,IC);
+  bars('dsl2',dcbSetter,SM,DC);
+  bars('isl2',invSetter,SM,IC);
+  fundBars('ifd',invFund,dcbFund);
+  convBars('ccl',dcbCloser,invCloser);
+  convBars('csl',dcbSetter,invSetter,SM);
+  mbar('dcm',dcbMonth,DC);
+  mbar('icm',invMonth,IC);
+
+  // All Money breakdown table — between the KPI rows and funnel sections
+  renderAllMoney();
+
+  // LTV section — always computed over ALL_FUNDED (ignores date/fund filter intentionally)
+  const ltvRows=computeLTV(ALL_FUNDED, INV_CONTACT_MAP);
+  renderLTV(ltvRows);
+}
+
+// ── All Money table ─────────────────────────────────────
+// Counts unique contacts per closer/AM (not raw records); dollar totals sum
+// every investment record so they reconcile with Total Capital Raised.
+// Comparison dropdown gives optional period-over-period delta per cell.
+function renderAllMoney(){
+  const section=document.getElementById('am-section');
+  if(!section) return;
+  if(!CURRENT_FUNDED_FOR_AM.length){
+    section.style.display='none';
+    return;
+  }
+  section.style.display='block';
+
+  const cols=[...INV_PERSON_IDS, 'unattributed', 'overall'];
+  const {prevFrom, prevTo, cmp}=CURRENT_AM_RANGE;
+  const hasPrev = cmp!=='none' && !!(prevFrom && prevTo);
+  const prevFunded = CURRENT_PREV_FUNDED_FOR_AM;
+
+  function metricsForColumn(funded, colId){
+    // matchInvOwner: 'overall' = all records; person ID = exact match; 'unattributed' = neither
+    const match=(c)=>{
+      if(colId==='overall') return true;
+      if(colId==='unattributed') return !c || INV_PERSON_IDS.indexOf(c)<0;
+      return c===colId;
+    };
+    const matching=funded.filter(i=>match(i.properties.closer));
+    const contacts=new Set();
+    let amount=0;
+    matching.forEach(i=>{
+      const cid=INV_CONTACT_MAP[i.id];
+      if(cid) contacts.add(cid);
+      amount += parseFloat(i.properties.investment_amount)||0;
+    });
+    const count=contacts.size;
+    const avg=count>0 ? Math.round(amount/count) : 0;
+    return {count, amount, avg};
+  }
+
+  const colData={};
+  cols.forEach(c=>{
+    colData[c]={cur:metricsForColumn(CURRENT_FUNDED_FOR_AM, c), prev:hasPrev?metricsForColumn(prevFunded, c):null};
+  });
+
+  // Build the table
+  const colLabel=(c)=> c==='overall' ? 'Overall' : c==='unattributed' ? 'Unattributed' : (INV_PERSONS[c]||c);
+  const colClass=(c)=> c==='overall' ? 'am-col-overall' : c==='unattributed' ? 'am-col-unattributed' : '';
+
+  const headRow='<thead><tr><th>Metric</th>'+
+    cols.map(c=>`<th class="${colClass(c)}">${colLabel(c)}</th>`).join('')+'</tr></thead>';
+
+  const metrics=[
+    {key:'count',  label:'All Investors Active',  sub:'unique contacts with any funding in range', fmt:n=>n.toLocaleString(), lowerIsBetter:false},
+    {key:'amount', label:'All Money Raised',      sub:'total dollars from all investment records', fmt:fmt,                  lowerIsBetter:false},
+    {key:'avg',    label:'Avg Ticket (all money)', sub:'per unique contact',                       fmt:fmt,                  lowerIsBetter:false},
+  ];
+
+  const deltaHtml=(cur, prev, isLower)=>{
+    if(!hasPrev) return '<div class="am-delta na">N/A</div>';
+    if(prev===null||prev===undefined) return '<div class="am-delta flat">—</div>';
+    if(prev===0 && cur===0) return '<div class="am-delta flat">no activity</div>';
+    if(prev===0) return '<div class="am-delta up">new activity</div><span class="am-delta-prev">prev: 0</span>';
+    const pct=Math.round(((cur-prev)/prev)*100);
+    let cls='flat', arrow='→';
+    if(pct>0){ cls=isLower?'dn':'up'; arrow='↑'; }
+    else if(pct<0){ cls=isLower?'up':'dn'; arrow='↓'; }
+    return `<div class="am-delta ${cls}">${arrow} ${Math.abs(pct)}%</div>`;
+  };
+
+  // Map of metric key → display label for drill-down titles. Defined here
+  // because it's read by ddAllMoneyCell which doesn't have access to the
+  // local `metrics` array used to build the table.
+  const ALL_MONEY_METRIC_LABELS = {
+    count:  'All Investors Active',
+    amount: 'All Money Raised',
+    avg:    'Avg Ticket (all money)',
+  };
+
+  // Cross-credit residual — unique-contact metrics (currently just 'count')
+  // use Set-dedup, so sum(persons) + Unattributed can EXCEED Overall whenever
+  // a contact's investments are attributed to multiple closers/AMs in the same
+  // window (a contact funded by Kelvin in Q1 and Alex Z. in Q2 within range
+  // counts in BOTH Kelvin's and Alex Z.'s columns but only ONCE in Overall).
+  // Compute the discrepancy here so we can surface it as a footnote on the
+  // Overall cell — leaves the row math visually honest without forcing a
+  // misleading sum. Dollar / avg-ticket rows don't need this (dollars just add).
+  const uniqueMetricKeys = new Set(['count']);
+  const crossCreditByMetric = {};
+  metrics.forEach(m=>{
+    if(!uniqueMetricKeys.has(m.key)) return;
+    const personSum = INV_PERSON_IDS.reduce((s,id)=>s+(colData[id]?.cur?.[m.key]||0),0);
+    const unattributed = colData['unattributed']?.cur?.[m.key]||0;
+    const overall = colData['overall']?.cur?.[m.key]||0;
+    const cur = (personSum + unattributed) - overall;
+    let prev = 0;
+    if(hasPrev){
+      const prevPersonSum = INV_PERSON_IDS.reduce((s,id)=>s+(colData[id]?.prev?.[m.key]||0),0);
+      const prevUnattributed = colData['unattributed']?.prev?.[m.key]||0;
+      const prevOverall = colData['overall']?.prev?.[m.key]||0;
+      prev = (prevPersonSum + prevUnattributed) - prevOverall;
+    }
+    crossCreditByMetric[m.key] = {cur, prev};
+  });
+
+  const CROSS_CREDIT_TOOLTIP = 'A contact whose investments are attributed to multiple closers or AMs in this date range counts once in each person\'s column but only once in Overall (unique contacts are deduplicated). The number shown is how many contacts are cross-credited — the difference between summing the visible columns and the true Overall count.';
+
+  const bodyRows=metrics.map(m=>{
+    return '<tr>'+
+      `<td>${m.label}<div class="am-metric-sub">${m.sub}</div></td>`+
+      cols.map(c=>{
+        const cur=colData[c].cur[m.key];
+        const prev=colData[c].prev ? colData[c].prev[m.key] : null;
+        const muted=!cur ? ' muted' : '';
+        const valDisp = cur ? m.fmt(cur) : (m.key==='count' ? '0' : '$0');
+        const delta=deltaHtml(cur, prev, m.lowerIsBetter);
+        // Cell value is clickable when there's data — opens the standard drill-down
+        // panel (dimension breakdown + record list) filtered to this column.
+        // Pass the metric KEY (not the label) so the onclick attribute stays
+        // valid — JSON-stringifying a label here breaks the attribute quoting.
+        const valHtml = cur
+          ? `<div class="am-val dd-clickable" onclick="ddAllMoneyCell('${c}','cur','${m.key}')" title="Click to view underlying records">${valDisp}</div>`
+          : `<div class="am-val${muted}">${valDisp}</div>`;
+        // Previous-period sub-value is also clickable so you can drill into the
+        // comparison cohort directly (e.g. to see who the investors WERE last quarter).
+        const prevDisp = hasPrev && prev!==null && prev!==undefined && prev!==0
+          ? `<span class="am-delta-prev dd-clickable" onclick="ddAllMoneyCell('${c}','prev','${m.key}')" title="Click to view comparison-period records">prev: ${m.fmt(prev)}</span>`
+          : '';
+        // Cross-credit footnote on the Overall cell when the unique-contact
+        // dedup creates a sum-vs-Overall mismatch. Only renders when cur > 0
+        // so cells where the row sums cleanly stay uncluttered.
+        let crossNote = '';
+        if(c==='overall' && crossCreditByMetric[m.key]){
+          const cc = crossCreditByMetric[m.key];
+          if(cc.cur > 0){
+            crossNote += `<span class="am-cross-credit" title="${CROSS_CREDIT_TOOLTIP}">(${cc.cur} cross-credited)</span>`;
+          }
+          if(hasPrev && cc.prev > 0){
+            crossNote += `<span class="am-cross-credit" title="${CROSS_CREDIT_TOOLTIP}">prev: (${cc.prev} cross-credited)</span>`;
+          }
+        }
+        return `<td class="${colClass(c)}">${valHtml}${delta}${prevDisp}${crossNote}</td>`;
+      }).join('')+
+    '</tr>';
+  }).join('');
+
+  // Expose the label map for ddAllMoneyCell to read.
+  window.__AM_METRIC_LABELS = ALL_MONEY_METRIC_LABELS;
+
+  document.getElementById('am-table').innerHTML = headRow + '<tbody>'+bodyRows+'</tbody>';
+}
+
+// ── API helpers ───────────────────────────────────────────
+async function api(path,body){
+  const r=await fetch((WORKER_URL+path).replace(/([^:])\/{2,}/g,'$1/'),{
+    method:body?'POST':'GET',
+    headers:{'Content-Type':'application/json'},
+    ...(body?{body:JSON.stringify(body)}:{})
+  });
+  if(!r.ok){
+    const e=await r.json().catch(()=>({}));
+    const err = new Error(e.message||'HTTP '+r.status);
+    err.status = r.status;
+    throw err;
+  }
+  return r.json();
+}
+
+// Sleep helper
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+// HubSpot rate limit is ~100 requests per 10 seconds. Inter-call delay keeps us safely under.
+const API_DELAY_MS = 110;
+
+// Track whether any fetch loop hit an unrecoverable error so we can warn the user.
+let LOAD_INCOMPLETE = false;
+let LOAD_INCOMPLETE_REASON = '';
+
+// Wrapper that retries on 429 (rate limit) with exponential backoff.
+async function apiWithRetry(path, body, label){
+  const backoffs = [1000, 3000, 10000];
+  for(let attempt=0; attempt<=backoffs.length; attempt++){
+    try {
+      return await api(path, body);
+    } catch(e){
+      if(e.status === 429 && attempt < backoffs.length){
+        const wait = backoffs[attempt];
+        console.warn(`Rate limit hit on ${label||path}, retrying in ${wait}ms (attempt ${attempt+1}/${backoffs.length})`);
+        if(label) lm(`Rate limit — waiting ${wait/1000}s…`);
+        await sleep(wait);
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+async function fetchAll(path,qs){
+  let all=[],after=null,page=0;
+  while(true){
+    page++;
+    lm('Loading investments… page '+page+' ('+all.length+' loaded)');
+    let d;
+    try{
+      d=await apiWithRetry(path+'?'+qs+(after?'&after='+encodeURIComponent(after):''), null, 'investments');
+    }catch(e){
+      console.warn('fetchAll error on page '+page+':',e.message);
+      st('Investment load error on page '+page+': '+e.message,'se');
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Investment fetch interrupted at page ${page}: ${e.message}`;
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    if(page>60) break;
+    // Pace requests to stay under HubSpot's per-second rate limit
+    await sleep(API_DELAY_MS);
+  }
+  return all;
+}
+
+async function fetchDealsChunk(fromMs, toMs, loaded){
+  let all=[],after=null,page=0;
+  while(true){
+    page++;
+    lm('Loading discovery call booked deals… ('+(loaded+all.length)+' loaded)');
+    const filters=[
+      {propertyName:'pipeline',operator:'EQ',value:PID},
+      {propertyName:'hs_v2_date_entered_233853873',operator:'HAS_PROPERTY'},
+    ];
+    if(fromMs) filters.push({propertyName:'hs_v2_date_entered_233853873',operator:'GTE',value:String(fromMs)});
+    if(toMs)   filters.push({propertyName:'hs_v2_date_entered_233853873',operator:'LTE',value:String(toMs)});
+    const body={
+      filterGroups:[{filters}],
+      properties:DPROPS.split(','),
+      sorts:[{propertyName:'hs_v2_date_entered_233853873',direction:'ASCENDING'}],
+      limit:200,
+      ...(after?{after}:{})
+    };
+    let d;
+    try{
+      d=await Promise.race([
+        apiWithRetry('/crm/v3/objects/deals/search',body,'deals'),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('Chunk timed out')),28000))
+      ]);
+    }catch(e){
+      console.warn('Chunk error:',e.message);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Deal fetch interrupted: ${e.message}`;
+      break;
+    }
+    all=all.concat(d.results||[]);
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+    // No per-chunk cap — paginate the full month so dense periods aren't silently
+    // truncated. Rate-limit retry handles pacing.
+    // Pace requests to stay under HubSpot's per-second rate limit
+    await sleep(API_DELAY_MS);
+  }
+  return all;
+}
+
+async function fetchDeals(dcbFromMs, dcbToMs){
+  const start=dcbFromMs ? new Date(dcbFromMs) : new Date('2023-01-01');
+  const end=dcbToMs ? new Date(dcbToMs) : new Date();
+  const chunks=[];
+  let cur=new Date(start.getFullYear(), start.getMonth(), 1);
+  while(cur<=end){
+    const chunkStart=new Date(cur);
+    const chunkEnd=new Date(cur.getFullYear(), cur.getMonth()+1, 0, 23, 59, 59, 999);
+    chunks.push([chunkStart.getTime(), Math.min(chunkEnd.getTime(), end.getTime())]);
+    cur=new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+  }
+  // Parallelize chunks: 3 in flight at a time. Separate date ranges have independent
+  // pagination cursors so they can run concurrently. Within each chunk paging is still
+  // sequential. apiWithRetry handles 429s if rate limit is hit.
+  const CHUNK_PARALLELISM = 3;
+  let all = [];
+  let completedChunks = 0;
+  const totalChunks = chunks.length;
+  for(let i=0; i<chunks.length; i+=CHUNK_PARALLELISM){
+    const batch = chunks.slice(i, i+CHUNK_PARALLELISM);
+    lm(`Loading discovery call deals… ${completedChunks}/${totalChunks} months done (${all.length} deals)`);
+    const results = await Promise.all(
+      batch.map(([cFrom,cTo]) => fetchDealsChunk(cFrom, cTo, all.length))
+    );
+    results.forEach(arr => { all = all.concat(arr); });
+    completedChunks += batch.length;
+    const seen=new Set();
+    all = all.filter(d => seen.has(d.id) ? false : seen.add(d.id));
+  }
+  return all;
+}
+
+async function fetchInvContactMap(invIds){
+  const map={};
+  for(let i=0;i<invIds.length;i+=100){
+    const batch=invIds.slice(i,i+100);
+    lm('Loading investment→contact links… ('+(i+batch.length)+'/'+invIds.length+')');
+    try{
+      const d=await apiWithRetry('/crm/v4/associations/'+INV+'/contacts/batch/read',{inputs:batch.map(id=>({id:String(id)}))}, 'inv-contact assoc');
+      (d.results||[]).forEach(r=>{if(r.to?.length>0)map[String(r.from.id)]=String(r.to[0].toObjectId);});
+    }catch(e){
+      console.warn('Assoc error',e);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Investment-contact association lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+  return map;
+}
+
+async function fetchContactSources(contactIds){
+  const src={};
+  const ids=[...new Set(contactIds)].filter(Boolean);
+  for(let i=0;i<ids.length;i+=100){
+    const batch=ids.slice(i,i+100);
+    lm('Loading contact sources… ('+(i+batch.length)+'/'+ids.length+')');
+    try{
+      const d=await apiWithRetry('/crm/v3/objects/contacts/batch/read',{
+        inputs:batch.map(id=>({id:String(id)})),
+        properties:['hs_latest_source','firstname','lastname','fund_3_total_investment_amount',
+          'first_conversion_event_name','recent_conversion_event_name',
+          'hs_analytics_source_data_1','hs_analytics_source_data_2']
+      }, 'contact sources');
+      (d.results||[]).forEach(c=>{
+        const cid=String(c.id);
+        const p=c.properties||{};
+        src[cid]=p.hs_latest_source||'Unknown';
+        const first=(p.firstname||'').trim();
+        const last=(p.lastname||'').trim();
+        const name=[first,last].filter(Boolean).join(' ')||'Contact '+cid;
+        const fund3=parseFloat(p.fund_3_total_investment_amount)||0;
+        CONTACT_DATA[cid]={name, fund3};
+        // Attribution properties for drill-down breakdowns
+        CONTACT_ATTRIB[cid]={
+          firstConversion: p.first_conversion_event_name || null,
+          recentConversion: p.recent_conversion_event_name || null,
+          sourceData1: p.hs_analytics_source_data_1 || null,
+          sourceData2: p.hs_analytics_source_data_2 || null
+        };
+      });
+    }catch(e){
+      console.warn('Contact src error',e);
+      LOAD_INCOMPLETE = true;
+      LOAD_INCOMPLETE_REASON = `Contact source lookup interrupted: ${e.message}`;
+    }
+    await sleep(API_DELAY_MS);
+  }
+  return src;
+}
+
+// ── Chart builders ────────────────────────────────────────
+function kc(id){if(ch[id]){ch[id].destroy();delete ch[id];}}
+
+function donut(cid,lid,map){
+  const sorted=Object.entries(map).filter(([k])=>k&&k!=='null').sort((a,b)=>b[1]-a[1]).slice(0,9);
+  const labels=sorted.map(([k])=>k.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()));
+  document.getElementById(lid).innerHTML=sorted.map(([,v],i)=>
+    `<div class="li"><div class="ld" style="background:${SC[i]}"></div>${labels[i]} (${v})</div>`).join('');
+  kc(cid);
+  // Determine record kind: dsc → deal (dcb source), isc → inv (invested source)
+  const kind = cid === 'isc' ? 'inv' : 'deal';
+  ch[cid]=new Chart(document.getElementById(cid),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:sorted.map(([,v])=>v),backgroundColor:SC.slice(0,sorted.length),borderWidth:1}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      onClick:(evt,elements)=>{
+        if(elements.length === 0) return;
+        const idx = elements[0].index;
+        const srcLabel = labels[idx];
+        if(srcLabel) ddSourceRow(srcLabel, kind);
+      },
+      onHover:(evt,elements)=>{
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      }
+    }
+  });
+}
+
+function srcTable(tbodyId, map, total, color){
+  const sorted=Object.entries(map).filter(([k])=>k&&k!=='null').sort((a,b)=>b[1]-a[1]);
+  const tbody=document.getElementById(tbodyId);
+  // Determine record kind from tbody id (dcb-src-tbl → deal, inv-src-tbl → inv)
+  const kind = tbodyId === 'dcb-src-tbl' ? 'deal' : 'inv';
+  tbody.innerHTML=sorted.map(([k,v])=>{
+    const pct=total>0?Math.round(v/total*100):0;
+    const label=k.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    return`<tr class="tbl-row-clickable" data-src="${escapeHtml(label)}" data-kind="${kind}"><td>${label}</td><td><span class="pct-bar" style="width:${pct}px;max-width:60px;background:${color}40"></span>${pct}%</td></tr>`;
+  }).join('');
+  // Wire delegated click handler
+  tbody.onclick = (e) => {
+    const tr = e.target.closest('tr.tbl-row-clickable');
+    if(!tr) return;
+    ddSourceRow(tr.dataset.src, tr.dataset.kind);
+  };
+}
+
+function bars(eid,map,nm,col){
+  const s=Object.entries(map).filter(([k])=>nm[k]).map(([k,v])=>({k,n:nm[k],v})).sort((a,b)=>b.v-a.v);
+  const mx=s[0]?.v||1;
+  // Determine record kind + role from container id
+  // dcl/dsl2 → deal (DCB), icl/isl2 → inv (funded). dcl/icl = closer, dsl2/isl2 = setter.
+  const kind = (eid === 'dcl' || eid === 'dsl2') ? 'deal' : 'inv';
+  const role = (eid === 'dcl' || eid === 'icl') ? 'closer' : 'setter';
+  const el = document.getElementById(eid);
+  el.innerHTML=s.map(({k,n,v})=>{
+    const p=Math.round(v/mx*100);
+    return`<div class="br tbl-row-clickable" data-id="${escapeHtml(k)}" data-kind="${kind}" data-role="${role}"><div class="bn">${n}</div><div class="bt"><div class="bf" style="width:${p}%;background:${col}20;border-right:2px solid ${col}"><span class="bv" style="color:${col}">${v}</span></div></div></div>`;
+  }).join('');
+  el.onclick = (e) => {
+    const br = e.target.closest('.br.tbl-row-clickable');
+    if(!br) return;
+    if(br.dataset.role === 'closer') ddCloserBar(br.dataset.id, br.dataset.kind);
+    else ddSetterBar(br.dataset.id, br.dataset.kind);
+  };
+}
+
+function fundBars(eid,invMap,dcbMap){
+  const cols={'Fund 4':DC,'Fund 5':IC,'Unknown':'#9e9789'};
+  const allFunds=[...new Set([...Object.keys(invMap||{}),...Object.keys(dcbMap||{})])].sort();
+  const mx=Math.max(...allFunds.map(f=>Math.max(invMap[f]||0,dcbMap?.[f]||0)),1);
+  const el = document.getElementById(eid);
+  el.innerHTML=allFunds.map(f=>{
+    const inv=invMap[f]||0, dcb=dcbMap?.[f]||0;
+    const c=cols[f]||'#4b5563';
+    const pi=Math.round(inv/mx*100), pd=Math.round(dcb/mx*100);
+    return`<div class="br"><div class="bn">${f}</div><div style="flex:1;display:flex;flex-direction:column;gap:3px">
+      <div class="bt tbl-row-clickable" data-fund="${escapeHtml(f)}" data-kind="funded" title="Funded investments — click to view"><div class="bf" style="width:${pi}%;background:${c}20;border-right:2px solid ${c}"><span class="bv" style="color:${c}">${inv} funded</span></div></div>
+      <div class="bt tbl-row-clickable" data-fund="${escapeHtml(f)}" data-kind="dcb" title="DCBs (by date cutoff) — click to view"><div class="bf" style="width:${pd}%;background:${DC}10;border-right:2px solid ${DC}"><span class="bv" style="color:${DC}">${dcb} DCB</span></div></div>
+    </div></div>`;
+  }).join('');
+  el.onclick = (e) => {
+    const bt = e.target.closest('.bt.tbl-row-clickable');
+    if(!bt) return;
+    ddFundBar(bt.dataset.fund, bt.dataset.kind);
+  };
+}
+
+function convBars(eid,dc,ic,nm){
+  nm=nm||CM;
+  const role = (eid === 'csl') ? 'setter' : 'closer';
+  const rows=Object.keys(dc).filter(k=>nm[k]&&dc[k]>0)
+    .map(k=>({k,n:nm[k],d:dc[k],i:ic[k]||0,r:Math.round((ic[k]||0)/dc[k]*100)}))
+    .sort((a,b)=>b.r-a.r);
+  const el = document.getElementById(eid);
+  el.innerHTML=rows.map(({k,n,d,i,r})=>
+    `<div class="vr tbl-row-clickable" data-id="${escapeHtml(k)}" data-role="${role}"><div class="vn">${n}</div><div class="vt"><div class="vf" style="width:${r||1}%;background:${GC}18;border-right:2px solid ${GC}"><span class="vp" style="color:${GC}">${r}%</span><span class="vd">${i}/${d}</span></div></div></div>`
+  ).join('');
+  el.onclick = (e) => {
+    const vr = e.target.closest('.vr.tbl-row-clickable');
+    if(!vr) return;
+    // Conversion view → show the funded (inv) records for that person
+    if(vr.dataset.role === 'closer') ddCloserBar(vr.dataset.id, 'inv');
+    else ddSetterBar(vr.dataset.id, 'inv');
+  };
+}
+
+function mbar(cid,map,col){
+  const ms=Object.keys(map).sort();
+  kc(cid);
+  // Determine record kind from canvas id: dcm → DCB (deal), icm → invested (inv)
+  const kind = cid === 'icm' ? 'inv' : 'deal';
+  ch[cid]=new Chart(document.getElementById(cid),{
+    type:'bar',
+    data:{labels:ms.map(m=>{const[y,mo]=m.split('-');return new Date(+y,+mo-1,1).toLocaleString('default',{month:'short',year:'2-digit'});}),datasets:[{data:ms.map(m=>map[m]),backgroundColor:col+'40',borderColor:col,borderWidth:1.5,borderRadius:3}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{autoSkip:true,maxRotation:45,font:{size:10}}},y:{beginAtZero:true}},
+      onClick:(evt,elements)=>{
+        if(elements.length === 0) return;
+        const idx = elements[0].index;
+        const monthStr = ms[idx];
+        if(monthStr) ddMonthBar(monthStr, kind);
+      },
+      onHover:(evt,elements)=>{
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      }
+    }
+  });
+}
+
+// ── Ad spend (Google Sheets) ──────────────────────────────
+async function loadAdSpendCache(){
+  if(!SHEETS_ID) return;
+  const tabMap={Meta:'meta',Google:'google',LinkedIn:'linkedin'};
+  const byDate={};
+  for(const tab of SHEETS_TABS){
+    try{
+      const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_ID}/values/${encodeURIComponent(tab+'!A:B')}`;
+      const r=await fetch(WORKER_URL.replace('/hs-api','/sheets-api')+'?url='+encodeURIComponent(url));
+      if(!r.ok) continue;
+      const d=await r.json();
+      const rows=(d.values||[]).slice(1);
+      rows.forEach(([date,val])=>{
+        if(!date||!val) return;
+        const ds=date.trim().slice(0,10);
+        if(!byDate[ds]) byDate[ds]={date:ds,meta:0,google:0,linkedin:0};
+        byDate[ds][tabMap[tab]]+=(parseFloat(String(val).replace(/[$,]/g,''))||0);
+      });
+    }catch(e){ console.warn('Sheets fetch error ('+tab+'):',e.message); }
+  }
+  ALL_ADSPEND=Object.values(byDate);
+}
+
+function calcAdSpend(from, to){
+  const toDate=to||(new Date().toISOString().slice(0,10));
+  const spend={meta:0,google:0,linkedin:0};
+  ALL_ADSPEND.forEach(row=>{
+    if(from && row.date<from) return;
+    if(row.date>toDate) return;
+    spend.meta+=row.meta;
+    spend.google+=row.google;
+    spend.linkedin+=row.linkedin;
+  });
+  spend.total=spend.meta+spend.google+spend.linkedin;
+  return spend;
+}
+
+function renderAdSpend(spend, dcbCount, fundedCount, capitalRaised, prevSpend, prevDcbCount, prevFundedCount, prevCapitalRaised, hasComparison){
+  const t=spend.total||0;
+
+  // Row 2: totals + efficiency
+  document.getElementById('k5').textContent=t>0?fmt(t):'—';
+  const breakdown=[
+    spend.meta>0?'Meta '+fmt(spend.meta):'',
+    spend.google>0?'Google '+fmt(spend.google):'',
+    spend.linkedin>0?'LinkedIn '+fmt(spend.linkedin):''
+  ].filter(Boolean).join(' · ');
+  document.getElementById('k5s').textContent=breakdown||'Meta + Google + LinkedIn';
+  document.getElementById('k6').textContent=(t>0&&dcbCount>0)?fmt(Math.round(t/dcbCount)):'—';
+  document.getElementById('k7').textContent=(t>0&&fundedCount>0)?fmt(Math.round(t/fundedCount)):'—';
+  document.getElementById('k8').textContent=(t>0&&capitalRaised>0)?(capitalRaised/t).toFixed(1)+'x':'—';
+
+  // Row 2 deltas
+  const hasPrevSpend = !!prevSpend;
+  const prevT = hasPrevSpend ? (prevSpend.total||0) : 0;
+  const prevCostPerDcb = hasPrevSpend && prevDcbCount>0 ? Math.round(prevT/prevDcbCount) : 0;
+  const prevCostPerInv = hasPrevSpend && prevFundedCount>0 ? Math.round(prevT/prevFundedCount) : 0;
+  const prevRoas = hasPrevSpend && prevT>0 && prevCapitalRaised>0 ? (prevCapitalRaised/prevT) : 0;
+  const curRoas = t>0 && capitalRaised>0 ? (capitalRaised/t) : 0;
+  const roasFmt = n => (n||0).toFixed(1)+'x';
+
+  renderKpiDelta('k5-delta', t, hasComparison && hasPrevSpend ? prevT : null, {formatFn:fmt, hasComparison});
+  renderKpiDelta('k6-delta', t>0&&dcbCount>0?Math.round(t/dcbCount):0, hasComparison && hasPrevSpend ? prevCostPerDcb : null, {formatFn:fmt, lowerIsBetter:true, hasComparison});
+  renderKpiDelta('k7-delta', t>0&&fundedCount>0?Math.round(t/fundedCount):0, hasComparison && hasPrevSpend ? prevCostPerInv : null, {formatFn:fmt, lowerIsBetter:true, hasComparison});
+  renderKpiDelta('k8-delta', curRoas, hasComparison && hasPrevSpend ? prevRoas : null, {formatFn:roasFmt, hasComparison});
+
+  // Row 3: per-platform tiles
+  const platforms=[
+    {key:'meta', id:'sp-meta', sid:'sp-meta-s', delta:'sp-meta-delta', label:'Meta'},
+    {key:'google', id:'sp-google', sid:'sp-google-s', delta:'sp-google-delta', label:'Google'},
+    {key:'linkedin', id:'sp-linkedin', sid:'sp-linkedin-s', delta:'sp-linkedin-delta', label:'LinkedIn'},
+  ];
+  const hasAnyData=ALL_ADSPEND.length>0;
+  platforms.forEach(({key,id,sid,delta,label})=>{
+    const v=spend[key]||0;
+    document.getElementById(id).textContent=hasAnyData?(v>0?fmt(v):'$0'):'—';
+    if(hasAnyData && t>0 && v>0){
+      const pct=Math.round(v/t*100);
+      document.getElementById(sid).textContent=pct+'% of total spend';
+    } else {
+      document.getElementById(sid).textContent=hasAnyData?'no spend in range':'no data';
+    }
+    const prevV = hasPrevSpend ? (prevSpend[key]||0) : 0;
+    renderKpiDelta(delta, v, hasComparison && hasPrevSpend ? prevV : null, {formatFn:fmt, hasComparison});
+  });
+}
+
+// ── LTV computation ───────────────────────────────────────
+function computeLTV(allFunded, invContactMap){
+  const byContact={};
+  allFunded.forEach(inv=>{
+    const cid=invContactMap[String(inv.id)];
+    if(!cid) return;
+    const amt=parseFloat(inv.properties.investment_amount)||0;
+    const typ=(inv.properties.type_of_investment||'').trim();
+    if(!byContact[cid]) byContact[cid]={firstAmt:0, followonAmt:0, count:0};
+    byContact[cid].count++;
+    if(typ==='New') byContact[cid].firstAmt+=amt;
+    else byContact[cid].followonAmt+=amt;
+  });
+
+  const rows=[];
+  const allContactIds=new Set([
+    ...Object.keys(byContact),
+    ...Object.keys(CONTACT_DATA).filter(cid=>CONTACT_DATA[cid].fund3>0)
+  ]);
+
+  allContactIds.forEach(cid=>{
+    const cd=CONTACT_DATA[cid]||{name:'Contact '+cid, fund3:0};
+    const inv=byContact[cid]||{firstAmt:0, followonAmt:0, count:0};
+    const fund3=cd.fund3||0;
+    const isF3=fund3>0;
+    const firstAmt=isF3 ? fund3 : inv.firstAmt;
+    const followonAmt=isF3 ? (inv.firstAmt+inv.followonAmt) : inv.followonAmt;
+    const isNew=!isF3 && inv.firstAmt>0;
+    const ltv=firstAmt+followonAmt;
+    if(!isNew && !isF3) return;
+    rows.push({cid, name:cd.name, firstAmt, followonAmt, ltv, count:inv.count+(isF3?1:0), isNew, isF3});
+  });
+
+  return rows;
+}
+
+function renderLTV(rows){
+  const firstInvestors=rows.filter(r=>r.isNew||r.isF3);
+  const totalFirstCapital=firstInvestors.reduce((s,r)=>s+r.firstAmt,0);
+  const portfolioLTV=rows.reduce((s,r)=>s+r.ltv,0);
+  const avgLTV=rows.length>0?portfolioLTV/rows.length:0;
+
+  // Detect whether Fund 3 contact totals are inflating "Avg first investment".
+  // When Fund 1/2/3 Investment records eventually exist (and the contact-side
+  // fund_3_total_investment_amount is cleared), totalF3 will be 0 and the
+  // sub-line caveat will disappear automatically.
+  const totalF3 = firstInvestors.filter(r=>r.isF3).reduce((s,r)=>s+r.firstAmt,0);
+
+  document.getElementById('ltv-k1').textContent=firstInvestors.length.toLocaleString();
+  document.getElementById('ltv-k2').textContent=fmt(totalFirstCapital);
+  document.getElementById('ltv-k6').textContent=(firstInvestors.length>0)?fmt(Math.round(totalFirstCapital/firstInvestors.length)):'—';
+  document.getElementById('ltv-k6s').textContent = totalF3 > 0
+    ? 'includes Fund 3 lifetime totals (will normalize when Fund 1/2/3 records exist)'
+    : 'total first-invest capital ÷ first-time investors';
+  document.getElementById('ltv-k3').textContent=fmt(portfolioLTV);
+  document.getElementById('ltv-k4').textContent=fmt(Math.round(avgLTV));
+  document.getElementById('ltv-k5').textContent=(totalFirstCapital>0)?(portfolioLTV/totalFirstCapital).toFixed(2)+'x':'—';
+
+  const BUCKETS=[
+    {label:'<$100K',   max:100000},
+    {label:'$100–250K',max:250000},
+    {label:'$250–500K',max:500000},
+    {label:'$500K–1M', max:1000000},
+    {label:'$1–2M',    max:2000000},
+    {label:'$2–5M',    max:5000000},
+    {label:'$5M+',     max:Infinity}
+  ];
+
+  const counts=BUCKETS.map(()=>0);
+  const firstAmts=BUCKETS.map(()=>0);
+  const followAmts=BUCKETS.map(()=>0);
+  const capAmts=BUCKETS.map(()=>0);
+  const bucketContactIds=BUCKETS.map(()=>[]); // for drill-down
+
+  rows.forEach(r=>{
+    const bi=BUCKETS.findIndex(b=>r.ltv<=b.max);
+    if(bi<0) return;
+    counts[bi]++;
+    firstAmts[bi]+=r.firstAmt;
+    followAmts[bi]+=r.followonAmt;
+    capAmts[bi]+=r.ltv;
+    bucketContactIds[bi].push(r.cid);
+  });
+
+  // Cache so click handlers can resolve cid → investments
+  LTV_BUCKETS_CACHE = {labels: BUCKETS.map(b=>b.label), bucketContactIds};
+
+  const totalCap=capAmts.reduce((s,v)=>s+v,0)||1;
+  const capPct=capAmts.map(v=>Math.round(v/totalCap*100));
+  const stackTotal=BUCKETS.map((_,i)=>firstAmts[i]+followAmts[i]);
+  const firstPct=stackTotal.map((t,i)=>t>0?Math.round(firstAmts[i]/t*100):0);
+  const followPct=stackTotal.map((t,i)=>t>0?Math.round(followAmts[i]/t*100):0);
+
+  const labels=BUCKETS.map(b=>b.label);
+  const purpleL='rgba(109,40,217,0.22)', purple='#6d28d9';
+  const tealL='rgba(6,95,70,0.22)', teal='#065f46';
+  const gridCol='rgba(0,0,0,0.06)', textCol='#9e9789';
+  const baseScales={
+    x:{ticks:{font:{size:10},color:textCol,maxRotation:35,autoSkip:false},grid:{display:false},border:{display:false}},
+    y:{ticks:{font:{size:10},color:textCol},grid:{color:gridCol},border:{display:false}}
+  };
+
+  // Shared onClick handler for bucket charts: resolves bucket → contact ids → investments
+  const bucketOnClick = (chartLabel) => (evt, elements) => {
+    if(elements.length === 0) return;
+    const idx = elements[0].index;
+    const cids = LTV_BUCKETS_CACHE.bucketContactIds[idx] || [];
+    const cidSet = new Set(cids.map(String));
+    const matchingInvIds = Object.entries(INV_CONTACT_MAP)
+      .filter(([invId, cid]) => cidSet.has(String(cid)))
+      .map(([invId]) => invId);
+    ddLtvBucket(matchingInvIds, `${chartLabel}: ${labels[idx]} bucket`);
+  };
+  const bucketOnHover = (evt, elements) => {
+    evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+  };
+
+  kc('ltv-dist');
+  ch['ltv-dist']=new Chart(document.getElementById('ltv-dist'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Investors',data:counts,backgroundColor:purpleL,borderColor:purple,borderWidth:1.5,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:baseScales,
+      onClick:bucketOnClick('Investor count'),onHover:bucketOnHover}
+  });
+
+  kc('ltv-cap');
+  ch['ltv-cap']=new Chart(document.getElementById('ltv-cap'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'% of capital',data:capPct,backgroundColor:tealL,borderColor:teal,borderWidth:1.5,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      ...baseScales,
+      y:{...baseScales.y,ticks:{...baseScales.y.ticks,callback:v=>v+'%'}}
+    },
+      onClick:bucketOnClick('Capital concentration'),onHover:bucketOnHover}
+  });
+
+  kc('ltv-stack');
+  ch['ltv-stack']=new Chart(document.getElementById('ltv-stack'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'First investment',data:firstPct,backgroundColor:'rgba(109,40,217,0.65)',borderRadius:3,stack:'s'},
+      {label:'Follow-on',data:followPct,backgroundColor:'rgba(6,95,70,0.65)',borderRadius:3,stack:'s'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'%'}}},
+      scales:{
+        x:{...baseScales.x,stacked:true},
+        y:{...baseScales.y,stacked:true,ticks:{...baseScales.y.ticks,callback:v=>v+'%'},max:100}
+      },
+      onClick:bucketOnClick('First vs follow-on'),onHover:bucketOnHover
+    }
+  });
+}
+
+// ── Main load ─────────────────────────────────────────────
+async function load(){
+  document.getElementById('btn').disabled=true;
+  st('Loading…','sd');
+  lm('Connecting to HubSpot…');
+  // Reset incomplete-load tracking on each fresh load
+  LOAD_INCOMPLETE = false;
+  LOAD_INCOMPLETE_REASON = '';
+  // Reset attribution cache for fresh load
+  CONTACT_ATTRIB = {};
+  try{
+    // Try R2 cache first; fall back to live HubSpot fetch on cache miss.
+    let invs, deals;
+    try {
+      lm('Loading investments from cache…');
+      invs = await fetchFromCache('cached-investments', 'investments');
+    } catch(e){
+      console.warn('Inv cache miss, falling back to live:', e.message);
+      lm(`Cache unavailable — fetching investments from HubSpot…`);
+      invs = await fetchAll('/crm/v3/objects/'+INV,'limit=100&properties='+IPROPS+'&archived=false');
+    }
+    try {
+      lm('Loading deals from cache…');
+      deals = await fetchFromCache('cached-deals', 'deals');
+    } catch(e){
+      console.warn('Deals cache miss, falling back to live:', e.message);
+      lm(`Cache unavailable — fetching deals from HubSpot…`);
+      deals = await fetchDeals(null, null);
+    }
+    lm('Loading ad spend data…');
+    await Promise.race([
+      loadAdSpendCache(),
+      new Promise(res=>setTimeout(res,8000))
+    ]).catch(()=>{});
+
+    const invContactMap=await fetchInvContactMap(invs.map(i=>i.id));
+    INV_CONTACT_MAP=invContactMap;
+    const contactSrc=await fetchContactSources(Object.values(invContactMap));
+
+    CONTACT_SRC={};
+    invs.forEach(i=>{
+      const cid=invContactMap[String(i.id)];
+      CONTACT_SRC[String(i.id)]=cid?contactSrc[cid]||'Unknown':'Unknown';
+    });
+
+    ALL_FUNDED=invs;
+    ALL_DEALS=deals;
+
+    clr();
+    document.getElementById('dash').style.display='block';
+    // Show cache age in header if available
+    const meta = await fetchCacheMeta();
+    if(meta && meta.lastUpdated){
+      const ageMin = Math.floor((Date.now() - new Date(meta.lastUpdated).getTime()) / 60000);
+      const ageHr = Math.floor(ageMin / 60);
+      const ageStr = ageHr >= 1 ? `${ageHr}h ${ageMin % 60}m ago` : `${ageMin}m ago`;
+      document.getElementById('ts').textContent = `Cache: ${ageStr}`;
+    } else {
+      document.getElementById('ts').textContent='Live · updated '+new Date().toLocaleTimeString();
+    }
+    st(invs.length+' investments loaded · '+deals.length+' discovery calls','so');
+
+    // Surface incomplete-load warning if any fetch loop hit an unrecoverable error
+    showIncompleteLoadBanner();
+
+    applyFilters();
+  }catch(e){
+    clr();
+    st('Error: '+e.message,'se');
+    console.error(e);
+  }finally{
+    document.getElementById('btn').disabled=false;
+  }
+}
+
+// Show a red banner above the dashboard if the load was truncated.
+function showIncompleteLoadBanner(){
+  const existing = document.getElementById('incomplete-banner');
+  if(existing) existing.remove();
+  if(!LOAD_INCOMPLETE) return;
+  const dash = document.getElementById('dash');
+  const banner = document.createElement('div');
+  banner.id = 'incomplete-banner';
+  banner.style.cssText = 'background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px';
+  banner.innerHTML = `
+    <div style="font-size:18px;color:#991b1b;flex-shrink:0">⚠</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:#7f1d1d">Data load was incomplete</div>
+      <div style="font-size:11px;color:#991b1b;margin-top:3px;line-height:1.4">${LOAD_INCOMPLETE_REASON} — some recent records may be missing. Click Retry to reload.</div>
+    </div>
+    <button onclick="load()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:#7f1d1d;background:#fca5a5;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;flex-shrink:0">Retry</button>
+  `;
+  dash.insertBefore(banner, dash.firstChild);
+}
+
+load();
+
+// ── Drill-down infrastructure (v20) ───────────────────────────────────
+let DD_OPEN = false;
+
+// State persisted within an open drill-down session
+const DD_STATE = {
+  records: [],          // current cohort: [{kind:'inv'|'deal', record, ...}]
+  title: '',
+  subtitle: '',
+  dimension: null,      // currently selected breakdown dimension
+  selectedGroup: null,  // selected breakdown row (filter), or null
+};
+
+// Closer / setter ID → display name lookup (CM and SM are defined at the top of this script)
+// Closer / setter ID → display name lookup. Resolvers fall through multiple
+// owner maps before giving up, because the team operates a single roster that
+// crosses dashboard concerns:
+//   - SM (setters) holds the 4 named setters
+//   - CM (closers) holds the 3 named closers + Alex Z. (he closes too)
+//   - INV_AMS holds the AMs (Daniel A., Alex Z.) who own most repeat fundings
+// An investment record's setter field can point at someone who isn't strictly
+// a setter (e.g. AM Alex Z. shows up on bolt-ons) — without the fall-through
+// the drill-down rendered "Setter 650567768" because the raw ID didn't hit SM.
+// Fall-through order chosen to prefer same-role names first, then cross-role
+// names, then the raw ID as a last resort so a misconfigured record stays
+// debuggable rather than silently invisible.
+function closerName(id){
+  const sid = String(id);
+  return CM[sid]
+      || SM[sid]
+      || INV_AMS[sid]
+      || (id ? `Closer ${id}` : '— (none)');
+}
+function setterName(id){
+  const sid = String(id);
+  return SM[sid]
+      || CM[sid]
+      || INV_AMS[sid]
+      || (id ? `Setter ${id}` : '— (none)');
+}
+
+// Available dimensions for breakdown. Some only make sense for investments,
+// some only for deals; we filter the list based on what's in the cohort.
+const DD_DIMENSIONS = {
+  source:           {label: 'Source',            kind: 'both', readFn: (r) => recDimSource(r)},
+  first_conversion: {label: 'First Conversion',  kind: 'both', readFn: (r) => recDimFirstConversion(r)},
+  recent_conversion:{label: 'Recent Conversion', kind: 'both', readFn: (r) => recDimRecentConversion(r)},
+  source_data_1:    {label: 'Source detail',     kind: 'both', readFn: (r) => recDimSourceData(r, 'sourceData1')},
+  source_data_2:    {label: 'Source data 2',     kind: 'both', readFn: (r) => recDimSourceData(r, 'sourceData2')},
+  closer:           {label: 'Closer',            kind: 'both', readFn: (r) => recDimCloser(r)},
+  setter:           {label: 'Setter',            kind: 'both', readFn: (r) => recDimSetter(r)},
+  fund:             {label: 'Fund',              kind: 'inv',  readFn: (r) => r.record.properties?.fund_invested || null},
+  type:             {label: 'Type',              kind: 'inv',  readFn: (r) => r.record.properties?.type_of_investment || null},
+  month:            {label: 'Month',             kind: 'both', readFn: (r) => recDimMonth(r)},
+  class:            {label: 'Class',             kind: 'inv',  readFn: (r) => r.record.properties?.class || null},
+};
+
+// Read the "source" dimension from any record (inv or deal).
+// Investments use the contact's hs_latest_source (via CONTACT_SRC keyed by inv id).
+// Deals use the deal's hs_analytics_source.
+function recDimSource(r){
+  if(r.kind === 'inv'){
+    return prettyLatestSource(CONTACT_SRC[String(r.record.id)] || 'Unknown');
+  }
+  if(r.kind === 'deal'){
+    return prettyLatestSource(r.record.properties?.hs_analytics_source || 'Unknown');
+  }
+  return null;
+}
+
+function recDimFirstConversion(r){
+  const cid = recContactId(r);
+  return cid ? (CONTACT_ATTRIB[cid]?.firstConversion || null) : null;
+}
+function recDimRecentConversion(r){
+  const cid = recContactId(r);
+  return cid ? (CONTACT_ATTRIB[cid]?.recentConversion || null) : null;
+}
+function recDimSourceData(r, key){
+  const cid = recContactId(r);
+  return cid ? (CONTACT_ATTRIB[cid]?.[key] || null) : null;
+}
+function recContactId(r){
+  if(r.kind === 'inv') return INV_CONTACT_MAP[String(r.record.id)] || null;
+  return null; // deals don't have a direct contact-id link in our data model
+}
+function recDimCloser(r){
+  if(r.kind === 'inv') return closerName(r.record.properties?.closer);
+  if(r.kind === 'deal') return closerName(r.record.properties?.hubspot_owner_id);
+  return null;
+}
+function recDimSetter(r){
+  if(r.kind === 'inv') return setterName(r.record.properties?.setter);
+  if(r.kind === 'deal') return setterName(r.record.properties?.setter_owner);
+  return null;
+}
+function recDimMonth(r){
+  if(r.kind === 'inv') return r.record.properties?.funds_received?.slice(0, 7) || null;
+  if(r.kind === 'deal') return r.record.properties?.hs_v2_date_entered_233853873?.slice(0, 7) || null;
+  return null;
+}
+
+// "Pretty print" the underscored HubSpot source values
+function prettyLatestSource(s){
+  if(!s) return 'Unknown';
+  return s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ── Cohort-building helpers (record filtering for each clickable surface) ──
+// Each returns an array of {kind, record} objects.
+
+// Apply the dashboard's current global filters to ALL_FUNDED.
+// Mirrors logic in applyFilters().
+//
+// Previously these had their own range-resolution path via currentRange(),
+// which understood a different set of dropdown values than getDateRange() —
+// 'last_week' / 'last_month' / 'this_quarter' / etc. (the actual dropdown
+// values) fell through all of currentRange's branches and returned
+// {from: null, to: null}, which meant the drill-down ignored the date filter
+// entirely and showed every investment. The KPI tile's count was computed
+// via filterFundedRange (correct), but the drill-down attached to that tile
+// pulled from a different function (wrong). Both now share the canonical
+// path: getDateRange() resolves the dropdown, filterFundedRange applies the
+// same date+fund+class+type filters used by the KPI count itself, so cell
+// count and drill-down record count match exactly.
+function getFilteredFundedInWindow(){
+  const {from, to} = getDateRange();
+  return filterFundedRange(from, to);
+}
+
+function getFilteredDealsInWindow(){
+  const {dcbFrom, dcbTo} = getDateRange();
+  return filterDealsRange(dcbFrom, dcbTo);
+}
+
+// Get the active range as {from, to, label}
+function currentRange(){
+  const sel = document.getElementById('sel-date');
+  const v = sel.value;
+  let from = null, to = null, label = sel.options[sel.selectedIndex].text;
+  const now = new Date();
+  if(v === 'ytd'){ from = new Date(now.getFullYear(), 0, 1).getTime(); to = now.getTime(); }
+  else if(/^\d{4}$/.test(v)){ from = new Date(`${v}-01-01`).getTime(); to = new Date(`${v}-12-31T23:59:59`).getTime(); }
+  else if(v === 'last12'){ const d = new Date(); d.setMonth(d.getMonth()-12); from = d.getTime(); to = now.getTime(); }
+  else if(v === 'all'){ from = null; to = null; }
+  else if(v === 'custom'){
+    const f = document.getElementById('sel-from')?.value;
+    const t = document.getElementById('sel-to')?.value;
+    if(f) from = new Date(f).getTime();
+    if(t) to = new Date(t+'T23:59:59').getTime();
+  }
+  return {from, to, label};
+}
+
+function activeFiltersSubtitle(){
+  const range = currentRange();
+  const fund = document.getElementById('sel-fund').value;
+  const cls = document.getElementById('sel-class').value;
+  const typ = document.getElementById('sel-type').value;
+  const parts = [range.label];
+  if(fund !== 'all') parts.push(`Fund ${fund}`);
+  if(cls !== 'all') parts.push(`Class ${cls}`);
+  if(typ !== 'all') parts.push(typ);
+  return parts.join(' · ');
+}
+
+// ── Open / close ──────────────────────────────────────────────────
+function openDrilldown(opts){
+  // opts: {records, title, subtitle, defaultDim}
+  DD_STATE.records = opts.records || [];
+  DD_STATE.title = opts.title || '';
+  DD_STATE.subtitle = opts.subtitle || activeFiltersSubtitle();
+  DD_STATE.selectedGroup = null;
+  DD_STATE.dimension = opts.defaultDim || 'source';
+
+  document.getElementById('dd-title').textContent = DD_STATE.title;
+  document.getElementById('dd-sub').textContent = `${DD_STATE.subtitle} · ${DD_STATE.records.length} record${DD_STATE.records.length===1?'':'s'}`;
+
+  // Populate dimension dropdown — filter to those that make sense given record kinds
+  const kinds = new Set(DD_STATE.records.map(r => r.kind));
+  const dims = Object.entries(DD_DIMENSIONS).filter(([k, d]) => {
+    if(d.kind === 'both') return true;
+    if(d.kind === 'inv') return kinds.has('inv');
+    if(d.kind === 'deal') return kinds.has('deal');
+    return false;
+  });
+  const dimSel = document.getElementById('dd-dim');
+  dimSel.innerHTML = '';
+  dims.forEach(([k, d]) => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = d.label;
+    dimSel.appendChild(opt);
+  });
+  if(!dims.find(([k]) => k === DD_STATE.dimension)) DD_STATE.dimension = dims[0]?.[0];
+  dimSel.value = DD_STATE.dimension;
+
+  renderBreakdownAndRecords();
+
+  document.getElementById('dd-panel').classList.add('open');
+  document.getElementById('dd-panel').setAttribute('aria-hidden', 'false');
+  document.getElementById('dd-backdrop').classList.add('open');
+  DD_OPEN = true;
+}
+
+function closeDrilldown(){
+  document.getElementById('dd-panel').classList.remove('open');
+  document.getElementById('dd-panel').setAttribute('aria-hidden', 'true');
+  document.getElementById('dd-backdrop').classList.remove('open');
+  DD_OPEN = false;
+}
+
+function onDimensionChange(){
+  DD_STATE.dimension = document.getElementById('dd-dim').value;
+  DD_STATE.selectedGroup = null;
+  renderBreakdownAndRecords();
+}
+function onBreakdownRowClick(groupValue){
+  DD_STATE.selectedGroup = (DD_STATE.selectedGroup === groupValue) ? null : groupValue;
+  renderBreakdownAndRecords();
+}
+function clearBreakdownFilter(){
+  DD_STATE.selectedGroup = null;
+  renderBreakdownAndRecords();
+}
+
+// ── Breakdown + records render ────────────────────────────────────
+function renderBreakdownAndRecords(){
+  const dim = DD_DIMENSIONS[DD_STATE.dimension];
+  if(!dim){ return; }
+
+  // Aggregate records by dimension value
+  const groups = {};
+  DD_STATE.records.forEach(rec => {
+    const v = dim.readFn(rec);
+    const key = (v && String(v).trim()) ? String(v).trim() : '— (not set)';
+    if(!groups[key]) groups[key] = { count: 0, amount: 0 };
+    groups[key].count++;
+    if(rec.kind === 'inv'){
+      groups[key].amount += parseFloat(rec.record.properties?.investment_amount || 0);
+    }
+  });
+
+  // Sort by amount desc, then count desc; "(not set)" sinks to bottom
+  const sorted = Object.entries(groups).sort((a, b) => {
+    const aE = a[0] === '— (not set)';
+    const bE = b[0] === '— (not set)';
+    if(aE && !bE) return 1;
+    if(!aE && bE) return -1;
+    if(b[1].amount !== a[1].amount) return b[1].amount - a[1].amount;
+    return b[1].count - a[1].count;
+  });
+
+  const bdBody = document.getElementById('dd-breakdown-body');
+  bdBody.innerHTML = '';
+  if(sorted.length === 0){
+    bdBody.innerHTML = '<div class="dd-bd-empty">No data to break down.</div>';
+  } else {
+    sorted.forEach(([key, val]) => {
+      const row = document.createElement('div');
+      row.className = 'dd-bd-row' + (DD_STATE.selectedGroup === key ? ' selected' : '');
+      const amtTxt = val.amount > 0 ? fmt(val.amount) : '—';
+      row.innerHTML = `
+        <div class="dd-bd-name" title="${escapeHtml(key)}">${escapeHtml(key)}</div>
+        <div class="dd-bd-count">${val.count.toLocaleString()} ${val.count === 1 ? 'record' : 'records'}</div>
+        <div class="dd-bd-amount">${amtTxt}</div>
+      `;
+      row.addEventListener('click', () => onBreakdownRowClick(key));
+      bdBody.appendChild(row);
+    });
+  }
+
+  const stateEl = document.getElementById('dd-filter-state');
+  if(DD_STATE.selectedGroup){
+    stateEl.innerHTML = `Filtered: ${escapeHtml(DD_STATE.selectedGroup)} <span class="clear-btn" onclick="clearBreakdownFilter()">clear</span>`;
+  } else {
+    stateEl.innerHTML = '';
+  }
+
+  // Filter records by selectedGroup
+  let filtered = DD_STATE.records;
+  if(DD_STATE.selectedGroup){
+    filtered = DD_STATE.records.filter(rec => {
+      const v = dim.readFn(rec);
+      const key = (v && String(v).trim()) ? String(v).trim() : '— (not set)';
+      return key === DD_STATE.selectedGroup;
+    });
+  }
+
+  document.getElementById('dd-records-header').textContent = DD_STATE.selectedGroup
+    ? `${filtered.length} of ${DD_STATE.records.length} records (filtered)`
+    : `${DD_STATE.records.length} ${DD_STATE.records.length === 1 ? 'record' : 'records'}`;
+
+  const body = document.getElementById('dd-body');
+  body.innerHTML = '';
+  if(filtered.length === 0){
+    body.innerHTML = '<div class="dd-empty">No records match this filter.</div>';
+  } else {
+    const shown = filtered.slice(0, 200);
+    shown.forEach(rec => body.appendChild(renderDrilldownRow(rec)));
+  }
+
+  const footer = document.getElementById('dd-footer');
+  if(filtered.length > 200){
+    footer.style.display = '';
+    footer.textContent = `Showing top 200 of ${filtered.length}.`;
+  } else {
+    footer.style.display = 'none';
+  }
+}
+
+// Copy a HubSpot URL to clipboard. Used by drill-down row copy buttons since
+// the HubSpot iframe sandbox blocks both target="_blank" and window.open.
+// Falls back to document.execCommand for browsers that block clipboard API.
+function copyDdLink(btn, url){
+  const showCopied=()=>{
+    const original=btn.textContent;
+    btn.textContent='✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.textContent=original;
+      btn.classList.remove('copied');
+    },2000);
+  };
+  const showFailed=()=>{
+    const original=btn.textContent;
+    btn.textContent='✗ Failed';
+    setTimeout(()=>{ btn.textContent=original; },2000);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(showCopied).catch(()=>{
+      // Fallback: temporary textarea + execCommand
+      const ta=document.createElement('textarea');
+      ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy') ? showCopied() : showFailed(); }
+      catch(e){ showFailed(); }
+      finally { document.body.removeChild(ta); }
+    });
+  } else {
+    const ta=document.createElement('textarea');
+    ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy') ? showCopied() : showFailed(); }
+    catch(e){ showFailed(); }
+    finally { document.body.removeChild(ta); }
+  }
+}
+
+function renderDrilldownRow(rec){
+  const row = document.createElement('div');
+  row.className = 'dd-row';
+  const main = document.createElement('div'); main.className = 'dd-row-main';
+  const tags = document.createElement('div'); tags.className = 'dd-row-tags';
+
+  if(rec.kind === 'inv'){
+    const inv = rec.record;
+    const p = inv.properties || {};
+    const cid = INV_CONTACT_MAP[String(inv.id)];
+    const investorName = (cid && CONTACT_DATA[cid]?.name) || `Investment ${inv.id}`;
+    const amount = parseFloat(p.investment_amount || 0);
+    const fundDate = p.funds_received || '—';
+    const type = p.type_of_investment || '';
+    const fund = p.fund_invested || '';
+
+    const link = document.createElement('span');
+    link.className = 'dd-row-name';
+    link.textContent = investorName;
+    main.appendChild(link);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'dd-copy-btn';
+    copyBtn.title = 'Copy HubSpot link';
+    copyBtn.textContent = '⧉';
+    const invUrl = `https://app.hubspot.com/contacts/23126809/record/${INV}/${inv.id}`;
+    copyBtn.onclick = (ev) => { ev.stopPropagation(); copyDdLink(copyBtn, invUrl); };
+    main.appendChild(copyBtn);
+
+    const meta = document.createElement('div');
+    meta.className = 'dd-row-meta';
+    const closerLabel = closerName(p.closer);
+    const setterLabel = setterName(p.setter);
+    meta.textContent = `Funded ${fundDate} · ${fund || 'Unknown fund'} · Closer: ${closerLabel} · Setter: ${setterLabel}`;
+    main.appendChild(meta);
+
+    if(amount > 0){
+      const t = document.createElement('span'); t.className = 'dd-tag amount'; t.textContent = fmt(amount); tags.appendChild(t);
+    }
+    if(type){
+      const t = document.createElement('span');
+      t.className = 'dd-tag ' + (type === 'New' ? 'type-new' : type === 'Repeat' ? 'type-repeat' : 'type-bolt');
+      t.textContent = type;
+      tags.appendChild(t);
+    }
+  } else if(rec.kind === 'deal'){
+    const deal = rec.record;
+    const p = deal.properties || {};
+    const dcbDate = p.hs_v2_date_entered_233853873?.slice(0,10) || '—';
+    const closerLabel = closerName(p.hubspot_owner_id);
+    const setterLabel = setterName(p.setter_owner);
+    const stage = p.dealstage || '';
+    const dealName = p.dealname || `Deal ${deal.id}`;
+
+    const link = document.createElement('span');
+    link.className = 'dd-row-name';
+    link.textContent = dealName;
+    main.appendChild(link);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'dd-copy-btn';
+    copyBtn.title = 'Copy HubSpot link';
+    copyBtn.textContent = '⧉';
+    const dealUrl = `https://app.hubspot.com/contacts/23126809/record/0-3/${deal.id}`;
+    copyBtn.onclick = (ev) => { ev.stopPropagation(); copyDdLink(copyBtn, dealUrl); };
+    main.appendChild(copyBtn);
+
+    const meta = document.createElement('div');
+    meta.className = 'dd-row-meta';
+    meta.textContent = `DCB ${dcbDate} · Closer: ${closerLabel} · Setter: ${setterLabel}`;
+    main.appendChild(meta);
+  }
+
+  row.appendChild(main);
+  row.appendChild(tags);
+  return row;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── Click handlers wired to specific surfaces ──────────────────────────────
+// Each function builds a cohort and calls openDrilldown.
+
+function ddFundedKpi(){
+  openDrilldown({
+    records: getFilteredFundedInWindow().map(r => ({kind: 'inv', record: r})),
+    title: 'Funded investments',
+    defaultDim: 'source'
+  });
+}
+function ddDcbKpi(){
+  openDrilldown({
+    records: getFilteredDealsInWindow().map(r => ({kind: 'deal', record: r})),
+    title: 'Discovery calls booked',
+    defaultDim: 'source'
+  });
+}
+function ddSourceRow(srcLabel, kind){
+  // kind: 'inv' for funded source, 'deal' for DCB source
+  const all = kind === 'inv' ? getFilteredFundedInWindow() : getFilteredDealsInWindow();
+  const matches = all.filter(r => {
+    const wrapped = {kind, record: r};
+    return recDimSource(wrapped) === srcLabel;
+  });
+  openDrilldown({
+    records: matches.map(r => ({kind, record: r})),
+    title: `${kind === 'inv' ? 'Funded' : 'Discovery calls'} · Source: ${srcLabel}`,
+    defaultDim: 'first_conversion'
+  });
+}
+function ddCloserBar(closerId, kind){
+  const all = kind === 'inv' ? getFilteredFundedInWindow() : getFilteredDealsInWindow();
+  const fld = kind === 'inv' ? 'closer' : 'hubspot_owner_id';
+  const matches = all.filter(r => String(r.properties?.[fld]) === String(closerId));
+  openDrilldown({
+    records: matches.map(r => ({kind, record: r})),
+    title: `${closerName(closerId)} · ${kind === 'inv' ? 'Funded investments' : 'Discovery calls booked'}`,
+    defaultDim: 'source'
+  });
+}
+function ddSetterBar(setterId, kind){
+  const all = kind === 'inv' ? getFilteredFundedInWindow() : getFilteredDealsInWindow();
+  const fld = kind === 'inv' ? 'setter' : 'setter_owner';
+  const matches = all.filter(r => String(r.properties?.[fld]) === String(setterId));
+  openDrilldown({
+    records: matches.map(r => ({kind, record: r})),
+    title: `${setterName(setterId)} · ${kind === 'inv' ? 'Funded investments' : 'Discovery calls booked'}`,
+    defaultDim: 'source'
+  });
+}
+function ddFundBar(fundName, kind){
+  // kind: 'funded' (inv) or 'dcb' (deal). For DCB by fund, we filter deals based on
+  // contact lookup — but our deals don't carry fund info, so DCB-by-fund opens deals matching
+  // funded investors of that fund (approximation). For 'funded', straightforward inv filter.
+  if(kind === 'funded'){
+    const matches = getFilteredFundedInWindow().filter(i => i.properties.fund_invested === fundName);
+    openDrilldown({
+      records: matches.map(r => ({kind: 'inv', record: r})),
+      title: `${fundName} · Funded investments`,
+      defaultDim: 'source'
+    });
+  } else {
+    // 'dcb' — for now, skip fund filtering on deals since the data isn't there
+    openDrilldown({
+      records: getFilteredDealsInWindow().map(r => ({kind: 'deal', record: r})),
+      title: `${fundName} · Discovery calls booked (all funds shown)`,
+      defaultDim: 'source'
+    });
+  }
+}
+function ddMonthBar(monthStr, kind){
+  // monthStr: 'YYYY-MM'
+  const all = kind === 'inv' ? getFilteredFundedInWindow() : getFilteredDealsInWindow();
+  const fld = kind === 'inv' ? 'funds_received' : 'hs_v2_date_entered_233853873';
+  const matches = all.filter(r => (r.properties?.[fld] || '').slice(0, 7) === monthStr);
+  openDrilldown({
+    records: matches.map(r => ({kind, record: r})),
+    title: `${monthStr} · ${kind === 'inv' ? 'Funded investments' : 'Discovery calls booked'}`,
+    defaultDim: 'source'
+  });
+}
+
+// All Money table cell click. Opens the standard Sunrise drill-down panel
+// (dimension dropdown + breakdown + record list) filtered to one column of
+// the table — closer/AM, 'unattributed', or 'overall' — for either the
+// current period or the comparison period. Same matchInvOwner logic as
+// renderAllMoney() so the cell click and the displayed value stay in sync.
+function ddAllMoneyCell(colId, period, metricKey){
+  const funded = period === 'prev'
+    ? CURRENT_PREV_FUNDED_FOR_AM
+    : CURRENT_FUNDED_FOR_AM;
+  if(!funded || !funded.length) return;
+
+  const match = (closer) => {
+    if(colId === 'overall') return true;
+    if(colId === 'unattributed') return !closer || INV_PERSON_IDS.indexOf(closer) < 0;
+    return closer === colId;
+  };
+  const matches = funded.filter(i => match(i.properties.closer));
+  if(matches.length === 0) return;
+
+  const colLbl = colId === 'overall'    ? 'Overall'
+              : colId === 'unattributed' ? 'Unattributed'
+              : (INV_PERSONS[colId] || colId);
+
+  // Look up display label from the map renderAllMoney stashes on window.
+  const labels = window.__AM_METRIC_LABELS || {};
+  const metricLabel = labels[metricKey] || metricKey;
+
+  // Range label for the title — from/to are already YYYY-MM-DD strings
+  const r = CURRENT_AM_RANGE;
+  let rangeStr = '';
+  if(period === 'prev' && r.prevFrom && r.prevTo){
+    rangeStr = ` · ${r.prevFrom} → ${r.prevTo} (comparison period)`;
+  } else if(r.from && r.to){
+    rangeStr = ` · ${r.from} → ${r.to}`;
+  }
+
+  openDrilldown({
+    records: matches.map(rec => ({kind: 'inv', record: rec})),
+    title: `${metricLabel} — ${colLbl}${rangeStr}`,
+    defaultDim: 'source'
+  });
+}
+
+function ddLtvTile(filterFn, title){
+  // LTV tiles always operate over ALL_FUNDED (no date filter — LTV is lifetime)
+  const matches = ALL_FUNDED.filter(filterFn);
+  openDrilldown({
+    records: matches.map(r => ({kind: 'inv', record: r})),
+    title,
+    subtitle: 'All loaded investments (LTV ignores filters)',
+    defaultDim: 'source'
+  });
+}
+
+// LTV tile: First-time investors → all New-type investments (Fund 3 contacts also count
+// in the tile number but aren't shown as records since they don't have Investment objects).
+function ddLtvFirstTime(){
+  ddLtvTile(
+    i => (i.properties?.type_of_investment === 'New'),
+    'First-time investors — New-type investments'
+  );
+}
+
+// LTV tile: Portfolio LTV → all investments
+function ddLtvAll(){
+  ddLtvTile(
+    () => true,
+    'Portfolio LTV — all investments'
+  );
+}
+function ddLtvBucket(invIds, title){
+  const idSet = new Set(invIds.map(String));
+  const matches = ALL_FUNDED.filter(i => idSet.has(String(i.id)));
+  openDrilldown({
+    records: matches.map(r => ({kind: 'inv', record: r})),
+    title,
+    subtitle: 'All loaded investments (LTV ignores filters)',
+    defaultDim: 'source'
+  });
+}
+
+// ESC closes panel
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    if(GUIDE_OPEN) closeHelp();
+    else if(DD_OPEN) closeDrilldown();
+  }
+});
+
+// ── Guide panel ──────────────────────────────────────────────────────
+let GUIDE_OPEN = false;
+function openHelp(){
+  document.getElementById('guide-panel').classList.add('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','false');
+  document.getElementById('guide-backdrop').classList.add('open');
+  GUIDE_OPEN = true;
+}
+function closeHelp(){
+  document.getElementById('guide-panel').classList.remove('open');
+  document.getElementById('guide-panel').setAttribute('aria-hidden','true');
+  document.getElementById('guide-backdrop').classList.remove('open');
+  GUIDE_OPEN = false;
+}
+</script>
+</body>
+</html>
