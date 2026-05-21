@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v18)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -209,7 +209,8 @@ tr.subgroup-divider td{padding:0;height:8px;background:var(--surface2);border-to
 .dd-row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 22px;border-bottom:1px solid var(--surface2);align-items:start}
 .dd-row:hover{background:var(--surface2)}
 .dd-row-main{min-width:0}
-.dd-row-name{font-size:13px;font-weight:500;color:var(--text);display:inline-block;line-height:1.3;cursor:default}
+.dd-row-name{font-size:13px;font-weight:500;color:var(--text);display:inline-block;line-height:1.3;text-decoration:none}
+a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--text2)}
 .dd-row-name.no-link{color:var(--text);cursor:default}
 .dd-row-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
 .dd-row-tags{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
@@ -317,7 +318,7 @@ tr.subgroup-divider td{padding:0;height:8px;background:var(--surface2);border-to
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v18</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -719,7 +720,7 @@ tr.subgroup-divider td{padding:0;height:8px;background:var(--surface2);border-to
       <li>Click the <strong>headline number</strong> → panel opens with the underlying records for the current period.</li>
       <li>Click the <strong>delta line</strong> ("↓ 18% prev: 25%") → same panel for the comparison period.</li>
     </ul>
-    <p>Each row shows the contact name, the meeting date and owner, and a funding-state tag: <span class="pill-inline investments">Funded $X</span> with the cycle time in days, <span class="pill-inline warn">Not funded · matured</span> for records past 90 days that didn't convert, or <span class="pill-inline bookings">In flight (Nd old)</span> for recent records still within the maturity window. Each row also has a small <strong>⧉ copy button</strong> next to the contact name — click it to copy the HubSpot contact URL to your clipboard. The button turns green and shows <strong>✓ Copied!</strong> to confirm. Paste into a new tab to open the contact. (Direct link-opening is blocked by the HubSpot iframe sandbox.)</p>
+    <p>Each row shows the contact name, the meeting date and owner, and a funding-state tag: <span class="pill-inline investments">Funded $X</span> with the cycle time in days, <span class="pill-inline warn">Not funded · matured</span> for records past 90 days that didn't convert, or <span class="pill-inline bookings">In flight (Nd old)</span> for recent records still within the maturity window. Each row's contact name is a link — click it to open the HubSpot contact in a new tab.</p>
     <p><strong>Booked vs Scheduled dates.</strong> When a booking's creation date and its scheduled meeting time differ, drill-down rows show both: "Booked Apr 23 · Scheduled Apr 27." Especially relevant for the Setter Funnel section, where the cohort is anchored on booking date but the meeting may be scheduled days or weeks later. Closer sections (Discovery, Decision) typically show single dates because their cohort is the meeting itself.</p>
     <p>Drilling into the conversion rate cell shows the matured cohort (the rate's denominator) — funded and not-funded mixed — so you can see who didn't convert and why. Drilling into the Funded count or New Money cell shows just the funded subset.</p>
 
@@ -2956,7 +2957,7 @@ async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
       const url=m.contactId ? hubspotContactUrl(m.contactId) : null;
       const name=cn ? cn.name : (m.title || 'Unknown contact');
       const nameHtml=url
-        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        ? `<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`
         : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
       // For the setter dashboard, the meeting's actual owner is usually the closer,
       // but the credit went to the setter via the cascade. Show both for clarity.
@@ -3004,7 +3005,7 @@ async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
       const url=c.contactId ? hubspotContactUrl(c.contactId) : null;
       const name=cn ? cn.name : 'Call (no contact link)';
       const nameHtml=url
-        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        ? `<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`
         : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
       const owner=c.ownerId && SETTERS[c.ownerId] ? SETTERS[c.ownerId] : (c.ownerId ? 'Other owner' : 'No owner');
       const dispo=c.disposition && CONNECTED_DISPO_IDS.has(c.disposition) ? 'Connected' : 'Not connected';
@@ -3026,7 +3027,7 @@ async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
       const url=e.contactId ? hubspotContactUrl(e.contactId) : null;
       const name=cn ? cn.name : 'Unknown contact';
       const nameHtml=url
-        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        ? `<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`
         : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
       const owner=e.setter_owner && SETTERS[e.setter_owner]
         ? SETTERS[e.setter_owner]
@@ -3057,7 +3058,7 @@ async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
       const url=m.contactId ? hubspotContactUrl(m.contactId) : null;
       const name=cn ? cn.name : (m.title || 'Unknown contact');
       const nameHtml=url
-        ? `<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        ? `<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`
         : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
 
       // Owner display — if it's a closer, label as such; otherwise "Other owner".
@@ -3129,7 +3130,7 @@ async function openDrilldown(metricKey, columnId, rangeKey, period='cur'){
       const url=e.contactId ? hubspotContactUrl(e.contactId) : null;
       const name=cn ? cn.name : 'Unknown contact';
       const nameHtml=url
-        ? `<span class="dd-row-name">${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`
+        ? `<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`
         : `<span class="dd-row-name no-link">${escapeHtml(name)}</span>`;
 
       // Attribution credit — show whichever side (setter/closer) the column
@@ -3854,7 +3855,7 @@ async function openPairingDrilldown(setterId, closerId, metricKey){
     const cn=CONTACT_NAME_CACHE[rec.contactId];
     const url=hubspotContactUrl(rec.contactId);
     const name=cn ? cn.name : 'Unknown contact';
-    const nameHtml=`<span class="dd-row-name" >${escapeHtml(name)}</span><button class="dd-copy-btn" onclick="event.stopPropagation();copyDdLink(this,'${url}')" title="Copy HubSpot link">⧉</button>`;
+    const nameHtml=`<a href="${url}" target="_blank" rel="noopener" class="dd-row-name">${escapeHtml(name)}</a>`;
 
     const m=rec.anchorMeeting;
     const anchorTypeLabel = m.isDiscovery ? 'Anchor discovery' : 'Anchor decision (no discovery)';
