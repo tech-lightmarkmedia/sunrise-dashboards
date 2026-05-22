@@ -325,6 +325,36 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 /* ── Drill-down copy button ─────────────────────────────── */
 .dd-copy-btn{display:inline-block;background:var(--surface2);border:1px solid var(--border);cursor:pointer;font-size:11px;color:var(--text2);padding:2px 6px;margin-left:5px;border-radius:4px;vertical-align:middle;line-height:1.4;font-family:'DM Sans',sans-serif;font-weight:500;transition:background .12s,color .12s}
 .dd-copy-btn:hover{background:var(--bk-bg);border-color:var(--bk);color:var(--bk)}
+
+/* ── Speed to Lead ── */
+.pill.stl{background:#0891b2}
+.stl-subtitle{font-size:13px;font-weight:400;color:#6b6558;margin-left:8px}
+.stl-note{font-size:12px;color:#6b6558;margin:8px 0 16px;line-height:1.5}
+.stl-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+.stl-card{background:white;border-radius:10px;padding:20px;border:1px solid #e5e2db}
+.stl-card-head{font-weight:700;font-size:15px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e5e2db}
+.stl-kayla .stl-card-head{border-bottom-color:#0891b2}
+.stl-cierra .stl-card-head{border-bottom-color:#7c3aed}
+.stl-nosetter .stl-card-head{border-bottom-color:#dc2626}
+.stl-uncalled .stl-card-head{border-bottom-color:#d97706}
+.stl-stat-row{display:flex;gap:12px;margin-bottom:10px}
+.stl-stat{flex:1;text-align:center}
+.stl-val{font-size:22px;font-weight:700;color:#1a1814}
+.stl-val.stl-neg{color:#059669}
+.stl-val.stl-warn{color:#dc2626}
+.stl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#6b6558;margin-top:2px}
+.stl-drill-list{margin-top:10px;max-height:200px;overflow-y:auto;font-size:12px}
+.stl-drill-row{padding:4px 0;border-bottom:1px solid #f0ede8;display:flex;gap:8px;align-items:center}
+.stl-name{font-weight:500;flex:1}
+.stl-date{color:#6b6558;font-size:11px}
+.stl-so{color:#6b6558;font-size:11px;font-style:italic}
+.stl-more{color:#6b6558;font-size:11px;padding:6px 0;font-style:italic}
+.stl-empty{color:#6b6558;font-size:12px;padding:8px 0}
+.stl-filter{margin:8px 0}
+.stl-filter select{font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #d5d0c8;background:#faf9f6}
+.sec-loading{padding:40px;text-align:center;color:#6b6558}
+.sec-error{padding:20px;color:#dc2626}
+.sec-idle{padding:20px;color:#6b6558}
 </style>
 </head>
 <body>
@@ -486,6 +516,41 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
       <button onclick="applyFilters()" class="apply-btn">Apply</button>
     </div>
   </div>
+  <div class="range-controls" id="range-controls-stl" data-range="stl">
+    <div class="fg">
+      <label>Speed to Lead range</label>
+      <select id="stl-sel-date" onchange="onDateChange('stl-')">
+        <option value="this_week">This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month" selected>Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="cdates" id="stl-cdates">
+      <input type="date" id="stl-d-from" />
+      <span>to</span>
+      <input type="date" id="stl-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+    <div class="fg">
+      <label>vs</label>
+      <select id="stl-sel-compare" onchange="onCompareChange('stl-')">
+        <option value="none" selected>None</option>
+        <option value="previous">Previous Period</option>
+        <option value="custom">Custom dates…</option>
+      </select>
+    </div>
+    <div class="cdates" id="stl-cmp-cdates">
+      <input type="date" id="stl-cmp-d-from" />
+      <span>to</span>
+      <input type="date" id="stl-cmp-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+  </div>
 </div>
 
 <div id="ov" style="display:none">
@@ -498,6 +563,8 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 
   <!-- Sections rendered as independent blocks. Each has its own header (with
        controls) and its own table. Section structure populated by render(). -->
+  <section class="dash-section range-stl" id="section-stl"></section>
+
   <!-- Call Outcomes — donut breakdown of meeting outcomes. The section header
        below holds one date picker + one compare picker (controls BOTH donuts)
        plus the Setter picker (only affects donuts; other sections always show
@@ -934,6 +1001,7 @@ function getDateRange(rangeKey='activity'){
     investments: {sel:'inv-sel-date', cmp:'inv-sel-compare', dFrom:'inv-d-from', dTo:'inv-d-to', cmpFrom:'inv-cmp-d-from', cmpTo:'inv-cmp-d-to'},
     // Call Outcomes section — single shared range for both donuts (Intro + Discovery)
     outcomes:    {sel:'oc-sel-date',  cmp:'oc-sel-compare',  dFrom:'oc-d-from',  dTo:'oc-d-to',  cmpFrom:'oc-cmp-d-from',  cmpTo:'oc-cmp-d-to'},
+    stl:         {sel:'stl-sel-date', cmp:'stl-sel-compare', dFrom:'stl-d-from', dTo:'stl-d-to', cmpFrom:'stl-cmp-d-from', cmpTo:'stl-cmp-d-to'},
   };
   const ids=prefixes[rangeKey];
   const baseKey=document.getElementById(ids.sel).value;
@@ -1875,6 +1943,8 @@ async function forceRefresh(){
   SECTION_STATE.activity='idle';
   SECTION_STATE.bookings='idle';
   SECTION_STATE.investments='idle';
+  SECTION_STATE.stl='idle';
+  SECTION_STATE.stl='idle';
 
   await load();
 }
@@ -1884,7 +1954,15 @@ async function forceRefresh(){
  * whether its data has been loaded. render() reads this to draw "Loading…"
  * placeholders for sections that aren't ready yet.
  */
-const SECTION_STATE={activity:'idle', bookings:'idle', investments:'idle'};
+const SECTION_STATE={activity:'idle', bookings:'idle', investments:'idle', stl:'idle'};
+
+// ── Speed to Lead ────────────────────────────────────────────────────────
+const STL_SETTER_IDS = ['1750115047', '80677823'];
+const STL_SETTER_NAMES = {'1750115047':'Kayla D.', '80677823':'Cierra M.'};
+const STL_OFFSET_MS = 5 * 60 * 60 * 1000;
+const STL_LIST_ID = '2909';
+let STL_CONTACTS = [];
+let STL_CALLS = {};
 
 async function load(){
   if(LOADING){
@@ -1906,7 +1984,7 @@ async function load(){
   // - Bookings: needs meetings only (no calls)
   // - Investments: needs the global investment+deal data only (no calls/meetings)
   const sectionNeedsLoad={};
-  for(const rk of ['activity','bookings','investments']){
+  for(const rk of ['activity','bookings','investments','stl']){
     let missing=false;
     if(rk==='activity'){
       const c=chunksForRange('activity');
@@ -1917,6 +1995,8 @@ async function load(){
       missing = c.meetingMonths.some(mk=>!MONTH_CACHE[`meetings:${mk}`]);
     } else if(rk==='investments'){
       missing = !INVESTMENTS_LOADED;
+    } else if(rk==='stl'){
+      missing = STL_CONTACTS.length===0 && SECTION_STATE.stl!=='ready';
     }
     sectionNeedsLoad[rk] = missing || SECTION_STATE[rk]==='idle' || SECTION_STATE[rk]==='error';
     if(sectionNeedsLoad[rk]) SECTION_STATE[rk]='loading';
@@ -1937,6 +2017,7 @@ async function load(){
     if(sectionNeedsLoad.activity) tasks.push(loadActivitySection());
     if(sectionNeedsLoad.bookings) tasks.push(loadBookingsSection());
     if(sectionNeedsLoad.investments) tasks.push(loadInvestmentsSection());
+    if(sectionNeedsLoad.stl) tasks.push(loadSTLSection());
     const results=await Promise.allSettled(tasks);
 
     // Final status line — count failures across sections plus any chunk failures.
@@ -1947,7 +2028,7 @@ async function load(){
       if(failedSections.length>0) parts.push(`${failedSections.length} section${failedSections.length>1?'s':''} failed`);
       st(`${CALLS.length.toLocaleString()} calls · ${MEETINGS.length.toLocaleString()} meetings · ${INVESTMENTS.length} investments · ${parts.join(' · ')} — click Refresh to retry`, 'se');
       results.forEach((r,i)=>{
-        if(r.status==='rejected') console.error(`Section ${['activity','bookings','investments'][i]} failed:`, r.reason);
+        if(r.status==='rejected') console.error(`Section ${['activity','bookings','investments','stl'][i]} failed:`, r.reason);
       });
     } else {
       st(`${CALLS.length.toLocaleString()} calls · ${MEETINGS.length.toLocaleString()} meetings · ${INVESTMENTS.length} investments`,'so');
@@ -2026,6 +2107,21 @@ async function loadInvestmentsSection(){
     render();
   }catch(e){
     SECTION_STATE.investments='error';
+    render();
+    throw e;
+  }
+}
+
+async function loadSTLSection(){
+  try{
+    const stlR=getDateRange('stl');
+    STL_CONTACTS=await fetchSTLContacts(stlR.from.getTime(),stlR.to.getTime());
+    setLoadingMsg('Speed to Lead: '+STL_CONTACTS.length+' qualifying leads. Fetching calls…');
+    STL_CALLS=await fetchSTLCalls(STL_CONTACTS.map(c=>c.id));
+    SECTION_STATE.stl='ready';
+    render();
+  }catch(e){
+    SECTION_STATE.stl='error';
     render();
     throw e;
   }
@@ -2977,6 +3073,229 @@ async function openOutcomeDrilldown(callType, outcome){
   body.innerHTML = `<div class="dd-summary">${records.length} record${records.length===1?'':'s'}</div>${html}`;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// SPEED TO LEAD
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function fetchSTLContacts(fromMs, toMs){
+  const results=[];
+  const chunks=[];
+  let cur=new Date(fromMs);
+  cur=new Date(cur.getFullYear(),cur.getMonth(),1);
+  const endDate=new Date(toMs);
+  while(cur<=endDate){
+    const cFrom=Math.max(cur.getTime(),fromMs);
+    const cTo=Math.min(new Date(cur.getFullYear(),cur.getMonth()+1,0,23,59,59,999).getTime(),toMs);
+    chunks.push([cFrom,cTo]);
+    cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  }
+  for(let i=0;i<chunks.length;i++){
+    const [cFrom,cTo]=chunks[i];
+    setLoadingMsg(`Speed to Lead: contacts (${i+1}/${chunks.length})…`);
+    let after=null,page=0;
+    while(true){
+      page++;
+      const body={
+        filterGroups:[{filters:[
+          {propertyName:'createdate',operator:'GTE',value:String(cFrom)},
+          {propertyName:'createdate',operator:'LTE',value:String(cTo)},
+          {propertyName:'are_you_accredited_',operator:'EQ',value:'Yes'},
+          {propertyName:'hs_list_memberships',operator:'EQ',value:STL_LIST_ID},
+        ]}],
+        properties:['createdate','setter_owner','firstname','lastname','email'],
+        sorts:[{propertyName:'createdate',direction:'ASCENDING'}],
+        limit:200,
+        ...(after?{after}:{}),
+      };
+      const d=await api('/crm/v3/objects/contacts/search',body);
+      for(const c of (d.results||[])){
+        const p=c.properties||{};
+        results.push({
+          id:String(c.id),createdate:p.createdate?new Date(p.createdate).getTime():null,
+          setter_owner:(p.setter_owner||'').trim()||null,
+          name:[p.firstname,p.lastname].filter(Boolean).join(' ')||'(no name)',
+          email:p.email||'',
+        });
+      }
+      if(d.paging?.next?.after) after=d.paging.next.after; else break;
+      await sleep(HS_DELAY_MS);
+      if(page>50) break;
+    }
+    await sleep(HS_DELAY_MS);
+  }
+  const seen=new Set();
+  return results.filter(c=>seen.has(c.id)?false:(seen.add(c.id),true));
+}
+
+async function fetchSTLCalls(contactIds){
+  if(!contactIds.length) return {};
+  const callMap={}, allCallIds=new Set(), callToContacts={};
+  const batches=[];
+  for(let i=0;i<contactIds.length;i+=100) batches.push(contactIds.slice(i,i+100));
+  for(let i=0;i<batches.length;i++){
+    setLoadingMsg(`Speed to Lead: call assocs (${i+1}/${batches.length})…`);
+    try{
+      const d=await api('/crm/v4/associations/contacts/calls/batch/read',
+        {inputs:batches[i].map(id=>({id:String(id)}))});
+      for(const r of (d.results||[])){
+        const cid=String(r.from?.id||'');
+        if(!cid) continue;
+        for(const to of (r.to||[])){
+          const callId=String(to.toObjectId||'');
+          if(!callId) continue;
+          allCallIds.add(callId);
+          if(!callToContacts[callId]) callToContacts[callId]=[];
+          callToContacts[callId].push(cid);
+        }
+      }
+    }catch(e){console.warn('STL call assoc error',e);}
+    await sleep(HS_DELAY_MS);
+  }
+  const callIdArr=[...allCallIds];
+  const cBatches=[];
+  for(let i=0;i<callIdArr.length;i+=100) cBatches.push(callIdArr.slice(i,i+100));
+  for(let i=0;i<cBatches.length;i++){
+    setLoadingMsg(`Speed to Lead: reading calls (${i+1}/${cBatches.length})…`);
+    try{
+      const d=await api('/crm/v3/objects/calls/batch/read',
+        {inputs:cBatches[i].map(id=>({id})),properties:['hs_timestamp','hubspot_owner_id']});
+      for(const r of (d.results||[])){
+        const callId=String(r.id);
+        const ts=r.properties?.hs_timestamp?new Date(r.properties.hs_timestamp).getTime():null;
+        const ownerId=r.properties?.hubspot_owner_id||null;
+        if(!ts) continue;
+        for(const cid of (callToContacts[callId]||[])){
+          if(!callMap[cid]) callMap[cid]=[];
+          callMap[cid].push({ts,ownerId});
+        }
+      }
+    }catch(e){console.warn('STL call read error',e);}
+    await sleep(HS_DELAY_MS);
+  }
+  for(const cid in callMap) callMap[cid].sort((a,b)=>a.ts-b.ts);
+  return callMap;
+}
+
+function calcSTLMetrics(){
+  const buckets={'1750115047':[],'80677823':[],'no_setter':[],'uncalled':[]};
+  const uncalledBySetter={};
+  for(const contact of STL_CONTACTS){
+    if(!contact.createdate) continue;
+    if(!contact.setter_owner){
+      buckets.no_setter.push({contact,speed:null,firstCall:null});
+      continue;
+    }
+    const calls=STL_CALLS[contact.id];
+    if(!calls||calls.length===0){
+      buckets.uncalled.push({contact,speed:null,firstCall:null});
+      if(!uncalledBySetter[contact.setter_owner]) uncalledBySetter[contact.setter_owner]=[];
+      uncalledBySetter[contact.setter_owner].push(contact);
+      continue;
+    }
+    const firstCall=calls[0];
+    const speedMs=firstCall.ts-contact.createdate-STL_OFFSET_MS;
+    const entry={contact,speed:speedMs,firstCall};
+    // Attribute by call owner; fallback to setter_owner if caller isn't K or C
+    if(firstCall.ownerId==='1750115047') buckets['1750115047'].push(entry);
+    else if(firstCall.ownerId==='80677823') buckets['80677823'].push(entry);
+    else if(contact.setter_owner==='1750115047') buckets['1750115047'].push(entry);
+    else if(contact.setter_owner==='80677823') buckets['80677823'].push(entry);
+    else buckets.no_setter.push(entry);
+  }
+  function summarize(entries){
+    const called=entries.filter(e=>e.speed!==null);
+    const speeds=called.map(e=>e.speed).sort((a,b)=>a-b);
+    const n=speeds.length;
+    return{count:entries.length,calledCount:n,speeds,
+      median:n>0?speeds[Math.floor(n/2)]:null,
+      avg:n>0?speeds.reduce((a,b)=>a+b,0)/n:null,
+      under1hr:speeds.filter(s=>s<3600000).length,
+      under1hrPct:n>0?speeds.filter(s=>s<3600000).length/n*100:null,
+      negative:speeds.filter(s=>s<0).length,
+      entries};
+  }
+  return{kayla:summarize(buckets['1750115047']),cierra:summarize(buckets['80677823']),
+    no_setter:summarize(buckets.no_setter),
+    uncalled:{count:buckets.uncalled.length,entries:buckets.uncalled,bySetter:uncalledBySetter}};
+}
+
+function fmtSpeed(ms){
+  if(ms===null||ms===undefined) return '\u2014';
+  const neg=ms<0, abs=Math.abs(ms);
+  const mins=Math.floor(abs/60000), hrs=Math.floor(mins/60), days=Math.floor(hrs/24);
+  const sign=neg?'\u2212':'';
+  if(days>0) return sign+days+'d '+(hrs%24)+'h';
+  if(hrs>0) return sign+hrs+'h '+(mins%60)+'m';
+  return sign+mins+'m';
+}
+
+function renderSTLSection(){
+  const el=document.getElementById('section-stl');
+  if(!el) return;
+  const status=SECTION_STATE.stl;
+  let h='<div class="sec-head"><h2 class="sec-title"><span class="pill stl">Speed to Lead</span> <span class="stl-subtitle">\u00b15 hours after create date</span></h2>';
+  h+='<div class="sec-controls" id="stl-controls-target"></div></div>';
+  if(status==='loading'){el.innerHTML=h+'<div class="sec-loading"><div class="spin"></div> Loading speed-to-lead data\u2026</div>';moveSTLControls();return;}
+  if(status==='error'){el.innerHTML=h+'<div class="sec-error">Failed to load speed-to-lead data.</div>';moveSTLControls();return;}
+  if(status!=='ready'){el.innerHTML=h+'<div class="sec-idle"></div>';moveSTLControls();return;}
+  const stlR=getDateRange('stl');
+  const m=calcSTLMetrics();
+  h+='<div class="stl-note">Qualifying: accredited + \u201CLeads to be Set\u201D list, created in '+stlR.label+'. Speed\u2009=\u2009first call \u2212 createdate \u2212 5h dialer delay. Negative\u2009=\u2009beat the queue.</div>';
+  h+='<div class="stl-grid">';
+  function calledCol(label,data,cls){
+    let c='<div class="stl-card '+cls+'"><div class="stl-card-head">'+label+'</div>';
+    c+='<div class="stl-stat-row">';
+    c+='<div class="stl-stat"><div class="stl-val">'+(data.calledCount||0)+'</div><div class="stl-lbl">leads called</div></div>';
+    c+='<div class="stl-stat"><div class="stl-val'+(data.median!==null&&data.median<0?' stl-neg':'')+'">'+fmtSpeed(data.median)+'</div><div class="stl-lbl">median</div></div>';
+    c+='<div class="stl-stat"><div class="stl-val">'+fmtSpeed(data.avg)+'</div><div class="stl-lbl">average</div></div>';
+    c+='</div><div class="stl-stat-row">';
+    c+='<div class="stl-stat"><div class="stl-val">'+(data.under1hr||0)+'</div><div class="stl-lbl">&lt; 1hr</div></div>';
+    c+='<div class="stl-stat"><div class="stl-val">'+(data.under1hrPct!==null?data.under1hrPct.toFixed(0)+'%':'\u2014')+'</div><div class="stl-lbl">&lt; 1hr rate</div></div>';
+    c+='<div class="stl-stat"><div class="stl-val">'+(data.negative||0)+'</div><div class="stl-lbl">beat queue</div></div>';
+    c+='</div></div>';
+    return c;
+  }
+  h+=calledCol('Kayla D.',m.kayla,'stl-kayla');
+  h+=calledCol('Cierra M.',m.cierra,'stl-cierra');
+  // No Setter Owner
+  h+='<div class="stl-card stl-nosetter"><div class="stl-card-head">No Setter Owner</div>';
+  h+='<div class="stl-stat-row"><div class="stl-stat"><div class="stl-val stl-warn">'+m.no_setter.count+'</div><div class="stl-lbl">leads unassigned</div></div></div>';
+  if(m.no_setter.count>0){h+='<div class="stl-drill-list">';for(const e of m.no_setter.entries.slice(0,10)){const d=e.contact.createdate?new Date(e.contact.createdate).toLocaleDateString():'';h+='<div class="stl-drill-row"><span class="stl-name">'+e.contact.name+'</span><span class="stl-date">'+d+'</span></div>';}if(m.no_setter.count>10)h+='<div class="stl-more">+ '+(m.no_setter.count-10)+' more</div>';h+='</div>';}
+  h+='</div>';
+  // Uncalled
+  h+='<div class="stl-card stl-uncalled"><div class="stl-card-head">Uncalled</div>';
+  h+='<div class="stl-stat-row"><div class="stl-stat"><div class="stl-val stl-warn">'+m.uncalled.count+'</div><div class="stl-lbl">leads with no calls</div></div></div>';
+  if(m.uncalled.count>0){
+    h+='<div class="stl-filter"><select id="stl-uncalled-filter" onchange="filterSTLUncalled()"><option value="all">All</option><option value="1750115047">Kayla D.</option><option value="80677823">Cierra M.</option></select></div>';
+    h+='<div id="stl-uncalled-list" class="stl-drill-list">'+renderSTLUncalledList(m.uncalled.entries,'all')+'</div>';
+  }
+  h+='</div></div>';
+  el.innerHTML=h;
+  moveSTLControls();
+}
+function moveSTLControls(){
+  const c=document.getElementById('range-controls-stl'),t=document.getElementById('stl-controls-target');
+  if(c&&t)t.appendChild(c);
+}
+function renderSTLUncalledList(entries,filter){
+  const f=filter==='all'?entries:entries.filter(e=>e.contact.setter_owner===filter);
+  let h='';
+  for(const e of f.slice(0,20)){
+    const d=e.contact.createdate?new Date(e.contact.createdate).toLocaleDateString():'';
+    const so=e.contact.setter_owner?(STL_SETTER_NAMES[e.contact.setter_owner]||e.contact.setter_owner):'\u2014';
+    h+='<div class="stl-drill-row"><span class="stl-name">'+e.contact.name+'</span><span class="stl-date">'+d+'</span><span class="stl-so">'+so+'</span></div>';
+  }
+  if(f.length>20)h+='<div class="stl-more">+ '+(f.length-20)+' more</div>';
+  if(f.length===0)h+='<div class="stl-empty">None</div>';
+  return h;
+}
+function filterSTLUncalled(){
+  const sel=document.getElementById('stl-uncalled-filter');if(!sel)return;
+  const m=calcSTLMetrics();
+  document.getElementById('stl-uncalled-list').innerHTML=renderSTLUncalledList(m.uncalled.entries,sel.value);
+}
+
+
 function render(){
   // The setter picker now ONLY affects the Call Outcomes donuts (read inside
   // renderOutcomeDonut). Activity, Bookings, and Investments sections always
@@ -3020,8 +3339,8 @@ function render(){
   // Top summary pills — slim recap of each section's range. Per-section warnings
   // (partial period, length mismatch) live inside their sections, not here.
   const pills=[];
-  const rangeLabels={activity:'Activity', bookings:'Bookings', investments:'New Money'};
-  for(const rk of ['activity','bookings','investments']){
+  const rangeLabels={activity:'Activity', bookings:'Bookings', investments:'New Money', stl:'Speed to Lead'};
+  for(const rk of ['activity','bookings','investments','stl']){
     const r=ranges[rk];
     pills.push(`<div class="fpill range-${rk}"><strong>${rangeLabels[rk]}:</strong> ${r.label}</div>`);
   }
@@ -3037,6 +3356,7 @@ function render(){
   // live in the Call Outcomes section header.
   renderOutcomeDonut('intro');
   renderOutcomeDonut('discovery');
+  renderSTLSection();
 }
 
 /**
