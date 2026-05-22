@@ -3232,6 +3232,11 @@ function fmtSpeed(ms){
 function renderSTLSection(){
   const el=document.getElementById('section-stl');
   if(!el) return;
+  // Detach range controls BEFORE innerHTML replacement — same pattern as renderSection.
+  // Without this, innerHTML wipes the controls from the DOM, and the next getDateRange('stl')
+  // call crashes because the select elements no longer exist.
+  const ctrlEl=document.getElementById('range-controls-stl');
+  if(ctrlEl) document.getElementById('range-controls-store').appendChild(ctrlEl);
   const status=SECTION_STATE.stl;
   let h='<div class="sec-head"><h2 class="sec-title"><span class="pill stl">Speed to Lead</span> <span class="stl-subtitle">\u00b15 hours after create date</span></h2>';
   h+='<div class="sec-controls" id="stl-controls-target"></div></div>';
