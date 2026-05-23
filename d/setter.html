@@ -702,11 +702,11 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
   <div class="guide-body">
 
     <h2>What this dashboard measures</h2>
-    <p>This is a setter-side view of the SCI sales process — the work each setter does to feed the closer pipeline. The dashboard is organized as three sections, each a different stage of the setter's contribution: <span class="pill-inline activity">Activity</span> (raw call volume + intro-call performance), <span class="pill-inline bookings">Bookings</span> (the discoveries setters cause to be booked), and <span class="pill-inline investments">New Money</span> (the dollars that eventually fund from those discoveries — first-time investor fundings only).</p>
+    <p>This is a setter-side view of the SCI sales process — the work each setter does to feed the closer pipeline. The dashboard is organized as four sections, each a different stage of the setter's contribution: <span class="pill-inline activity">Activity</span> (raw call volume + intro-call performance), <span class="pill-inline bookings">Bookings</span> (the discoveries setters cause to be booked), <span class="pill-inline investments">New Money</span> (the dollars that eventually fund from those discoveries — first-time investor fundings only), and <span class="pill-inline" style="background:#ecfeff;color:#0891b2;border:1px solid #a5f3fc">Speed to Lead</span> (how quickly setters make first contact with new accredited leads).</p>
     <p>Setters shown: <strong>Kayla Daughtrey</strong>, <strong>Cierra Milao</strong>, <strong>Alex White</strong>, <strong>Aidan Conner</strong>. Jamie Wright is inactive and excluded from the columns. For Bookings and New Money, records whose setter cascade resolved to a non-setter or didn't resolve land in the Unattributed column. Activity (Dials, Connections, Intros) intentionally leaves Unattributed blank — a closer's calls aren't "setter activity that happens to be unattributed," they belong on the closer dashboard.</p>
     <p>Column order in every section: <strong>persons, then Unattributed, then Overall</strong>. Overall is the section-wide grand total. For Bookings and New Money rows, Overall = sum of persons + Unattributed (the row math sums cleanly left-to-right). For Activity rows, Unattributed is blank and Overall = sum of persons by design (no "unattributed setter activity" exists). The Overall column is highlighted to mark it as the grand total.</p>
 
-    <h2>The three sections</h2>
+    <h2>The four sections</h2>
 
     <h3>Call Outcomes (top of dashboard)</h3>
     <p>Two donuts at the very top of the dashboard — Intro on the left, Discovery on the right. Each donut breaks down meeting outcomes for the call type: <strong>Completed</strong> (green), <strong>No-Show</strong> (red), <strong>Rescheduled</strong> (amber), <strong>Canceled</strong> (gray), <strong>Disqualified</strong> (purple). The number in the center of the donut is the resolved-cohort total — the denominator the percentages use.</p>
@@ -735,6 +735,28 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
     <p><strong>Important — first-investment attribution.</strong> Only each contact's FIRST funded investment counts. Once an investor is acquired, post-acquisition relationship management and follow-on (repeat) fundings are owned by Account Managers — those repeat investments live on the AM dashboard, not here. So this dashboard's New Money Raised totals will be intentionally lower than the main Investment Dashboard, which sums every funded record including repeat and follow-on. The gap between them is the AM-owned repeat-funding volume.</p>
     <p>Funded investments and their original discovery bookings can sit in different date ranges — a discovery booked in March can fund in April. The Bookings range and New Money range are independent windows, not a strict pipeline.</p>
     <p>Default range: <strong>Last Quarter</strong>. Funding cycles run longer than booking cycles; quarterly read is the right granularity.</p>
+
+    <h3><span class="pill-inline" style="background:#ecfeff;color:#0891b2;border:1px solid #a5f3fc">Speed to Lead</span></h3>
+    <p>Measures how quickly setters make first contact with new accredited leads. For every contact created in the date range where <code>are_you_accredited_ = Yes</code>, the dashboard finds the first outbound call associated with that contact and computes the gap between contact creation and first call (adjusted by a 5-hour offset for timezone/business-hours alignment).</p>
+    <p><strong>Only two setters shown: Kayla D. and Cierra M.</strong> These are the two setters who handle outbound calling on new leads. The other setters (Alex, Aidan) don't appear in this section.</p>
+    <p><strong>Table columns.</strong> Each setter gets three sub-columns: <strong>Available</strong> (leads assigned — both called and uncalled), <strong>Made</strong> (leads actually called), and <strong>% Made</strong> (call-through rate). Six metric rows:</p>
+    <ul>
+      <li><strong>Leads</strong> — count of accredited leads available vs actually called.</li>
+      <li><strong>Median Speed</strong> — median time from contact creation to first call (spans all three sub-columns). The single most useful number for "how fast is this setter responding?"</li>
+      <li><strong>Avg Speed</strong> — mean of the same. More sensitive to outliers than median — a few very slow responses will drag this up even if most leads are called quickly.</li>
+      <li><strong>&lt; 1 Hour</strong> — count of leads called within one hour. The gold standard for speed to lead.</li>
+      <li><strong>&lt; 1hr Rate</strong> — percentage of called leads reached within one hour (spans all three sub-columns).</li>
+      <li><strong>Beat Queue</strong> — leads where the speed was negative (the setter called before the offset window elapsed). A negative speed means the setter reached the lead faster than the baseline expectation — shown in green.</li>
+    </ul>
+    <p><strong>Three summary cards</strong> appear to the right of the table:</p>
+    <ul>
+      <li><strong>Speed to Lead</strong> (teal) — overall median speed combining both setters' called leads. The headline number for the section.</li>
+      <li><strong>No Setter Owner</strong> (red) — contacts in the range with no <code>setter_owner</code> assigned. These leads fell through the cracks — nobody is responsible for calling them. Click to drill down.</li>
+      <li><strong>Uncalled</strong> (amber) — contacts assigned to a setter but with zero associated calls. The setter owns them but hasn't reached out. Click to drill down.</li>
+    </ul>
+    <p><strong>Attribution.</strong> First call's <code>hubspot_owner_id</code> determines which setter column the lead lands in. If the caller isn't Kayla or Cierra, falls back to the contact's <code>setter_owner</code> field.</p>
+    <p><strong>The 5-hour offset.</strong> Raw speed is <code>first_call_timestamp − contact_createdate − 5 hours</code>. The offset accounts for the fact that leads created overnight or outside business hours shouldn't penalize the setter's response time. A "Beat Queue" (negative speed) means the setter called within 5 hours of creation.</p>
+    <p>Default range: <strong>Last Month</strong>. Monthly cadence balances sample size with recency.</p>
 
     <h2>How attribution works</h2>
     <p>Setter attribution is harder than closer attribution because the setter usually doesn't own the meeting record — the closer who runs the discovery does. Cascade logic resolves this:</p>
@@ -768,7 +790,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 
     <h2>Reading the funnel together</h2>
     <p>The setter funnel: dials → connections → intro calls scheduled → intro calls completed → discoveries booked → discoveries completed → investments funded.</p>
-    <p>Activity rows answer "how hard are setters working?" The Bookings rows answer "how good is the work?" — completion and no-show rates of their booked discoveries. The Investments rows answer "what dollars do they ultimately drive?"</p>
+    <p>Activity rows answer "how hard are setters working?" The Bookings rows answer "how good is the work?" — completion and no-show rates of their booked discoveries. The Investments rows answer "what dollars do they ultimately drive?" Speed to Lead answers "how fast are setters responding to new leads?" — a leading indicator that feeds everything downstream.</p>
     <p>Key insight when reading: high activity with low completion rate = setters are booking volume but the discoveries aren't qualified enough. Low activity with high completion = a setter who books selectively. Both can be valid styles depending on team strategy.</p>
 
     <h2>Reading caveats</h2>
@@ -786,6 +808,9 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
     <p><strong>Resolved cohort</strong> — bookings whose scheduled meeting time has already passed. Used as the denominator for completion rate and no-show rate, so the rates aren't dragged down by future bookings.</p>
     <p><strong>Pending</strong> — a discovery booking whose scheduled meeting time is still in the future. Counted in Booked, excluded from rate denominators.</p>
     <p><strong>Cascade attribution</strong> — when the meeting owner isn't the setter (typical for discoveries), credit falls back to the deal's <code>setter_owner</code> field, then to the contact's <code>setter_owner</code> field. Lets the dashboard credit setters even when they don't own the meeting record directly.</p>
+    <p><strong>Speed to Lead</strong> — time between a contact's <code>createdate</code> in HubSpot and the first outbound call to that contact, minus a 5-hour offset. Lower is better. Negative values ("Beat Queue") mean the setter called within the offset window.</p>
+    <p><strong>Beat Queue</strong> — a Speed to Lead value that is negative, meaning the setter made first contact faster than the 5-hour baseline offset. Displayed in green.</p>
+    <p><strong>Uncalled</strong> (Speed to Lead) — a contact assigned to a setter via <code>setter_owner</code> but with no associated calls in HubSpot. The setter owns the lead but hasn't reached out.</p>
 
   </div>
 </aside>
