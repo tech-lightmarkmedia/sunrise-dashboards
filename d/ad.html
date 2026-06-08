@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Ad Performance Dashboard (v10.8.4.15)</title>
+<title>Sunrise Capital — Ad Performance Dashboard (v10.8.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -625,7 +625,7 @@ tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
   <h3>The main table</h3>
   <p>Each row is one campaign with its Intros, Discoveries, lead counts, AI counts, % AI, Spend, and CPAIL.</p>
   <p><strong>Sort:</strong> Discoveries Booked descending by default. Click any number-column header to flip. <em>(not set)</em> rows always pin to the top regardless of sort. When sorting by <strong>% AI</strong>, rows with zero leads (no denominator) sink to the bottom regardless of direction, and equal percentages tiebreak by lead volume — so a 100% rate from 50 leads outranks a 100% rate from 1.</p>
-  <p><strong>Click any campaign row</strong> to open a per-campaign drill drawer with the full breakdown: Total Leads / New Leads / Returning Leads, then Total AI / New AI / Returning AI — six metrics with Count, % of Total Leads, and CPL each.</p>
+  <p><strong>Click any campaign row</strong> to open a per-campaign drill drawer. For Meta campaigns, the drawer shows an <strong>Ad Set Breakdown</strong> table at the top — each ad set within the campaign with its intros, discoveries, AI leads, spend, and CPAIL. Below that is the full <strong>Attribution Breakdown</strong>: Total Leads / New Leads / Returning Leads, then Total AI / New AI / Returning AI — six metrics with Count, % of Total Leads, and CPL each.</p>
 
   <h3>Filters and how to slice the data</h3>
   <p><strong>Source filter</strong> (multi-select dropdown) filters by <code>hs_analytics_source</code> (Original Source). Affects everything — KPIs, charts, table, and totals strip.</p>
@@ -721,9 +721,11 @@ let RETURNING_CONTACTS=[];   // [{id, accredited:bool}]
 // fields (the contact's creation moment). For returning contacts: take the
 // LATEST event with source fields in the period (last touch within window).
 //
-// Per-contact entry: {ots, dd1, dd2, hsaCam, hsaNet, level, kind}
+// Per-contact entry: {ots, dd1, dd2, hsaCam, hsaGrp, hsaAd, hsaNet, level, kind}
 //   ots/dd1/dd2 — same as v10.5's CONTACT_ATTRIB but sourced from events
 //   hsaCam      — Meta campaign ID parsed from event URL (when present)
+//   hsaGrp      — Meta ad set ID parsed from event URL (v10.8.5)
+//   hsaAd       — Meta ad ID parsed from event URL (v10.8.5)
 //   hsaNet      — Meta network value (`facebook`, `linkedin`, `google`...)
 //   level       — `dd2` | `dd1` | `src` | `none` — same fallback cascade
 //   kind        — `new` | `returning` — distinguishes the two universes
@@ -736,6 +738,9 @@ let EVENT_ATTRIB_BY_CONTACT={};
 //
 // Per-id entry: {name, spend, impressions, clicks, leads}
 let META_DATA_BY_ID={};
+// v10.8.5: Ad set level insights from Meta. Keyed by ad set ID.
+// Each entry: {name, campaignId, spend, impressions, clicks, leads}
+let META_ADSET_DATA_BY_ID={};
 
 // v10.8.1: Set of all Meta campaign IDs known to be SCI's, including
 // campaigns that ran BEFORE the dashboard's display range. Populated from
@@ -1171,6 +1176,60 @@ async function fetchMetaInsightsByID(fromMs, toMs){
         }
       }
       if(!prev.name && item.campaign_name) prev.name = item.campaign_name;
+      result[id] = prev;
+    }
+    if(d.paging?.next){
+      try{
+        const nextUrl=new URL(d.paging.next);
+        const nextAfter=nextUrl.searchParams.get('after');
+        if(nextAfter && nextAfter !== after){ after=nextAfter; continue; }
+      }catch{ /* break */ }
+    }
+    break;
+  }
+  return result;
+}
+
+// v10.8.5: Fetch ad-set-level insights from Meta. Same date range as the
+// campaign-level fetch. Returns {adsetId → {name, campaignId, spend, impressions, clicks, leads}}.
+// Used for the per-adset breakdown table in the campaign drill drawer.
+async function fetchMetaAdSetInsights(fromMs, toMs){
+  const result={};
+  const fromIso=new Date(fromMs).toISOString().slice(0,10);
+  const toIso=new Date(toMs).toISOString().slice(0,10);
+  const timeRange=encodeURIComponent(JSON.stringify({since:fromIso, until:toIso}));
+  const baseQs=`level=adset&fields=adset_id,adset_name,campaign_id,campaign_name,spend,impressions,clicks,actions&time_range=${timeRange}&limit=500`;
+  let after=null;
+  let page=0;
+  while(true){
+    page++;
+    const qs=baseQs + (after ? `&after=${encodeURIComponent(after)}` : '');
+    const url=`${META_PROXY_URL}/insights?${qs}`;
+    let r;
+    try{ r=await fetch(url); }
+    catch(e){
+      console.warn('Meta adset fetch network error:', e.message);
+      break;
+    }
+    if(!r.ok){
+      console.warn(`Meta adset fetch returned ${r.status}`);
+      break;
+    }
+    const d=await r.json();
+    for(const item of (d.data || [])){
+      const id = String(item.adset_id || '');
+      if(!id) continue;
+      const prev = result[id] || {name:'', campaignId:'', spend:0, impressions:0, clicks:0, leads:0};
+      prev.name        = prev.name || item.adset_name || '';
+      prev.campaignId  = prev.campaignId || String(item.campaign_id || '');
+      prev.spend       += parseFloat(item.spend) || 0;
+      prev.impressions += parseInt(item.impressions, 10) || 0;
+      prev.clicks      += parseInt(item.clicks, 10) || 0;
+      if(Array.isArray(item.actions)){
+        for(const a of item.actions){
+          if(a && a.action_type === 'lead') prev.leads += parseFloat(a.value) || 0;
+        }
+      }
       result[id] = prev;
     }
     if(d.paging?.next){
@@ -1729,7 +1788,7 @@ function extractURLParam(urlOrQS, name){
 // `isNewSet` is the set of contact IDs whose createdate is in the period —
 // used to decide which event to pick (earliest vs latest).
 //
-// Returns: contactId → {ots, dd1, dd2, hsaCam, hsaNet, level, kind}
+// Returns: contactId → {ots, dd1, dd2, hsaCam, hsaGrp, hsaAd, hsaNet, level, kind}
 //   level — `dd2` | `dd1` | `src` | `none` (matches v10.5's resolveAttribution
 //           cascade so downstream bucket assembly stays uniform)
 //   kind  — `new` | `returning`
@@ -1764,6 +1823,8 @@ function buildEventAttributionMap(events, isNewSet){
       dd1:           chosen.dd1           || '',
       dd2:           chosen.dd2           || '',
       hsaCam:        chosen.hsaCam        || '',
+      hsaGrp:        chosen.hsaGrp        || '',
+      hsaAd:         chosen.hsaAd         || '',
       hsaNet:        chosen.hsaNet        || '',
       platform:      chosen.platform      || '',
       isLeadAd:      !!chosen.isLeadAd,
@@ -1784,7 +1845,7 @@ function buildEventAttributionMap(events, isNewSet){
 // Lead Ads). Returns null when nothing usable is on the event.
 // v10.7: Extract attribution data + classify into HubSpot's OTS taxonomy.
 //
-// Returns: {ots, dd1, dd2, hsaCam, hsaNet, platform, isLeadAd} | null
+// Returns: {ots, dd1, dd2, hsaCam, hsaGrp, hsaAd, hsaNet, platform, isLeadAd} | null
 //
 //   ots       — One of HubSpot's OTS values (PAID_SOCIAL, EMAIL_MARKETING,
 //               etc.) — already mapped to property format. Validated against
@@ -1817,6 +1878,11 @@ function extractAttributionFromEvent(ev){
   // Ads) or hs_query_params (LP submissions). Try both.
   const hsaCam = extractURLParam(url, 'hsa_cam') || extractURLParam('?'+qs, 'hsa_cam') || '';
   const hsaNet = extractURLParam(url, 'hsa_net') || extractURLParam('?'+qs, 'hsa_net') || '';
+  // v10.8.5: Extract ad set and ad IDs for sub-campaign breakdown in the
+  // drill drawer. Same URL-parsing pattern as hsa_cam — Meta auto-tags all
+  // three levels into the URL query string.
+  const hsaGrp = extractURLParam(url, 'hsa_grp') || extractURLParam('?'+qs, 'hsa_grp') || '';
+  const hsaAd  = extractURLParam(url, 'hsa_ad')  || extractURLParam('?'+qs, 'hsa_ad')  || '';
 
   // v10.8: Validate hsa_cam against SCI's Meta account data. A hsa_cam ID
   // that's NOT in META_DATA_BY_ID is from a different ad account — most
@@ -1911,6 +1977,10 @@ function extractAttributionFromEvent(ev){
   // would build per-campaign rows from cross-tracked IDs. Same for hsaNet
   // when its only signal was paired with the invalid hsa_cam.
   const validHsaCam = hsaCamIsSci ? hsaCam : '';
+  // v10.8.5: ad set and ad IDs follow the same validation — if the campaign
+  // isn't SCI's, neither is the ad set or ad.
+  const validHsaGrp = hsaCamIsSci ? hsaGrp : '';
+  const validHsaAd  = hsaCamIsSci ? hsaAd  : '';
 
   // DD1 historically was free-text platform-ish; under v10.7+ the `platform`
   // field carries that role. We keep DD1 populated for backward compat with
@@ -1954,7 +2024,7 @@ function extractAttributionFromEvent(ev){
     }
   }
 
-  return {ots: finalOts, dd1, dd2, hsaCam: validHsaCam, hsaNet, platform: finalPlatform, isLeadAd, liCampaignName};
+  return {ots: finalOts, dd1, dd2, hsaCam: validHsaCam, hsaGrp: validHsaGrp, hsaAd: validHsaAd, hsaNet, platform: finalPlatform, isLeadAd, liCampaignName};
 }
 
 // v10.7: Recognize Lead Ad form-host URLs. Meta serves Lead Ads from
@@ -2443,6 +2513,19 @@ function aggregate(){
   // Used in Pass 3's name-based LinkedIn join.
   const bucketLiNames = {};     // key → Set<string>
 
+  // v10.8.5: per-bucket per-adset metric counters. Drives the ad set
+  // breakdown table in the campaign drill drawer.
+  const bucketAdSetMetrics = {}; // key → { adsetId → {intros, discs, aiLeads, naiLeads, returning, returningAi, returningNai} }
+
+  function ensureAdSet(bucketKey, adsetId){
+    if(!adsetId) return null;
+    if(!bucketAdSetMetrics[bucketKey]) bucketAdSetMetrics[bucketKey] = {};
+    if(!bucketAdSetMetrics[bucketKey][adsetId]){
+      bucketAdSetMetrics[bucketKey][adsetId] = {intros:0, discs:0, aiLeads:0, naiLeads:0, returning:0, returningAi:0, returningNai:0};
+    }
+    return bucketAdSetMetrics[bucketKey][adsetId];
+  }
+
   function ensureBucket(attr){
     if(!buckets[attr.key]){
       buckets[attr.key]={
@@ -2497,6 +2580,10 @@ function aggregate(){
     const b=ensureBucket(attr);
     if(m.type==='intro'){ b.intros++; totalIntros++; }
     else { b.discs++; totalDiscs++; }
+    // v10.8.5: track per-adset metrics for drill drawer
+    const mEa = EVENT_ATTRIB_BY_CONTACT[m.contactId];
+    const mAs = ensureAdSet(attr.key, mEa?.hsaGrp);
+    if(mAs){ if(m.type==='intro') mAs.intros++; else mAs.discs++; }
   }
 
   // Pass 2: new lead contacts (createdate in period). v10.7: source-filter
@@ -2514,6 +2601,9 @@ function aggregate(){
     const ea = EVENT_ATTRIB_BY_CONTACT[c.id];
     if(ea?.hsaCam) bucketHsaCamIds[attr.key].add(ea.hsaCam);
     if(ea?.liCampaignName) bucketLiNames[attr.key].add(ea.liCampaignName);
+    // v10.8.5: per-adset metric tracking
+    const cAs = ensureAdSet(attr.key, ea?.hsaGrp);
+    if(cAs){ if(c.accredited) cAs.aiLeads++; else cAs.naiLeads++; }
   }
 
   // Pass 2b: returning lead contacts. v10.7 unchanged from v10.6.2 logic
@@ -2534,6 +2624,9 @@ function aggregate(){
     else            { b.returningNai++; totalNAi++; }
     if(ea.hsaCam) bucketHsaCamIds[attr.key].add(ea.hsaCam);
     if(ea.liCampaignName) bucketLiNames[attr.key].add(ea.liCampaignName);
+    // v10.8.5: per-adset metric tracking
+    const rAs = ensureAdSet(attr.key, ea?.hsaGrp);
+    if(rAs){ rAs.returning++; if(c.accredited) rAs.returningAi++; else rAs.returningNai++; }
   }
 
   // Pass 3 (v10.6): ID-based Meta join. For each bucket, look up every Meta
@@ -2621,6 +2714,34 @@ function aggregate(){
     // HubSpot. The estimate flag stays in the row for backward compatibility
     // with existing render code paths but is always false.
     row.hasEst = false;
+
+    // v10.8.5: attach per-adset breakdown for the drill drawer. Each entry
+    // gets the same derived metrics (totalNew, totalLeads, totalAi, spend,
+    // cpail) as the parent row, scoped to that ad set.
+    const asMetrics = bucketAdSetMetrics[row.key] || {};
+    const asBreakdown = [];
+    for(const [asId, as] of Object.entries(asMetrics)){
+      const md = META_ADSET_DATA_BY_ID[asId];
+      const totalNew = as.aiLeads + as.naiLeads;
+      const totalLeads = totalNew + as.returning;
+      const totalAi = as.aiLeads + as.returningAi;
+      const asSpend = md ? md.spend : null;
+      asBreakdown.push({
+        id: asId,
+        name: md?.name || asId,
+        intros: as.intros,
+        discs: as.discs,
+        aiLeads: as.aiLeads,
+        totalNew,
+        totalLeads,
+        totalAi,
+        spend: asSpend,
+        cpail: (asSpend != null && totalAi > 0) ? asSpend / totalAi : null,
+      });
+    }
+    // Sort by totalLeads desc, then spend desc
+    asBreakdown.sort((a,b) => (b.totalLeads - a.totalLeads) || ((b.spend||0) - (a.spend||0)));
+    row.adSetBreakdown = asBreakdown;
   }
 
   // Sort by current SORT_KEY/SORT_DIR. "(not set)" rows always pin to TOP
@@ -3434,19 +3555,14 @@ function closeDrillDrawer(){
 // v10.3: Per-campaign drill drawer. Opens when the user clicks any row in
 // the campaign table (except (not set) rows, which the renderer skips).
 // Reuses the existing #drill-drawer element — same close behaviour
-// (Esc / × / click-away). Renders a 6-row metric matrix for the clicked
-// campaign showing the full Total / New / Returning × Total / AI breakdown:
+// (Esc / × / click-away).
 //
-//   Total Leads          (parent — exact when no Meta data, exact otherwise)
-//   ↳ New Leads          (exact: HubSpot new contacts)
-//   ↳ Returning Leads    (~est: Meta − HubSpot New, clamped at 0)
-//   Total AI Leads       (parent — partial est. when returning > 0)
-//   ↳ New AI Leads       (exact: HubSpot new AI contacts)
-//   ↳ Returning AI Leads (~est: Returning × campaign AI rate)
-//
-// All cells calling out estimates use the same .est styling as the main
-// table — italic + muted tone — so the visual qualifier travels with the
-// number wherever it appears. Three columns: Count, % of Total Leads, CPL.
+// v10.8.5: Now renders two sections:
+//   1. Ad Set Breakdown (when available) — per-adset table showing intros,
+//      discoveries, AI leads, spend, and CPAIL within the campaign. Only
+//      appears for Meta campaigns where hsa_grp IDs were captured in events.
+//   2. Attribution Breakdown — the 6-row metric matrix (Total / New /
+//      Returning × Total / AI) with Count, % of Total Leads, and CPL.
 function openCampaignDrawer(row){
   if(!row || row.level === 'none') return;
 
@@ -3495,6 +3611,75 @@ function openCampaignDrawer(row){
   ];
 
   bodyEl.innerHTML='';
+
+  // v10.8.5: Ad set breakdown table — shows per-adset metrics within this
+  // campaign. Only renders when the row has adSetBreakdown with at least 1
+  // entry (Meta campaigns with hsa_grp in the events data).
+  if(row.adSetBreakdown && row.adSetBreakdown.length > 0){
+    const asHead = document.createElement('div');
+    asHead.className='drawer-section-head';
+    asHead.textContent='Ad Set Breakdown';
+    bodyEl.appendChild(asHead);
+
+    const asTbl = document.createElement('table');
+    asTbl.className='drill-table';
+    asTbl.innerHTML=`
+      <thead>
+        <tr>
+          <th>Ad Set</th>
+          <th class="num">Intros</th>
+          <th class="num">Disc.</th>
+          <th class="num">AI Leads</th>
+          <th class="num">Spend</th>
+          <th class="num">CPAIL</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const asTbody = asTbl.querySelector('tbody');
+    for(const as of row.adSetBreakdown){
+      const tr = document.createElement('tr');
+      const nameTd = document.createElement('td');
+      nameTd.textContent = as.name;
+      nameTd.style.maxWidth='180px';
+      nameTd.style.overflow='hidden';
+      nameTd.style.textOverflow='ellipsis';
+      nameTd.style.whiteSpace='nowrap';
+      nameTd.title = as.name;
+      tr.appendChild(nameTd);
+
+      const numTd = (val) => {
+        const td = document.createElement('td');
+        td.className='num';
+        td.textContent = (val == null || isNaN(val)) ? '—' : Math.round(val).toLocaleString();
+        return td;
+      };
+      const moneyTd = (val) => {
+        const td = document.createElement('td');
+        td.className='num';
+        td.textContent = (val == null || isNaN(val)) ? '—' : fmtMoney(val);
+        return td;
+      };
+      tr.appendChild(numTd(as.intros));
+      tr.appendChild(numTd(as.discs));
+      tr.appendChild(numTd(as.totalAi));
+      tr.appendChild(moneyTd(as.spend));
+      tr.appendChild(moneyTd(as.cpail));
+      asTbody.appendChild(tr);
+    }
+    bodyEl.appendChild(asTbl);
+
+    // Spacer before the attribution matrix
+    const spacer = document.createElement('div');
+    spacer.style.height='16px';
+    bodyEl.appendChild(spacer);
+  }
+
+  // Attribution matrix heading
+  const matrixHead = document.createElement('div');
+  matrixHead.className='drawer-section-head';
+  matrixHead.textContent='Attribution Breakdown';
+  bodyEl.appendChild(matrixHead);
 
   const tbl=document.createElement('table');
   tbl.className='matrix-table';
@@ -4499,6 +4684,16 @@ async function load(){
     // check has data to read.
     META_VALIDATION_IDS = await fetchMetaCampaignIdsWide(fromMs, toMs);
     META_DATA_BY_ID     = await fetchMetaInsightsByID(fromMs, toMs);
+
+    // v10.8.5: Ad set level insights — same date range, used for per-adset
+    // breakdown in the campaign drill drawer. Failure is non-fatal; drawer
+    // falls back to showing no ad set breakdown.
+    try{
+      META_ADSET_DATA_BY_ID = await fetchMetaAdSetInsights(fromMs, toMs);
+    }catch(e){
+      console.warn('Meta adset fetch failed (non-fatal):', e.message);
+      META_ADSET_DATA_BY_ID = {};
+    }
 
     // v10.8.4.12: enrich META_DATA_BY_ID with each campaign's objective so
     // the orphan panel can show whether spend was on Lead Gen vs Engagement
