@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v9)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v10)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -37,10 +37,12 @@ select:focus,input[type=date]:focus{outline:none;border-color:var(--accent)}
 #btn:hover{background:#333}
 #btn:disabled{background:#888;cursor:not-allowed}
 main{max-width:1300px;margin:0 auto;padding:24px 28px 60px}
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
-.kpi .label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
-.kpi .value{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
+/* v10: hero block — KPIs left, donut right */
+.hero-block{display:flex;gap:24px;margin-bottom:28px;align-items:stretch}
+.kpi-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi .label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+.kpi .value{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text)}
 .kpi .sub{font-size:11px;color:var(--text3);margin-top:4px}
 .kpi .delta{font-size:12px;font-weight:600;margin-top:4px}
 .kpi .delta.up{color:var(--green)}
@@ -76,12 +78,12 @@ tbody tr:hover{background:#faf8f4}
 .ch-referral{background:var(--referral-bg);color:var(--referral)}
 .ch-other{background:var(--surface2);color:var(--text2)}
 .ch-desc{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3}
-/* v8: sessions doughnut */
-.donut-wrap{display:flex;align-items:flex-start;gap:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:24px}
+/* v9: sessions doughnut — sits right of KPI grid */
+.donut-wrap{flex-shrink:0;width:340px;display:flex;align-items:flex-start;gap:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .donut-wrap .donut-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:12px}
 .donut-svg-wrap{flex-shrink:0}
 .donut-svg-wrap svg{cursor:pointer}
-.donut-legend{display:flex;flex-direction:column;gap:4px;font-size:12px;min-width:180px}
+.donut-legend{display:flex;flex-direction:column;gap:2px;font-size:11px;min-width:140px;overflow-y:auto;max-height:200px}
 .donut-legend .leg-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background 0.1s}
 .donut-legend .leg-row:hover{background:var(--surface2)}
 .donut-legend .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -127,7 +129,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v9</span>
+    <span class="vpill">v10</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -183,8 +185,10 @@ tbody tr:hover{background:#faf8f4}
     <div id="loadMsg">Loading GA4 data…</div>
   </div>
   <div id="content" style="display:none">
-    <div class="kpi-row" id="kpis"></div>
-    <div id="donutWrap" class="donut-wrap"></div>
+    <div class="hero-block">
+      <div class="kpi-grid" id="kpis"></div>
+      <div id="donutWrap" class="donut-wrap"></div>
+    </div>
     <div class="section-head">Traffic by Channel</div>
     <div class="tbl-wrap"><table id="channelTbl"><thead></thead><tbody></tbody></table></div>
     <div class="section-head">Top Pages</div>
