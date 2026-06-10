@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v11)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v12)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +129,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v11</span>
+    <span class="vpill">v12</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -274,10 +274,10 @@ tbody tr:hover{background:#faf8f4}
   <p>Traffic grouped by the <code>utm_campaign</code> parameter, scoped to the active traffic bucket. "(not set)" means no campaign tag was present. Click a row to drill into pages within that campaign.</p>
 
   <h3>Drill drawers</h3>
-  <p>There are two types of drill drawers:</p>
+  <p>There are two types of drill drawers. Both respect the active traffic filter — if you're viewing Organic traffic, drill results only show organic data.</p>
   <p><strong>Channel drill</strong> (from the channel table): Three toggles — <strong>Pages</strong> (top pages for that channel), <strong>UTM Campaigns</strong> (campaigns for that channel), and <strong>Sources</strong> (source/medium pairs showing exactly where within a channel the traffic originates, e.g., youtube.com / referral, google / cpc).</p>
   <p><strong>Source group drill</strong> (from the doughnut): Three toggles — <strong>Source Detail</strong> (raw GA4 sources within the group with sessions/users/new users), <strong>Pages</strong> (top pages visited by that source group), and <strong>UTM Campaigns</strong> (campaigns for that source group).</p>
-  <p>All views are fetched in parallel when the drawer opens and cached for instant toggling. The drawer closes via the × button or Esc key.</p>
+  <p>All views are fetched in parallel when the drawer opens and cached for instant toggling. Switching the traffic filter clears the drill cache so subsequent drills reflect the new filter. The drawer closes via the × button or Esc key.</p>
 
   <h3>Date ranges</h3>
   <p>Default: <strong>Last Month</strong>. Preset ranges include Today, This Week, Last Week, This Month, Last Month, This Quarter, Last Quarter, This Year, Last Year, and rolling windows (Last 7/14/30/90 Days, Last 12 Months). Custom dates use the date pickers; click Refresh to apply. Changing any preset automatically refreshes. "Last N Days" ranges end yesterday (GA4 convention — today's data is partial).</p>
@@ -481,7 +481,14 @@ function buildBucketFilter(bucket){
   };
 }
 
-// v7: cache for bucket-specific pages/UTM data
+// v11: combine a drill-specific filter with the active bucket's channel filter
+// Returns a dimensionFilter that ANDs both constraints together
+function combineDrillFilter(drillFilter){
+  const bucketFilter = buildBucketFilter(ACTIVE_BUCKET);
+  if(!bucketFilter) return drillFilter; // All bucket — no extra constraint
+  if(!drillFilter) return bucketFilter;
+  return { andGroup: { expressions: [drillFilter, bucketFilter] } };
+}
 let _bucketCache = {}; // bucket → { pages, utm }
 let _lastDateKey = '';
 
@@ -719,6 +726,10 @@ function renderDonut(){
 }
 async function applyBucket(bucket){
   ACTIVE_BUCKET = bucket;
+
+  // v12: invalidate drill caches — they're scoped to the previous bucket
+  _drillChannelCache = {};
+  _drillSourceGroupCache = {};
 
   // Update toggle UI
   document.querySelectorAll('.bt-pill').forEach(b => {
@@ -1075,13 +1086,12 @@ async function drillPage(pagePath){
 
   try{
     const {start,end} = getDateRange();
+    const pageFilter = { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: pagePath } } };
     const data = await ga4Report({
       dateRanges: [{ startDate: start, endDate: end }],
       dimensions: [{ name: 'sessionDefaultChannelGroup' }],
       metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'sessions' }],
-      dimensionFilter: {
-        filter: { fieldName: 'pagePath', stringFilter: { matchType: 'EXACT', value: pagePath } },
-      },
+      dimensionFilter: combineDrillFilter(pageFilter),
       orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
       limit: 30,
     });
@@ -1117,13 +1127,12 @@ async function drillUtm(campaign){
 
   try{
     const {start,end} = getDateRange();
+    const campaignFilter = { filter: { fieldName: 'sessionCampaignName', stringFilter: { matchType: 'EXACT', value: campaign } } };
     const data = await ga4Report({
       dateRanges: [{ startDate: start, endDate: end }],
       dimensions: [{ name: 'pagePath' }],
       metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'sessions' }],
-      dimensionFilter: {
-        filter: { fieldName: 'sessionCampaignName', stringFilter: { matchType: 'EXACT', value: campaign } },
-      },
+      dimensionFilter: combineDrillFilter(campaignFilter),
       orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
       limit: 30,
     });
@@ -1167,9 +1176,12 @@ async function drillSourceGroup(group){
     return;
   }
 
-  const dimFilter = rawSources.length === 1
+  const sourceFilter = rawSources.length === 1
     ? { filter: { fieldName:'sessionSource', stringFilter:{ matchType:'EXACT', value:rawSources[0] } } }
     : { orGroup: { expressions: rawSources.map(s => ({ filter: { fieldName:'sessionSource', stringFilter:{ matchType:'EXACT', value:s } } })) } };
+
+  // v12: combine source filter with active bucket filter
+  const dimFilter = combineDrillFilter(sourceFilter);
 
   try{
     const {start,end} = getDateRange();
