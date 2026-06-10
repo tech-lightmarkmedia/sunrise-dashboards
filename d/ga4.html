@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v8)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v9)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -127,7 +127,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v8</span>
+    <span class="vpill">v9</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -570,33 +570,90 @@ async function load(){
   }
 }
 
-// v8: sessions-by-source doughnut chart (SVG)
+// v9: consolidated source groups for the doughnut
+const SOURCE_GROUPS = {
+  'Facebook': ['facebook','fb','l.facebook.com','m.facebook.com','facebook.com','Facebook','ig','Instagram','instagram.com','lm.facebook.com','business.facebook.com','Facecbook','fb-image-ad','adsmanager.facebook.com'],
+  'Google': ['google','google.com','adwords','sites.google.com','mail.google.com','docs.google.com','voice.google.com','keep.google.com','tagassistant.google.com','google.com'],
+  '(direct)': ['(direct)','(not set)','(data not available)'],
+  'SCI (self)': ['sunrisecapitalinvestors.com','sunrisecapitalinvestors.investnext.com','23126809.hubspotpreview-na1.com','23126809.hs-sites.com'],
+  'HubSpot': ['hs_email','hs_automation','meetings.hubspot.com','app.hubspot.com','preview.hubspoteditor.com','share.hsforms.com'],
+  'LinkedIn': ['LinkedIn','linkedin','linkedin.com','lnkd.in','Linkedin'],
+  'YouTube': ['YouTube','youtube.com'],
+  'Other Search': ['bing','yahoo','duckduckgo','ecosia.org','aol','us.search.yahoo.com'],
+  'AI': ['chatgpt.com','perplexity.ai','claude.ai','gemini.google.com'],
+};
+
+// Build reverse lookup: raw source → group name
+const _sourceToGroup = {};
+for(const [group, sources] of Object.entries(SOURCE_GROUPS)){
+  for(const s of sources) _sourceToGroup[s] = group;
+}
+function getSourceGroup(raw){ return _sourceToGroup[raw] || null; }
+
 const DONUT_COLORS = [
-  '#059669','#1d4ed8','#6d28d9','#c44a1e','#0891b2','#d97706','#be185d','#4f46e5',
-  '#9e9789' // "Other" always last
+  '#1d4ed8','#c44a1e','#6b6558','#059669','#d97706','#0369a1','#dc2626','#6d28d9',
+  '#0891b2','#9e9789'
 ];
+// Assign fixed colors to known groups
+const GROUP_COLORS = {
+  'Facebook':'#1d4ed8','Google':'#c44a1e','(direct)':'#6b6558',
+  'SCI (self)':'#059669','HubSpot':'#d97706','LinkedIn':'#0369a1',
+  'YouTube':'#dc2626','Other Search':'#6d28d9','AI':'#0891b2',
+};
 
 function renderDonut(){
   const wrap = document.getElementById('donutWrap');
   if(!SOURCE_ROWS.length){ wrap.innerHTML = ''; return; }
 
-  // Top 8 + Other rollup
-  const sorted = [...SOURCE_ROWS].sort((a,b) => b.vals[0] - a.vals[0]);
-  const top = sorted.slice(0, 8);
-  const rest = sorted.slice(8);
-  const restSum = rest.reduce((s,r) => s + (r.vals[0]||0), 0);
-  const slices = top.map((r,i) => {
-    const src = r.dims[0] || '(direct)';
-    return { label: src, value: r.vals[0]||0, color: DONUT_COLORS[i], source: r.dims[0] };
-  });
-  if(restSum > 0){
-    slices.push({ label: `Other (${rest.length})`, value: restSum, color: DONUT_COLORS[8], source: null });
+  // Aggregate sources into groups
+  const groupTotals = {}; // group → { sessions, sources: [{raw, sessions}] }
+  for(const r of SOURCE_ROWS){
+    const raw = r.dims[0] || '(direct)';
+    const group = getSourceGroup(raw) || '_other';
+    if(!groupTotals[group]) groupTotals[group] = { sessions: 0, sources: [] };
+    groupTotals[group].sessions += r.vals[0] || 0;
+    groupTotals[group].sources.push({ raw, sessions: r.vals[0]||0, users: r.vals[1]||0, newUsers: r.vals[2]||0 });
   }
+
+  // Sort groups by sessions desc
+  const sorted = Object.entries(groupTotals).sort((a,b) => b[1].sessions - a[1].sessions);
+
+  // Build slices — named groups + "Other" rollup for _other
+  const slices = [];
+  let otherSessions = 0;
+  let otherSources = [];
+  for(const [group, data] of sorted){
+    if(group === '_other'){
+      otherSessions += data.sessions;
+      otherSources.push(...data.sources);
+    } else {
+      slices.push({
+        label: group,
+        value: data.sessions,
+        color: GROUP_COLORS[group] || DONUT_COLORS[slices.length % DONUT_COLORS.length],
+        group,
+        sources: data.sources.sort((a,b) => b.sessions - a.sessions),
+      });
+    }
+  }
+  if(otherSessions > 0){
+    slices.push({
+      label: `Other (${otherSources.length})`,
+      value: otherSessions,
+      color: '#9e9789',
+      group: '_other',
+      sources: otherSources.sort((a,b) => b.sessions - a.sessions),
+    });
+  }
+
   const total = slices.reduce((s,sl) => s + sl.value, 0);
   if(total === 0){ wrap.innerHTML = ''; return; }
 
+  // Store for drill use
+  window._donutSlices = slices;
+
   // Build SVG arcs
-  const cx=80, cy=80, R=70, r=45;
+  const cx=80, cy=80, R=70, ri=45;
   let angle = -Math.PI/2;
   let paths = '';
 
@@ -608,19 +665,15 @@ function renderDonut(){
     const endA = angle + sweep - gap/2;
     if(sweep < 0.01){ angle += sweep; continue; }
 
-    const x1o = cx + R * Math.cos(startA);
-    const y1o = cy + R * Math.sin(startA);
-    const x2o = cx + R * Math.cos(endA);
-    const y2o = cy + R * Math.sin(endA);
-    const x1i = cx + r * Math.cos(endA);
-    const y1i = cy + r * Math.sin(endA);
-    const x2i = cx + r * Math.cos(startA);
-    const y2i = cy + r * Math.sin(startA);
+    const x1o = cx + R * Math.cos(startA), y1o = cy + R * Math.sin(startA);
+    const x2o = cx + R * Math.cos(endA),   y2o = cy + R * Math.sin(endA);
+    const x1i = cx + ri * Math.cos(endA),  y1i = cy + ri * Math.sin(endA);
+    const x2i = cx + ri * Math.cos(startA),y2i = cy + ri * Math.sin(startA);
     const large = sweep > Math.PI ? 1 : 0;
 
-    const d = `M${x1o},${y1o} A${R},${R} 0 ${large},1 ${x2o},${y2o} L${x1i},${y1i} A${r},${r} 0 ${large},0 ${x2i},${y2i} Z`;
-    const esc = sl.source ? sl.source.replace(/'/g,"\\'") : '';
-    const click = sl.source ? ` onclick="_drawerJustOpened=true;drillSource('${esc}')" style="cursor:pointer"` : '';
+    const d = `M${x1o},${y1o} A${R},${R} 0 ${large},1 ${x2o},${y2o} L${x1i},${y1i} A${ri},${ri} 0 ${large},0 ${x2i},${y2i} Z`;
+    const esc = sl.group.replace(/'/g,"\\'");
+    const click = ` onclick="_drawerJustOpened=true;drillSourceGroup('${esc}')" style="cursor:pointer"`;
     paths += `<path d="${d}" fill="${sl.color}"${click}><title>${sl.label}: ${fmt(sl.value)}</title></path>`;
     angle += sweep;
   }
@@ -632,9 +685,8 @@ function renderDonut(){
   // Legend
   let legend = '';
   for(const sl of slices){
-    const esc = sl.source ? sl.source.replace(/'/g,"\\'") : '';
-    const click = sl.source ? `onclick="_drawerJustOpened=true;drillSource('${esc}')"` : '';
-    legend += `<div class="leg-row" ${click}><span class="leg-dot" style="background:${sl.color}"></span><span class="leg-label">${sl.label}</span><span class="leg-val">${fmt(sl.value)}</span></div>`;
+    const esc = sl.group.replace(/'/g,"\\'");
+    legend += `<div class="leg-row" onclick="_drawerJustOpened=true;drillSourceGroup('${esc}')"><span class="leg-dot" style="background:${sl.color}"></span><span class="leg-label">${sl.label}</span><span class="leg-val">${fmt(sl.value)}</span></div>`;
   }
 
   wrap.innerHTML = `
@@ -1071,24 +1123,33 @@ async function drillUtm(campaign){
   }
 }
 
-// v8: source drill — Pages / UTM toggle, filtered by sessionSource
-let _drillSourceCache = {};
+// v9: source group drill — Source Detail / Pages / UTM toggle
+let _drillSourceGroupCache = {};
 
-async function drillSource(source){
+async function drillSourceGroup(group){
   _drawerJustOpened = true;
   const drawer = document.getElementById('drill-drawer');
-  document.getElementById('drill-title').textContent = source || '(direct)';
+  const sl = (window._donutSlices || []).find(s => s.group === group);
+  document.getElementById('drill-title').textContent = sl ? sl.label : group;
   document.getElementById('drill-subtitle').textContent = '';
   const body = document.getElementById('drill-body');
   body.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0">Loading…</div>';
   drawer.classList.add('on');
 
+  // Build filter: OR across all raw sources in this group
+  const rawSources = SOURCE_GROUPS[group] || (sl ? sl.sources.map(s => s.raw) : []);
+  if(!rawSources.length){
+    body.innerHTML = '<div style="color:var(--text3);font-size:12px">No source data.</div>';
+    return;
+  }
+
+  const dimFilter = rawSources.length === 1
+    ? { filter: { fieldName:'sessionSource', stringFilter:{ matchType:'EXACT', value:rawSources[0] } } }
+    : { orGroup: { expressions: rawSources.map(s => ({ filter: { fieldName:'sessionSource', stringFilter:{ matchType:'EXACT', value:s } } })) } };
+
   try{
     const {start,end} = getDateRange();
     const dateRanges = [{ startDate: start, endDate: end }];
-    const dimFilter = {
-      filter: { fieldName: 'sessionSource', stringFilter: { matchType: 'EXACT', value: source } },
-    };
 
     const [pagesData, utmData] = await Promise.all([
       ga4Report({
@@ -1109,22 +1170,26 @@ async function drillSource(source){
       }),
     ]);
 
-    _drillSourceCache[source] = { pages: parseRows(pagesData), utm: parseRows(utmData) };
-    renderSourceDrill(source, 'pages');
+    // Source detail comes from the already-loaded SOURCE_ROWS (no extra fetch)
+    const sourceDetail = sl ? sl.sources : [];
+
+    _drillSourceGroupCache[group] = { sources: sourceDetail, pages: parseRows(pagesData), utm: parseRows(utmData) };
+    renderSourceGroupDrill(group, 'sources');
   }catch(err){
     body.innerHTML = `<div style="color:var(--accent);font-size:12px">${err.message}</div>`;
   }
 }
 
-function renderSourceDrill(source, mode){
+function renderSourceGroupDrill(group, mode){
   const body = document.getElementById('drill-body');
-  const cache = _drillSourceCache[source];
+  const cache = _drillSourceGroupCache[group];
   if(!cache){ body.innerHTML = '<div style="color:var(--text3);font-size:12px">No data.</div>'; return; }
 
-  const esc = (source||'').replace(/'/g,"\\'");
+  const esc = group.replace(/'/g,"\\'");
   let html = '<div class="drill-toggle">';
-  html += `<button class="${mode==='pages'?'active':''}" onclick="renderSourceDrill('${esc}','pages')">Pages</button>`;
-  html += `<button class="${mode==='utm'?'active':''}" onclick="renderSourceDrill('${esc}','utm')">UTM Campaigns</button>`;
+  html += `<button class="${mode==='sources'?'active':''}" onclick="renderSourceGroupDrill('${esc}','sources')">Source Detail</button>`;
+  html += `<button class="${mode==='pages'?'active':''}" onclick="renderSourceGroupDrill('${esc}','pages')">Pages</button>`;
+  html += `<button class="${mode==='utm'?'active':''}" onclick="renderSourceGroupDrill('${esc}','utm')">UTM Campaigns</button>`;
   html += '</div>';
 
   const thStyle = 'text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)';
@@ -1132,7 +1197,17 @@ function renderSourceDrill(source, mode){
   const tdStyleR = 'text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7';
   const tdStyleTrunc = 'padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
 
-  if(mode === 'pages'){
+  if(mode === 'sources'){
+    const rows = cache.sources;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No source detail.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += `<thead><tr><th style="${thStyle}">Source</th><th style="${thStyleR}">Sessions</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">New Users</th></tr></thead><tbody>`;
+    for(const r of rows){
+      html += `<tr><td style="${tdStyleTrunc}" title="${r.raw}">${r.raw}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.sessions)}</td><td style="${tdStyleR}">${fmt(r.users)}</td><td style="${tdStyleR}">${fmt(r.newUsers)}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  } else if(mode === 'pages'){
     const rows = cache.pages;
     if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No page data.</div>'; body.innerHTML = html; return; }
     html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
