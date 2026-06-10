@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v1)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v2)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -45,10 +45,12 @@ main{max-width:1300px;margin:0 auto;padding:24px 28px 60px}
 .section-head{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400;margin:28px 0 12px;color:var(--text)}
 .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:1}
 thead th:hover{color:var(--text)}
 thead th.num{text-align:right}
 thead th.active{color:var(--accent)}
+/* v2: cap tables at ~15 visible rows with scrollable overflow */
+.tbl-scroll{max-height:555px;overflow-y:auto}
 tbody td{padding:10px 14px;border-bottom:1px solid #f0ede7}
 tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
 tbody tr:last-child td{border-bottom:none}
@@ -72,6 +74,11 @@ tbody tr:hover{background:#faf8f4}
 .drawer-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);padding:4px 8px}
 .drawer-close:hover{color:var(--text)}
 .drawer-section-head{padding:14px 0 4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3)}
+/* v2: toggle pills for drill drawer (Pages / UTM) */
+.drill-toggle{display:flex;gap:4px;margin-bottom:14px}
+.drill-toggle button{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.drill-toggle button:hover{border-color:var(--text3)}
+.drill-toggle button.active{background:var(--text);color:white;border-color:var(--text)}
 
 /* Guide drawer */
 #guide{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
@@ -94,7 +101,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v1</span>
+    <span class="vpill">v2</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -129,11 +136,11 @@ tbody tr:hover{background:#faf8f4}
   <div id="content" style="display:none">
     <div class="kpi-row" id="kpis"></div>
     <div class="section-head">Traffic by Channel</div>
-    <div class="tbl-wrap"><table id="channelTbl"><thead></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table id="channelTbl"><thead></thead><tbody></tbody></table></div></div>
     <div class="section-head">Top Pages</div>
-    <div class="tbl-wrap"><table id="pagesTbl"><thead></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table id="pagesTbl"><thead></thead><tbody></tbody></table></div></div>
     <div class="section-head">UTM Campaigns</div>
-    <div class="tbl-wrap"><table id="utmTbl"><thead></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-scroll"><table id="utmTbl"><thead></thead><tbody></tbody></table></div></div>
   </div>
 </main>
 
@@ -508,29 +515,69 @@ function renderUtmTable(){
 
 // ── Drill-downs ───────────────────────────────────────────────────────────────
 
+// v2: channel drill with Pages / UTM toggle
+let _drillChannelCache = {}; // channel → { pages: rows, utm: rows }
+
 async function drillChannel(channel){
   const drawer = document.getElementById('drill-drawer');
   document.getElementById('drill-title').textContent = channel;
-  document.getElementById('drill-subtitle').textContent = 'Top pages for this channel';
+  document.getElementById('drill-subtitle').textContent = '';
   const body = document.getElementById('drill-body');
   body.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0">Loading…</div>';
   drawer.classList.add('on');
 
   try{
     const {start,end} = getDateRange();
-    const data = await ga4Report({
-      dateRanges: [{ startDate: start, endDate: end }],
-      dimensions: [{ name: 'pagePath' }],
-      metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'sessions' }],
-      dimensionFilter: {
-        filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { matchType: 'EXACT', value: channel } },
-      },
-      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-      limit: 30,
-    });
-    const rows = parseRows(data);
-    if(!rows.length){ body.innerHTML = '<div style="color:var(--text3);font-size:12px">No page data for this channel.</div>'; return; }
-    let html = '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    const dateRanges = [{ startDate: start, endDate: end }];
+    const dimFilter = {
+      filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { matchType: 'EXACT', value: channel } },
+    };
+
+    // Fetch both pages and UTM in parallel
+    const [pagesData, utmData] = await Promise.all([
+      ga4Report({
+        dateRanges,
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'sessions' }],
+        dimensionFilter: dimFilter,
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 50,
+      }),
+      ga4Report({
+        dateRanges,
+        dimensions: [{ name: 'sessionCampaignName' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' }, { name: 'screenPageViews' }],
+        dimensionFilter: dimFilter,
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        limit: 50,
+      }),
+    ]);
+
+    const pagesRows = parseRows(pagesData);
+    const utmRows = parseRows(utmData);
+    _drillChannelCache[channel] = { pages: pagesRows, utm: utmRows };
+
+    renderChannelDrill(channel, 'pages');
+  }catch(err){
+    body.innerHTML = `<div style="color:var(--accent);font-size:12px">${err.message}</div>`;
+  }
+}
+
+function renderChannelDrill(channel, mode){
+  const body = document.getElementById('drill-body');
+  const cache = _drillChannelCache[channel];
+  if(!cache){ body.innerHTML = '<div style="color:var(--text3);font-size:12px">No data.</div>'; return; }
+
+  // Toggle pills
+  let html = '<div class="drill-toggle">';
+  html += `<button class="${mode==='pages'?'active':''}" onclick="renderChannelDrill('${channel.replace(/'/g,"\\'")}','pages')">Pages</button>`;
+  html += `<button class="${mode==='utm'?'active':''}" onclick="renderChannelDrill('${channel.replace(/'/g,"\\'")}','utm')">UTM Campaigns</button>`;
+  html += '</div>';
+
+  if(mode === 'pages'){
+    const rows = cache.pages;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No page data.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
     html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Page</th>';
     html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Views</th>';
     html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Users</th>';
@@ -542,10 +589,27 @@ async function drillChannel(channel){
       html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[2])}</td></tr>`;
     }
     html += '</tbody></table>';
-    body.innerHTML = html;
-  }catch(err){
-    body.innerHTML = `<div style="color:var(--accent);font-size:12px">${err.message}</div>`;
+  } else {
+    const rows = cache.utm;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No UTM data.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Campaign</th>';
+    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Sessions</th>';
+    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Users</th>';
+    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">New Users</th>';
+    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Views</th></tr></thead><tbody>';
+    for(const r of rows){
+      const campaign = r.dims[0] || '(not set)';
+      html += `<tr><td style="padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${campaign}">${campaign}</td>`;
+      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[0])}</td>`;
+      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[1])}</td>`;
+      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[2])}</td>`;
+      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[3])}</td></tr>`;
+    }
+    html += '</tbody></table>';
   }
+
+  body.innerHTML = html;
 }
 
 async function drillPage(pagePath){
