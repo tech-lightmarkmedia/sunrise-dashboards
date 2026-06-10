@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v7)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v8)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -76,6 +76,17 @@ tbody tr:hover{background:#faf8f4}
 .ch-referral{background:var(--referral-bg);color:var(--referral)}
 .ch-other{background:var(--surface2);color:var(--text2)}
 .ch-desc{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3}
+/* v8: sessions doughnut */
+.donut-wrap{display:flex;align-items:flex-start;gap:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:24px}
+.donut-wrap .donut-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-bottom:12px}
+.donut-svg-wrap{flex-shrink:0}
+.donut-svg-wrap svg{cursor:pointer}
+.donut-legend{display:flex;flex-direction:column;gap:4px;font-size:12px;min-width:180px}
+.donut-legend .leg-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background 0.1s}
+.donut-legend .leg-row:hover{background:var(--surface2)}
+.donut-legend .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.donut-legend .leg-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.donut-legend .leg-val{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
 #loading{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
 #loading .spinner{width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -116,7 +127,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v7</span>
+    <span class="vpill">v8</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -173,6 +184,7 @@ tbody tr:hover{background:#faf8f4}
   </div>
   <div id="content" style="display:none">
     <div class="kpi-row" id="kpis"></div>
+    <div id="donutWrap" class="donut-wrap"></div>
     <div class="section-head">Traffic by Channel</div>
     <div class="tbl-wrap"><table id="channelTbl"><thead></thead><tbody></tbody></table></div>
     <div class="section-head">Top Pages</div>
@@ -553,7 +565,83 @@ async function load(){
   }
 }
 
-// v7: apply a bucket filter — re-aggregate KPIs, filter channel table, fetch/cache pages+UTM
+// v8: sessions doughnut chart (SVG)
+const DONUT_COLORS = [
+  '#059669','#1d4ed8','#6d28d9','#c44a1e','#0891b2','#d97706','#be185d','#4f46e5',
+  '#9e9789' // "Other" always last
+];
+
+function renderDonut(){
+  const wrap = document.getElementById('donutWrap');
+  const rows = getFilteredChannelRows(ACTIVE_BUCKET);
+  if(!rows.length){ wrap.innerHTML = ''; return; }
+
+  // Top 8 + Other rollup
+  const sorted = [...rows].sort((a,b) => b.vals[0] - a.vals[0]);
+  const top = sorted.slice(0, 8);
+  const rest = sorted.slice(8);
+  const restSum = rest.reduce((s,r) => s + (r.vals[0]||0), 0);
+  const slices = top.map((r,i) => ({ label: r.dims[0], value: r.vals[0]||0, color: DONUT_COLORS[i], channel: r.dims[0] }));
+  if(restSum > 0){
+    slices.push({ label: `Other (${rest.length})`, value: restSum, color: DONUT_COLORS[8], channel: null });
+  }
+  const total = slices.reduce((s,sl) => s + sl.value, 0);
+  if(total === 0){ wrap.innerHTML = ''; return; }
+
+  // Build SVG arcs
+  const cx=80, cy=80, R=70, r=45;
+  let angle = -Math.PI/2; // start at top
+  let paths = '';
+  const sliceAngles = []; // for click handling
+
+  for(const sl of slices){
+    const frac = sl.value / total;
+    const sweep = frac * 2 * Math.PI;
+    const gap = 0.02; // small gap between slices
+    const startA = angle + gap/2;
+    const endA = angle + sweep - gap/2;
+    if(sweep < 0.01){ angle += sweep; sliceAngles.push({startA,endA,channel:sl.channel}); continue; }
+
+    const x1o = cx + R * Math.cos(startA);
+    const y1o = cy + R * Math.sin(startA);
+    const x2o = cx + R * Math.cos(endA);
+    const y2o = cy + R * Math.sin(endA);
+    const x1i = cx + r * Math.cos(endA);
+    const y1i = cy + r * Math.sin(endA);
+    const x2i = cx + r * Math.cos(startA);
+    const y2i = cy + r * Math.sin(startA);
+    const large = sweep > Math.PI ? 1 : 0;
+
+    const d = `M${x1o},${y1o} A${R},${R} 0 ${large},1 ${x2o},${y2o} L${x1i},${y1i} A${r},${r} 0 ${large},0 ${x2i},${y2i} Z`;
+    const esc = sl.channel ? sl.channel.replace(/'/g,"\\'") : '';
+    const click = sl.channel ? ` onclick="_drawerJustOpened=true;drillChannel('${esc}')" style="cursor:pointer"` : '';
+    paths += `<path d="${d}" fill="${sl.color}"${click}><title>${sl.label}: ${fmt(sl.value)}</title></path>`;
+    sliceAngles.push({startA,endA,channel:sl.channel});
+    angle += sweep;
+  }
+
+  // Center label
+  const centerText = `<text x="${cx}" y="${cy-4}" text-anchor="middle" fill="var(--text)" font-family="DM Serif Display,serif" font-size="18">${fmt(total)}</text>`;
+  const centerSub = `<text x="${cx}" y="${cy+12}" text-anchor="middle" fill="var(--text3)" font-size="9">Sessions</text>`;
+
+  const svg = `<svg viewBox="0 0 160 160" width="160" height="160" xmlns="http://www.w3.org/2000/svg">${paths}${centerText}${centerSub}</svg>`;
+
+  // Legend
+  let legend = '';
+  for(const sl of slices){
+    const esc = sl.channel ? sl.channel.replace(/'/g,"\\'") : '';
+    const click = sl.channel ? `onclick="_drawerJustOpened=true;drillChannel('${esc}')"` : '';
+    legend += `<div class="leg-row" ${click}><span class="leg-dot" style="background:${sl.color}"></span><span class="leg-label">${sl.label}</span><span class="leg-val">${fmt(sl.value)}</span></div>`;
+  }
+
+  wrap.innerHTML = `
+    <div>
+      <div class="donut-title">Sessions by Channel</div>
+      <div class="donut-svg-wrap">${svg}</div>
+    </div>
+    <div class="donut-legend">${legend}</div>
+  `;
+}
 async function applyBucket(bucket){
   ACTIVE_BUCKET = bucket;
 
@@ -600,6 +688,9 @@ async function applyBucket(bucket){
 
   // ── Channel table ────────────────────────────────────────────────────
   renderChannelTable();
+
+  // ── Doughnut ────────────────────────────────────────────────────────
+  renderDonut();
 
   // ── Pages + UTM: fetch if not cached ─────────────────────────────────
   if(!_bucketCache[bucket]){
