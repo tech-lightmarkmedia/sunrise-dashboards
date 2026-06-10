@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v3)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v5)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -42,6 +42,15 @@ main{max-width:1300px;margin:0 auto;padding:24px 28px 60px}
 .kpi .label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px}
 .kpi .value{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
 .kpi .sub{font-size:11px;color:var(--text3);margin-top:4px}
+.kpi .delta{font-size:12px;font-weight:600;margin-top:4px}
+.kpi .delta.up{color:var(--green)}
+.kpi .delta.down{color:var(--red)}
+.kpi .delta.flat{color:var(--text3)}
+/* v4: comparison delta columns in tables */
+td.delta-cell{font-size:11px;font-weight:600}
+td.delta-cell.up{color:var(--green)}
+td.delta-cell.down{color:var(--red)}
+td.delta-cell.flat{color:var(--text3)}
 .section-head{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400;margin:28px 0 12px;color:var(--text)}
 .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -101,7 +110,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v3</span>
+    <span class="vpill">v5</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -113,12 +122,28 @@ tbody tr:hover{background:#faf8f4}
   <div class="fg">
     <label>Range</label>
     <select id="range">
+      <option value="today">Today</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month" selected>Last Month</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
       <option value="7d">Last 7 Days</option>
       <option value="14d">Last 14 Days</option>
-      <option value="30d" selected>Last 30 Days</option>
+      <option value="30d">Last 30 Days</option>
       <option value="90d">Last 90 Days</option>
       <option value="12m">Last 12 Months</option>
       <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>vs</label>
+    <select id="cmp">
+      <option value="none">None</option>
+      <option value="prev" selected>Previous Period</option>
     </select>
   </div>
   <div class="cdates" id="cdates">
@@ -192,6 +217,13 @@ const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function ymd(d){ return d.toISOString().slice(0,10); }
+
+function startOfWeek(d){ const r=new Date(d); r.setDate(r.getDate()-r.getDay()); return r; }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function startOfQuarter(d){ const q=Math.floor(d.getMonth()/3)*3; return new Date(d.getFullYear(), q, 1); }
+function endOfQuarter(d){ const q=Math.floor(d.getMonth()/3)*3; return new Date(d.getFullYear(), q+3, 0); }
+
 function getDateRange(){
   const v = document.getElementById('range').value;
   if(v === 'custom'){
@@ -199,14 +231,38 @@ function getDateRange(){
   }
   const today = new Date();
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-  const end = ymd(yesterday);
-  let start;
-  if(v === '7d'){ const d=new Date(yesterday); d.setDate(d.getDate()-6); start=ymd(d); }
-  else if(v === '14d'){ const d=new Date(yesterday); d.setDate(d.getDate()-13); start=ymd(d); }
-  else if(v === '30d'){ const d=new Date(yesterday); d.setDate(d.getDate()-29); start=ymd(d); }
-  else if(v === '90d'){ const d=new Date(yesterday); d.setDate(d.getDate()-89); start=ymd(d); }
-  else if(v === '12m'){ const d=new Date(yesterday); d.setFullYear(d.getFullYear()-1); d.setDate(d.getDate()+1); start=ymd(d); }
+  let start, end;
+
+  if(v === 'today'){ start = end = ymd(today); }
+  else if(v === 'this_week'){ start = ymd(startOfWeek(today)); end = ymd(today); }
+  else if(v === 'last_week'){ const s=startOfWeek(today); s.setDate(s.getDate()-7); const e=new Date(s); e.setDate(e.getDate()+6); start=ymd(s); end=ymd(e); }
+  else if(v === 'this_month'){ start = ymd(startOfMonth(today)); end = ymd(today); }
+  else if(v === 'last_month'){ const d=new Date(today.getFullYear(), today.getMonth()-1, 1); start=ymd(d); end=ymd(endOfMonth(d)); }
+  else if(v === 'this_quarter'){ start=ymd(startOfQuarter(today)); end=ymd(today); }
+  else if(v === 'last_quarter'){ const d=new Date(today.getFullYear(), today.getMonth()-1, 1); const sq=startOfQuarter(new Date(d.getFullYear(), d.getMonth()-((d.getMonth()%3)||3), 1)); const prev=new Date(startOfQuarter(today)); prev.setDate(prev.getDate()-1); start=ymd(startOfQuarter(prev)); end=ymd(prev); }
+  else if(v === 'this_year'){ start=ymd(new Date(today.getFullYear(),0,1)); end=ymd(today); }
+  else if(v === 'last_year'){ start=ymd(new Date(today.getFullYear()-1,0,1)); end=ymd(new Date(today.getFullYear()-1,11,31)); }
+  else if(v === '7d'){ const d=new Date(yesterday); d.setDate(d.getDate()-6); start=ymd(d); end=ymd(yesterday); }
+  else if(v === '14d'){ const d=new Date(yesterday); d.setDate(d.getDate()-13); start=ymd(d); end=ymd(yesterday); }
+  else if(v === '30d'){ const d=new Date(yesterday); d.setDate(d.getDate()-29); start=ymd(d); end=ymd(yesterday); }
+  else if(v === '90d'){ const d=new Date(yesterday); d.setDate(d.getDate()-89); start=ymd(d); end=ymd(yesterday); }
+  else if(v === '12m'){ const d=new Date(yesterday); d.setFullYear(d.getFullYear()-1); d.setDate(d.getDate()+1); start=ymd(d); end=ymd(yesterday); }
   return { start, end };
+}
+
+function getComparisonRange(){
+  const cmp = document.getElementById('cmp').value;
+  if(cmp === 'none') return null;
+  const {start, end} = getDateRange();
+  if(!start || !end) return null;
+  const s = new Date(start + 'T00:00:00');
+  const e = new Date(end + 'T00:00:00');
+  const spanMs = e.getTime() - s.getTime();
+  const spanDays = Math.round(spanMs / 86400000);
+  // Previous period: same-length window immediately before
+  const cmpEnd = new Date(s); cmpEnd.setDate(cmpEnd.getDate() - 1);
+  const cmpStart = new Date(cmpEnd); cmpStart.setDate(cmpStart.getDate() - spanDays);
+  return { start: ymd(cmpStart), end: ymd(cmpEnd) };
 }
 
 document.getElementById('range').addEventListener('change', function(){
@@ -214,6 +270,7 @@ document.getElementById('range').addEventListener('change', function(){
   document.getElementById('cdates').classList.toggle('on', isCustom);
   if(!isCustom) load();
 });
+document.getElementById('cmp').addEventListener('change', function(){ load(); });
 
 // ── GA4 API call helper ──────────────────────────────────────────────────────
 async function ga4Report(body){
@@ -238,6 +295,18 @@ function fmtDuration(sec){
   if(sec < 60) return sec + 's';
   const m = Math.floor(sec/60), s = sec%60;
   return m + 'm ' + (s<10?'0':'') + s + 's';
+}
+function fmtDelta(curr, prev, isPct){
+  if(curr == null || prev == null || isNaN(curr) || isNaN(prev)) return { text:'', cls:'flat' };
+  if(isPct){
+    const pp = (curr - prev) * 100;
+    const sign = pp > 0 ? '+' : '';
+    return { text: `${sign}${pp.toFixed(1)}pp`, cls: pp > 0 ? 'up' : pp < 0 ? 'down' : 'flat' };
+  }
+  if(prev === 0) return curr > 0 ? { text: '+∞', cls:'up' } : { text: '—', cls:'flat' };
+  const pct = ((curr - prev) / Math.abs(prev)) * 100;
+  const sign = pct > 0 ? '+' : '';
+  return { text: `${sign}${pct.toFixed(1)}%`, cls: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' };
 }
 
 function parseRows(data){
@@ -278,6 +347,9 @@ function sortRows(tableId, rows, colIdx, isNum){
 let CHANNEL_ROWS = [];
 let PAGES_ROWS = [];
 let UTM_ROWS = [];
+let CMP_KPI = null; // comparison KPI values
+let CMP_CHANNEL_MAP = null; // channel → vals from comparison period
+let HAS_CMP = false;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function load(){
@@ -297,94 +369,90 @@ async function load(){
     const {start, end} = getDateRange();
     if(!start || !end) throw new Error('Please select a date range');
     const dateRanges = [{ startDate: start, endDate: end }];
+    const cmpRange = getComparisonRange();
+    HAS_CMP = !!cmpRange;
 
-    el.loadMsg.textContent = 'Fetching traffic by channel…';
+    el.loadMsg.textContent = 'Fetching traffic data…';
 
-    // ── Parallel fetch: channel, pages, UTM, overview KPIs ──────────────
-    const [channelData, pagesData, utmData, kpiData] = await Promise.all([
-      ga4Report({
-        dateRanges,
-        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
-        metrics: [
-          { name: 'sessions' },
-          { name: 'activeUsers' },
-          { name: 'newUsers' },
-          { name: 'engagementRate' },
-          { name: 'screenPageViews' },
-        ],
-        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-        limit: 50,
-      }),
-      ga4Report({
-        dateRanges,
-        dimensions: [{ name: 'pagePath' }],
-        metrics: [
-          { name: 'screenPageViews' },
-          { name: 'activeUsers' },
-          { name: 'sessions' },
-          { name: 'engagementRate' },
-        ],
-        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-        limit: 50,
-      }),
-      ga4Report({
-        dateRanges,
-        dimensions: [{ name: 'sessionCampaignName' }],
-        metrics: [
-          { name: 'sessions' },
-          { name: 'activeUsers' },
-          { name: 'newUsers' },
-          { name: 'screenPageViews' },
-        ],
-        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-        limit: 50,
-      }),
-      ga4Report({
-        dateRanges,
-        metrics: [
-          { name: 'sessions' },
-          { name: 'activeUsers' },
-          { name: 'newUsers' },
-          { name: 'averageSessionDuration' },
-          { name: 'engagementRate' },
-          { name: 'screenPageViews' },
-        ],
-      }),
-    ]);
+    const metrics_channel = [
+      { name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' },
+      { name: 'engagementRate' }, { name: 'screenPageViews' },
+    ];
+    const metrics_kpi = [
+      { name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' },
+      { name: 'averageSessionDuration' }, { name: 'engagementRate' }, { name: 'screenPageViews' },
+    ];
+
+    // Build fetch array
+    const fetches = [
+      ga4Report({ dateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
+      ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
+      ga4Report({ dateRanges, dimensions:[{name:'sessionCampaignName'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'},{name:'screenPageViews'}], orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
+      ga4Report({ dateRanges, metrics:metrics_kpi }),
+    ];
+
+    // Comparison fetches (KPIs + channel table)
+    if(cmpRange){
+      const cmpDateRanges = [{ startDate: cmpRange.start, endDate: cmpRange.end }];
+      fetches.push(ga4Report({ dateRanges:cmpDateRanges, metrics:metrics_kpi }));
+      fetches.push(ga4Report({ dateRanges:cmpDateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }));
+    }
+
+    const results = await Promise.all(fetches);
+    const [channelData, pagesData, utmData, kpiData] = results;
+    const cmpKpiData = cmpRange ? results[4] : null;
+    const cmpChannelData = cmpRange ? results[5] : null;
 
     // ── KPIs ──────────────────────────────────────────────────────────────
     const kpi = kpiData.rows?.[0]?.metricValues?.map(v => parseFloat(v.value)) || [];
+    CMP_KPI = cmpKpiData ? (cmpKpiData.rows?.[0]?.metricValues?.map(v => parseFloat(v.value)) || null) : null;
+
     const kpiEl = document.getElementById('kpis');
     kpiEl.innerHTML = '';
     const kpiDefs = [
-      { label: 'Sessions', value: fmt(kpi[0]) },
-      { label: 'Users', value: fmt(kpi[1]) },
-      { label: 'New Users', value: fmt(kpi[2]) },
-      { label: 'Avg Duration', value: fmtDuration(kpi[3]) },
-      { label: 'Engagement Rate', value: fmtPct(kpi[4]) },
-      { label: 'Pageviews', value: fmt(kpi[5]) },
+      { label:'Sessions', value:fmt(kpi[0]), raw:kpi[0], cmpRaw:CMP_KPI?.[0], isPct:false },
+      { label:'Users', value:fmt(kpi[1]), raw:kpi[1], cmpRaw:CMP_KPI?.[1], isPct:false },
+      { label:'New Users', value:fmt(kpi[2]), raw:kpi[2], cmpRaw:CMP_KPI?.[2], isPct:false },
+      { label:'Avg Duration', value:fmtDuration(kpi[3]), raw:kpi[3], cmpRaw:CMP_KPI?.[3], isPct:false },
+      { label:'Engagement Rate', value:fmtPct(kpi[4]), raw:kpi[4], cmpRaw:CMP_KPI?.[4], isPct:true },
+      { label:'Pageviews', value:fmt(kpi[5]), raw:kpi[5], cmpRaw:CMP_KPI?.[5], isPct:false },
     ];
     for(const k of kpiDefs){
       const d = document.createElement('div');
       d.className = 'kpi';
-      d.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>`;
+      let deltaHtml = '';
+      if(HAS_CMP && k.cmpRaw != null){
+        const dlt = fmtDelta(k.raw, k.cmpRaw, k.isPct);
+        if(dlt.text) deltaHtml = `<div class="delta ${dlt.cls}">${dlt.text}</div>`;
+      }
+      d.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>${deltaHtml}`;
       kpiEl.appendChild(d);
     }
 
-    // ── Channel table ─────────────────────────────────────────────────────
+    // ── Comparison channel map ────────────────────────────────────────────
+    if(cmpChannelData){
+      CMP_CHANNEL_MAP = {};
+      for(const r of parseRows(cmpChannelData)){
+        CMP_CHANNEL_MAP[r.dims[0]] = r.vals;
+      }
+    } else {
+      CMP_CHANNEL_MAP = null;
+    }
+
+    // ── Tables ────────────────────────────────────────────────────────────
     CHANNEL_ROWS = parseRows(channelData);
     renderChannelTable();
 
-    // ── Pages table ───────────────────────────────────────────────────────
     PAGES_ROWS = parseRows(pagesData);
     renderPagesTable();
 
-    // ── UTM table ─────────────────────────────────────────────────────────
     UTM_ROWS = parseRows(utmData);
     renderUtmTable();
 
     // ── Timestamp ─────────────────────────────────────────────────────────
-    document.getElementById('ts').textContent = `${start} — ${end}`;
+    let tsText = `${start} — ${end}`;
+    if(cmpRange) tsText += `  vs  ${cmpRange.start} — ${cmpRange.end}`;
+    document.getElementById('ts').textContent = tsText;
 
     el.content.style.display='';
   } catch(err){
@@ -400,19 +468,26 @@ async function load(){
 // ── Render: Channel table ─────────────────────────────────────────────────────
 function renderChannelTable(){
   const tbl = document.getElementById('channelTbl');
+  const hasCmp = HAS_CMP && CMP_CHANNEL_MAP;
   const cols = [
     { label:'Channel', num:false },
     { label:'Sessions', num:true, idx:0 },
     { label:'Users', num:true, idx:1 },
     { label:'New Users', num:true, idx:2 },
-    { label:'Engagement Rate', num:true, idx:3 },
+    { label:'Eng. Rate', num:true, idx:3 },
     { label:'Pageviews', num:true, idx:4 },
   ];
-  tbl.querySelector('thead').innerHTML = '<tr>' + cols.map((c,i) =>
+  // Add delta column header if comparison active
+  let headHtml = '<tr>' + cols.map((c,i) =>
     `<th class="${c.num?'num':''}" data-col="${i}">${c.label}</th>`
-  ).join('') + '</tr>';
+  ).join('');
+  if(hasCmp) headHtml += '<th class="num">Δ Sessions</th>';
+  headHtml += '</tr>';
+  tbl.querySelector('thead').innerHTML = headHtml;
+
   tbl.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
     const ci = parseInt(th.dataset.col);
+    if(isNaN(ci)) return;
     const col = cols[ci];
     if(col.num) sortRows('channel', CHANNEL_ROWS, col.idx, true);
     else sortRows('channel', CHANNEL_ROWS, 0, false);
@@ -425,7 +500,7 @@ function renderChannelTable(){
     tr.style.cursor='pointer';
     tr.addEventListener('click', (e) => { e.stopPropagation(); drillChannel(r.dims[0]); });
     const chName = r.dims[0] || '(not set)';
-    tr.innerHTML = `
+    let rowHtml = `
       <td><span class="ch-pill ${channelClass(chName)}">${chName}</span></td>
       <td class="num">${fmt(r.vals[0])}</td>
       <td class="num">${fmt(r.vals[1])}</td>
@@ -433,6 +508,12 @@ function renderChannelTable(){
       <td class="num">${fmtPct(r.vals[3])}</td>
       <td class="num">${fmt(r.vals[4])}</td>
     `;
+    if(hasCmp){
+      const prev = CMP_CHANNEL_MAP[r.dims[0]];
+      const dlt = prev ? fmtDelta(r.vals[0], prev[0], false) : { text:'—', cls:'flat' };
+      rowHtml += `<td class="num delta-cell ${dlt.cls}">${dlt.text}</td>`;
+    }
+    tr.innerHTML = rowHtml;
     tbody.appendChild(tr);
   }
 }
@@ -515,8 +596,8 @@ function renderUtmTable(){
 
 // ── Drill-downs ───────────────────────────────────────────────────────────────
 
-// v2: channel drill with Pages / UTM toggle
-let _drillChannelCache = {}; // channel → { pages: rows, utm: rows }
+// v2: channel drill with Pages / UTM / Sources toggle
+let _drillChannelCache = {}; // channel → { pages: rows, utm: rows, sources: rows }
 
 async function drillChannel(channel){
   _drawerJustOpened = true;
@@ -534,8 +615,8 @@ async function drillChannel(channel){
       filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { matchType: 'EXACT', value: channel } },
     };
 
-    // Fetch both pages and UTM in parallel
-    const [pagesData, utmData] = await Promise.all([
+    // Fetch pages, UTM, and sources in parallel
+    const [pagesData, utmData, sourcesData] = await Promise.all([
       ga4Report({
         dateRanges,
         dimensions: [{ name: 'pagePath' }],
@@ -552,11 +633,20 @@ async function drillChannel(channel){
         orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
         limit: 50,
       }),
+      ga4Report({
+        dateRanges,
+        dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' }],
+        dimensionFilter: dimFilter,
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        limit: 50,
+      }),
     ]);
 
     const pagesRows = parseRows(pagesData);
     const utmRows = parseRows(utmData);
-    _drillChannelCache[channel] = { pages: pagesRows, utm: utmRows };
+    const sourcesRows = parseRows(sourcesData);
+    _drillChannelCache[channel] = { pages: pagesRows, utm: utmRows, sources: sourcesRows };
 
     renderChannelDrill(channel, 'pages');
   }catch(err){
@@ -569,43 +659,53 @@ function renderChannelDrill(channel, mode){
   const cache = _drillChannelCache[channel];
   if(!cache){ body.innerHTML = '<div style="color:var(--text3);font-size:12px">No data.</div>'; return; }
 
+  const esc = channel.replace(/'/g,"\\'");
   // Toggle pills
   let html = '<div class="drill-toggle">';
-  html += `<button class="${mode==='pages'?'active':''}" onclick="renderChannelDrill('${channel.replace(/'/g,"\\'")}','pages')">Pages</button>`;
-  html += `<button class="${mode==='utm'?'active':''}" onclick="renderChannelDrill('${channel.replace(/'/g,"\\'")}','utm')">UTM Campaigns</button>`;
+  html += `<button class="${mode==='pages'?'active':''}" onclick="renderChannelDrill('${esc}','pages')">Pages</button>`;
+  html += `<button class="${mode==='utm'?'active':''}" onclick="renderChannelDrill('${esc}','utm')">UTM Campaigns</button>`;
+  html += `<button class="${mode==='sources'?'active':''}" onclick="renderChannelDrill('${esc}','sources')">Sources</button>`;
   html += '</div>';
+
+  const thStyle = 'text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)';
+  const thStyleR = 'text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)';
+  const tdStyle = 'padding:6px 8px;border-bottom:1px solid #f0ede7';
+  const tdStyleR = 'text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7';
+  const tdStyleTrunc = 'padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
 
   if(mode === 'pages'){
     const rows = cache.pages;
     if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No page data.</div>'; body.innerHTML = html; return; }
     html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-    html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Page</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Views</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Users</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Sessions</th></tr></thead><tbody>';
+    html += `<thead><tr><th style="${thStyle}">Page</th><th style="${thStyleR}">Views</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">Sessions</th></tr></thead><tbody>`;
     for(const r of rows){
-      html += `<tr><td style="padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.dims[0]}">${r.dims[0]}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[0])}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[1])}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[2])}</td></tr>`;
+      html += `<tr><td style="${tdStyleTrunc}" title="${r.dims[0]}">${r.dims[0]}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.vals[0])}</td><td style="${tdStyleR}">${fmt(r.vals[1])}</td><td style="${tdStyleR}">${fmt(r.vals[2])}</td></tr>`;
     }
     html += '</tbody></table>';
-  } else {
+  } else if(mode === 'utm'){
     const rows = cache.utm;
     if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No UTM data.</div>'; body.innerHTML = html; return; }
     html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
-    html += '<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Campaign</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Sessions</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Users</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">New Users</th>';
-    html += '<th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)">Views</th></tr></thead><tbody>';
+    html += `<thead><tr><th style="${thStyle}">Campaign</th><th style="${thStyleR}">Sessions</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">New Users</th><th style="${thStyleR}">Views</th></tr></thead><tbody>`;
     for(const r of rows){
       const campaign = r.dims[0] || '(not set)';
-      html += `<tr><td style="padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${campaign}">${campaign}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[0])}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[1])}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[2])}</td>`;
-      html += `<td style="text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7">${fmt(r.vals[3])}</td></tr>`;
+      html += `<tr><td style="${tdStyleTrunc}" title="${campaign}">${campaign}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.vals[0])}</td><td style="${tdStyleR}">${fmt(r.vals[1])}</td><td style="${tdStyleR}">${fmt(r.vals[2])}</td><td style="${tdStyleR}">${fmt(r.vals[3])}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  } else {
+    // Sources
+    const rows = cache.sources;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No source data.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += `<thead><tr><th style="${thStyle}">Source / Medium</th><th style="${thStyleR}">Sessions</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">New Users</th></tr></thead><tbody>`;
+    for(const r of rows){
+      const source = r.dims[0] || '(direct)';
+      const medium = r.dims[1] || '(none)';
+      const label = `${source} / ${medium}`;
+      html += `<tr><td style="${tdStyleTrunc}" title="${label}">${label}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.vals[0])}</td><td style="${tdStyleR}">${fmt(r.vals[1])}</td><td style="${tdStyleR}">${fmt(r.vals[2])}</td></tr>`;
     }
     html += '</tbody></table>';
   }
