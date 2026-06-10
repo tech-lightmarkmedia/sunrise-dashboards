@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v10)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v11)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +129,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v10</span>
+    <span class="vpill">v11</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -212,15 +212,32 @@ tbody tr:hover{background:#faf8f4}
   <h2>Web Traffic Dashboard — Guide</h2>
 
   <h3>What this dashboard shows</h3>
-  <p>Website traffic from Google Analytics 4, broken down by channel, page, and UTM campaign. This is <strong>all site visitors</strong> — including anonymous traffic that never becomes a HubSpot contact. The other SCI dashboards only see contacts who filled out a form; this one covers everything upstream of that.</p>
+  <p>Website traffic from Google Analytics 4, broken down by source, channel, page, and UTM campaign. This is <strong>all site visitors</strong> — including anonymous traffic that never becomes a HubSpot contact. The other SCI dashboards only see contacts who filled out a form; this one covers everything upstream of that.</p>
 
   <h3>Data source</h3>
   <p>Google Analytics 4 property (ID 324853644) via the GA4 Data API. Data is fetched live on each load — not cached. Refresh cadence depends on GA4's own processing pipeline (typically 24–48 hours for finalized data; recent data may shift slightly).</p>
 
+  <h3>Layout</h3>
+  <p>The top hero block shows KPI tiles (3×2 grid) on the left and the Sessions by Source doughnut on the right. Below that: the channel table, top pages, and UTM campaigns.</p>
+
   <h3>Traffic filter (All / Paid / Organic / Direct)</h3>
   <p>The toggle bar filters the entire dashboard to a traffic bucket. <strong>All</strong> shows everything. <strong>Paid</strong> includes Paid Social, Paid Search, Paid Shopping, Paid Video, and Paid Other. <strong>Direct</strong> is direct traffic only. <strong>Organic</strong> is everything else — Organic Social, Organic Search, Organic Video, Email, Referral, and any other non-paid, non-direct channels.</p>
-  <p>When a bucket is selected, KPIs re-aggregate to that bucket, the channel table filters, and Top Pages / UTM Campaigns re-fetch from GA4 scoped to the selected channels. Results are cached per bucket — switching back is instant.</p>
+  <p>When a bucket is selected, KPIs re-aggregate to that bucket, the channel table filters, the Sessions by Source doughnut re-renders with only sources from that bucket, and Top Pages / UTM Campaigns re-fetch from GA4 scoped to the selected channels. Results are cached per bucket — switching back is instant.</p>
   <p>Note: <strong>Avg Duration</strong> shows "—" for non-All buckets because GA4 doesn't provide per-channel session duration in the channel breakdown. All other KPIs are accurately re-aggregated. Engagement Rate is weighted by sessions.</p>
+
+  <h3>Sessions by Source (doughnut)</h3>
+  <p>The doughnut chart shows sessions grouped by consolidated source. Raw GA4 sources (e.g., facebook, fb, l.facebook.com, m.facebook.com) are rolled up into logical groups so you can see the real picture at a glance. The doughnut responds to the traffic filter — selecting Paid/Organic/Direct re-fetches sources scoped to that bucket. The groups are:</p>
+  <p><strong>Facebook</strong> — facebook, fb, l.facebook.com, m.facebook.com, facebook.com, ig, Instagram, instagram.com, lm.facebook.com, business.facebook.com, and related variants. Includes Instagram (same parent company and ad platform).</p>
+  <p><strong>Google</strong> — google, google.com, adwords, sites.google.com, mail.google.com, docs.google.com, and related Google properties.</p>
+  <p><strong>(direct)</strong> — (direct), (not set), (data not available). Traffic where the referrer is unknown.</p>
+  <p><strong>SCI (self)</strong> — sunrisecapitalinvestors.com, the InvestNext subdomain, and HubSpot preview/hosted pages. Internal self-referral traffic.</p>
+  <p><strong>HubSpot</strong> — hs_email, hs_automation, meetings.hubspot.com, app.hubspot.com, and HubSpot editor previews. Traffic from HubSpot email campaigns and workflows.</p>
+  <p><strong>LinkedIn</strong> — LinkedIn, linkedin, linkedin.com, lnkd.in, and case variants.</p>
+  <p><strong>YouTube</strong> — YouTube, youtube.com.</p>
+  <p><strong>Other Search</strong> — bing, yahoo, duckduckgo, ecosia.org, aol. Non-Google search engines.</p>
+  <p><strong>AI</strong> — chatgpt.com, perplexity.ai, claude.ai, gemini.google.com. Traffic from AI assistant tools.</p>
+  <p><strong>Other</strong> — everything that doesn't match a named group.</p>
+  <p>Click any slice or legend row to open a drill drawer with three toggles: <strong>Source Detail</strong> (the raw source breakdown within that group — e.g., l.facebook.com: 7,452 / facebook: 4,607 / m.facebook.com: 1,294), <strong>Pages</strong> (top pages visited by that source group), and <strong>UTM Campaigns</strong> (campaigns tagged to that source group).</p>
 
   <h3>KPI tiles</h3>
   <p><strong>Sessions:</strong> Total sessions in the period. A session is a group of user interactions within a time frame (default 30 minutes of inactivity ends a session).</p>
@@ -234,21 +251,21 @@ tbody tr:hover{background:#faf8f4}
   <p>The <strong>vs</strong> dropdown enables comparison against the previous period (same-length window immediately before the selected range). When active, KPI tiles show green/red deltas (percentage change for counts, percentage-point change for rates), and the channel table adds a <strong>Δ Sessions</strong> column showing per-channel change. Set to "None" to hide comparisons.</p>
 
   <h3>Traffic by Channel</h3>
-  <p>Rows are GA4's default channel groupings. Filtered by the active traffic bucket. Click any column header to sort. Click any row to open a drill drawer.</p>
+  <p>Rows are GA4's default channel groupings. Filtered by the active traffic bucket. Each row shows a short description of what the channel means. Click any column header to sort. Click any row to open a drill drawer with Pages / UTM Campaigns / Sources toggles.</p>
 
   <h3>Channel definitions</h3>
   <p>These are GA4's standard channel groupings. GA4 classifies each session into exactly one channel based on how the visitor arrived.</p>
-  <p><strong>Organic Search</strong> — visitor arrived from an unpaid search engine result (Google, Bing, DuckDuckGo, etc.).</p>
-  <p><strong>Organic Social</strong> — visitor arrived from an unpaid link on a social platform (Facebook, Instagram, LinkedIn, X/Twitter, YouTube, TikTok, etc.).</p>
-  <p><strong>Organic Video</strong> — visitor arrived from an unpaid video platform link (YouTube, Vimeo, etc.) when GA4 distinguishes it from Organic Social.</p>
-  <p><strong>Paid Social</strong> — visitor arrived from a paid ad on a social platform (Meta Ads, LinkedIn Ads, etc.).</p>
-  <p><strong>Paid Search</strong> — visitor arrived from a paid search ad (Google Ads search, Bing Ads, etc.).</p>
-  <p><strong>Direct</strong> — visitor typed the URL directly, used a bookmark, or arrived via a link with no referrer information (email clients that strip referrers, some mobile apps, etc.).</p>
-  <p><strong>Referral</strong> — visitor arrived from a link on another website that isn't a search engine or social platform.</p>
-  <p><strong>Email</strong> — visitor arrived from a link in an email (identified by UTM medium = "email" or a recognized email platform referrer).</p>
-  <p><strong>Cross-network</strong> — visitor arrived from a Google Ads campaign that spans multiple networks (Performance Max, Smart Shopping, etc.). This is paid traffic.</p>
-  <p><strong>Unassigned</strong> — GA4 couldn't classify the session into any standard channel. Usually means the referrer data was ambiguous or missing in a way that doesn't match Direct either.</p>
-  <p><strong>AI Assistant</strong> — visitor arrived from a link in an AI tool (ChatGPT, Perplexity, Google AI Overview, etc.). GA4 added this grouping recently.</p>
+  <p><strong>Organic Search</strong> — unpaid search engine results (Google, Bing, DuckDuckGo, etc.).</p>
+  <p><strong>Organic Social</strong> — unpaid social media links (Facebook, Instagram, LinkedIn, X/Twitter, YouTube, TikTok, etc.).</p>
+  <p><strong>Organic Video</strong> — unpaid video platform links (YouTube, Vimeo, etc.) when GA4 distinguishes it from Organic Social.</p>
+  <p><strong>Paid Social</strong> — paid ads on social platforms (Meta Ads, LinkedIn Ads, etc.).</p>
+  <p><strong>Paid Search</strong> — paid search ads (Google Ads search, Bing Ads, etc.).</p>
+  <p><strong>Direct</strong> — direct URL entry, bookmarks, or links with no referrer information.</p>
+  <p><strong>Referral</strong> — links from other websites that aren't search engines or social platforms.</p>
+  <p><strong>Email</strong> — links from email campaigns (UTM medium = "email" or a recognized email platform referrer).</p>
+  <p><strong>Cross-network</strong> — multi-network paid campaigns (Google Ads Performance Max, Smart Shopping, etc.). This is paid traffic.</p>
+  <p><strong>Unassigned</strong> — GA4 couldn't classify the session into any standard channel.</p>
+  <p><strong>AI Assistant</strong> — traffic from AI tools (ChatGPT, Perplexity, Google AI Overview, etc.).</p>
 
   <h3>Top Pages</h3>
   <p>Most-viewed pages, scoped to the active traffic bucket. The "Page" column shows the URL path (e.g., <code>/fund-5</code>). Click a row to drill into which channels drove traffic to that page.</p>
@@ -256,15 +273,14 @@ tbody tr:hover{background:#faf8f4}
   <h3>UTM Campaigns</h3>
   <p>Traffic grouped by the <code>utm_campaign</code> parameter, scoped to the active traffic bucket. "(not set)" means no campaign tag was present. Click a row to drill into pages within that campaign.</p>
 
-  <h3>Drill drawer</h3>
-  <p>Click any row in any table to open a drill-down panel on the right. Channel drills have three toggle views:</p>
-  <p><strong>Pages:</strong> Top pages visited by traffic from that channel.</p>
-  <p><strong>UTM Campaigns:</strong> Campaign-level breakdown for that channel.</p>
-  <p><strong>Sources:</strong> Source / medium pairs (e.g., <code>youtube.com / referral</code>, <code>google / cpc</code>) — shows exactly where within a channel the traffic originates.</p>
-  <p>All three views are fetched in parallel when the drawer opens and cached for instant toggling. The drawer closes via the × button or Esc key.</p>
+  <h3>Drill drawers</h3>
+  <p>There are two types of drill drawers:</p>
+  <p><strong>Channel drill</strong> (from the channel table): Three toggles — <strong>Pages</strong> (top pages for that channel), <strong>UTM Campaigns</strong> (campaigns for that channel), and <strong>Sources</strong> (source/medium pairs showing exactly where within a channel the traffic originates, e.g., youtube.com / referral, google / cpc).</p>
+  <p><strong>Source group drill</strong> (from the doughnut): Three toggles — <strong>Source Detail</strong> (raw GA4 sources within the group with sessions/users/new users), <strong>Pages</strong> (top pages visited by that source group), and <strong>UTM Campaigns</strong> (campaigns for that source group).</p>
+  <p>All views are fetched in parallel when the drawer opens and cached for instant toggling. The drawer closes via the × button or Esc key.</p>
 
   <h3>Date ranges</h3>
-  <p>Preset ranges include Today, This Week, Last Week, This Month (default), Last Month, This Quarter, Last Quarter, This Year, Last Year, and rolling windows (Last 7/14/30/90 Days, Last 12 Months). Custom dates use the date pickers; click Refresh to apply. Changing any preset automatically refreshes. "Last N Days" ranges end yesterday (GA4 convention — today's data is partial).</p>
+  <p>Default: <strong>Last Month</strong>. Preset ranges include Today, This Week, Last Week, This Month, Last Month, This Quarter, Last Quarter, This Year, Last Year, and rolling windows (Last 7/14/30/90 Days, Last 12 Months). Custom dates use the date pickers; click Refresh to apply. Changing any preset automatically refreshes. "Last N Days" ranges end yesterday (GA4 convention — today's data is partial).</p>
 </div>
 
 <script>
@@ -535,8 +551,8 @@ async function load(){
     // Store raw source rows
     SOURCE_ROWS = parseRows(sourcesData);
 
-    // Store "all" data in cache
-    _bucketCache['all'] = { pages: parseRows(pagesData), utm: parseRows(utmData) };
+    // Store "all" data in cache (including sources)
+    _bucketCache['all'] = { pages: parseRows(pagesData), utm: parseRows(utmData), sources: SOURCE_ROWS };
 
     // KPI raw values (all channels)
     const kpi = kpiData.rows?.[0]?.metricValues?.map(v => parseFloat(v.value)) || [];
@@ -748,23 +764,27 @@ async function applyBucket(bucket){
   // ── Channel table ────────────────────────────────────────────────────
   renderChannelTable();
 
-  // ── Doughnut ────────────────────────────────────────────────────────
-  renderDonut();
-
-  // ── Pages + UTM: fetch if not cached ─────────────────────────────────
+  // ── Pages + UTM + Sources: fetch if not cached ─────────────────────
   if(!_bucketCache[bucket]){
     const {start, end} = getDateRange();
     const dateRanges = [{ startDate: start, endDate: end }];
     const dimFilter = buildBucketFilter(bucket);
-    const [pData, uData] = await Promise.all([
+    const [pData, uData, sData] = await Promise.all([
       ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], dimensionFilter:dimFilter, orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'sessionCampaignName'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'},{name:'screenPageViews'}], dimensionFilter:dimFilter, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
+      ga4Report({ dateRanges, dimensions:[{name:'sessionSource'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'}], dimensionFilter:dimFilter, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
     ]);
-    _bucketCache[bucket] = { pages: parseRows(pData), utm: parseRows(uData) };
+    _bucketCache[bucket] = { pages: parseRows(pData), utm: parseRows(uData), sources: parseRows(sData) };
   }
 
+  // Update display data from cache
+  SOURCE_ROWS = _bucketCache[bucket].sources;
   PAGES_ROWS = _bucketCache[bucket].pages;
   UTM_ROWS = _bucketCache[bucket].utm;
+
+  // ── Doughnut (after sources are set for this bucket) ────────────────
+  renderDonut();
+
   renderPagesTable();
   renderUtmTable();
 }
