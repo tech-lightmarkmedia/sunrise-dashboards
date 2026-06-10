@@ -75,6 +75,7 @@ tbody tr:hover{background:#faf8f4}
 .ch-direct{background:var(--direct-bg);color:var(--direct)}
 .ch-referral{background:var(--referral-bg);color:var(--referral)}
 .ch-other{background:var(--surface2);color:var(--text2)}
+.ch-desc{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.3}
 #loading{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
 #loading .spinner{width:24px;height:24px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -217,7 +218,21 @@ tbody tr:hover{background:#faf8f4}
   <p>The <strong>vs</strong> dropdown enables comparison against the previous period (same-length window immediately before the selected range). When active, KPI tiles show green/red deltas (percentage change for counts, percentage-point change for rates), and the channel table adds a <strong>Δ Sessions</strong> column showing per-channel change. Set to "None" to hide comparisons.</p>
 
   <h3>Traffic by Channel</h3>
-  <p>Rows are GA4's default channel groupings: Organic Search, Paid Social, Direct, Referral, Organic Social, Email, etc. Filtered by the active traffic bucket. Click any column header to sort. Click any row to open a drill drawer.</p>
+  <p>Rows are GA4's default channel groupings. Filtered by the active traffic bucket. Click any column header to sort. Click any row to open a drill drawer.</p>
+
+  <h3>Channel definitions</h3>
+  <p>These are GA4's standard channel groupings. GA4 classifies each session into exactly one channel based on how the visitor arrived.</p>
+  <p><strong>Organic Search</strong> — visitor arrived from an unpaid search engine result (Google, Bing, DuckDuckGo, etc.).</p>
+  <p><strong>Organic Social</strong> — visitor arrived from an unpaid link on a social platform (Facebook, Instagram, LinkedIn, X/Twitter, YouTube, TikTok, etc.).</p>
+  <p><strong>Organic Video</strong> — visitor arrived from an unpaid video platform link (YouTube, Vimeo, etc.) when GA4 distinguishes it from Organic Social.</p>
+  <p><strong>Paid Social</strong> — visitor arrived from a paid ad on a social platform (Meta Ads, LinkedIn Ads, etc.).</p>
+  <p><strong>Paid Search</strong> — visitor arrived from a paid search ad (Google Ads search, Bing Ads, etc.).</p>
+  <p><strong>Direct</strong> — visitor typed the URL directly, used a bookmark, or arrived via a link with no referrer information (email clients that strip referrers, some mobile apps, etc.).</p>
+  <p><strong>Referral</strong> — visitor arrived from a link on another website that isn't a search engine or social platform.</p>
+  <p><strong>Email</strong> — visitor arrived from a link in an email (identified by UTM medium = "email" or a recognized email platform referrer).</p>
+  <p><strong>Cross-network</strong> — visitor arrived from a Google Ads campaign that spans multiple networks (Performance Max, Smart Shopping, etc.). This is paid traffic.</p>
+  <p><strong>Unassigned</strong> — GA4 couldn't classify the session into any standard channel. Usually means the referrer data was ambiguous or missing in a way that doesn't match Direct either.</p>
+  <p><strong>AI Assistant</strong> — visitor arrived from a link in an AI tool (ChatGPT, Perplexity, Google AI Overview, etc.). GA4 added this grouping recently.</p>
 
   <h3>Top Pages</h3>
   <p>Most-viewed pages, scoped to the active traffic bucket. The "Page" column shows the URL path (e.g., <code>/fund-5</code>). Click a row to drill into which channels drove traffic to that page.</p>
@@ -391,6 +406,24 @@ function channelMatchesBucket(ch, bucket){
   if(bucket === 'all') return true;
   return classifyChannel(ch) === bucket;
 }
+
+// v7: short descriptions shown under each channel pill
+const CHANNEL_DESCS = {
+  'Organic Search': 'Unpaid search engine results',
+  'Organic Social': 'Unpaid social media links',
+  'Organic Video': 'Unpaid video platform links',
+  'Paid Social': 'Paid ads on social platforms',
+  'Paid Search': 'Paid search ads',
+  'Paid Shopping': 'Paid shopping ads',
+  'Paid Video': 'Paid video ads',
+  'Paid Other': 'Other paid campaigns',
+  'Direct': 'Direct URL entry or bookmarks',
+  'Referral': 'Links from other websites',
+  'Email': 'Links from email campaigns',
+  'Cross-network': 'Multi-network paid campaigns',
+  'Unassigned': 'GA4 couldn\'t classify this traffic',
+  'AI Assistant': 'Traffic from AI tools (ChatGPT, etc.)',
+};
 
 function getFilteredChannelRows(bucket){
   if(bucket === 'all') return CHANNEL_ROWS;
@@ -647,8 +680,9 @@ function renderChannelTable(){
     tr.style.cursor='pointer';
     tr.addEventListener('click', (e) => { e.stopPropagation(); drillChannel(r.dims[0]); });
     const chName = r.dims[0] || '(not set)';
+    const chDesc = CHANNEL_DESCS[chName] || '';
     let rowHtml = `
-      <td><span class="ch-pill ${channelClass(chName)}">${chName}</span></td>
+      <td><span class="ch-pill ${channelClass(chName)}">${chName}</span>${chDesc ? `<div class="ch-desc">${chDesc}</div>` : ''}</td>
       <td class="num">${fmt(r.vals[0])}</td>
       <td class="num">${fmt(r.vals[1])}</td>
       <td class="num">${fmt(r.vals[2])}</td>
