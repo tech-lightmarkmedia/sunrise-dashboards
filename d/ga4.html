@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v2)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v3)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -101,7 +101,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v2</span>
+    <span class="vpill">v3</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -423,7 +423,7 @@ function renderChannelTable(){
   for(const r of CHANNEL_ROWS){
     const tr = document.createElement('tr');
     tr.style.cursor='pointer';
-    tr.addEventListener('click', () => drillChannel(r.dims[0]));
+    tr.addEventListener('click', (e) => { e.stopPropagation(); drillChannel(r.dims[0]); });
     const chName = r.dims[0] || '(not set)';
     tr.innerHTML = `
       <td><span class="ch-pill ${channelClass(chName)}">${chName}</span></td>
@@ -462,7 +462,7 @@ function renderPagesTable(){
   for(const r of PAGES_ROWS){
     const tr = document.createElement('tr');
     tr.style.cursor='pointer';
-    tr.addEventListener('click', () => drillPage(r.dims[0]));
+    tr.addEventListener('click', (e) => { e.stopPropagation(); drillPage(r.dims[0]); });
     const pagePath = r.dims[0] || '/';
     tr.innerHTML = `
       <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${pagePath}">${pagePath}</td>
@@ -500,7 +500,7 @@ function renderUtmTable(){
   for(const r of UTM_ROWS){
     const tr = document.createElement('tr');
     tr.style.cursor='pointer';
-    tr.addEventListener('click', () => drillUtm(r.dims[0]));
+    tr.addEventListener('click', (e) => { e.stopPropagation(); drillUtm(r.dims[0]); });
     const campaign = r.dims[0] || '(not set)';
     tr.innerHTML = `
       <td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${campaign}">${campaign}</td>
@@ -519,6 +519,7 @@ function renderUtmTable(){
 let _drillChannelCache = {}; // channel → { pages: rows, utm: rows }
 
 async function drillChannel(channel){
+  _drawerJustOpened = true;
   const drawer = document.getElementById('drill-drawer');
   document.getElementById('drill-title').textContent = channel;
   document.getElementById('drill-subtitle').textContent = '';
@@ -613,6 +614,7 @@ function renderChannelDrill(channel, mode){
 }
 
 async function drillPage(pagePath){
+  _drawerJustOpened = true;
   const drawer = document.getElementById('drill-drawer');
   document.getElementById('drill-title').textContent = pagePath;
   document.getElementById('drill-subtitle').textContent = 'Traffic sources for this page';
@@ -654,6 +656,7 @@ async function drillPage(pagePath){
 }
 
 async function drillUtm(campaign){
+  _drawerJustOpened = true;
   const drawer = document.getElementById('drill-drawer');
   document.getElementById('drill-title').textContent = campaign || '(not set)';
   document.getElementById('drill-subtitle').textContent = 'Top pages for this campaign';
@@ -695,13 +698,17 @@ async function drillUtm(campaign){
 
 // ── Drawer management ─────────────────────────────────────────────────────────
 function closeDrill(){ document.getElementById('drill-drawer').classList.remove('on'); }
-function openGuide(e){ if(e) e.stopPropagation(); document.getElementById('guide').classList.add('on'); }
+function openGuide(e){ if(e) e.stopPropagation(); _drawerJustOpened = true; document.getElementById('guide').classList.add('on'); }
 function closeAllDrawers(){
   document.getElementById('guide').classList.remove('on');
   document.getElementById('drill-drawer').classList.remove('on');
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeAllDrawers(); });
+// v2: track when a drawer was just opened so click-outside doesn't
+// immediately close it on the same event.
+let _drawerJustOpened = false;
 document.addEventListener('click', e => {
+  if(_drawerJustOpened){ _drawerJustOpened = false; return; }
   const guide = document.getElementById('guide');
   const drill = document.getElementById('drill-drawer');
   if(guide.classList.contains('on') && !guide.contains(e.target)) guide.classList.remove('on');
