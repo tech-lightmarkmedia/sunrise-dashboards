@@ -396,6 +396,7 @@ function sortRows(tableId, rows, colIdx, isNum){
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let CHANNEL_ROWS = [];    // all channels (raw from API)
+let SOURCE_ROWS = [];     // all sources (raw from API)
 let PAGES_ROWS = [];      // pages for current bucket
 let UTM_ROWS = [];        // UTM for current bucket
 let CMP_KPI = null;       // comparison KPI values (all channels)
@@ -503,12 +504,13 @@ async function load(){
       { name: 'averageSessionDuration' }, { name: 'engagementRate' }, { name: 'screenPageViews' },
     ];
 
-    // Build fetch array — always fetch channel-level and "all" pages/UTM/KPIs
+    // Build fetch array — always fetch channel-level, sources, and "all" pages/UTM/KPIs
     const fetches = [
       ga4Report({ dateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'sessionCampaignName'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'},{name:'screenPageViews'}], orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, metrics:metrics_kpi }),
+      ga4Report({ dateRanges, dimensions:[{name:'sessionSource'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'}], orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
     ];
 
     // Comparison fetches (KPIs + channel table)
@@ -519,12 +521,15 @@ async function load(){
     }
 
     const results = await Promise.all(fetches);
-    const [channelData, pagesData, utmData, kpiData] = results;
-    const cmpKpiData = cmpRange ? results[4] : null;
-    const cmpChannelData = cmpRange ? results[5] : null;
+    const [channelData, pagesData, utmData, kpiData, sourcesData] = results;
+    const cmpKpiData = cmpRange ? results[5] : null;
+    const cmpChannelData = cmpRange ? results[6] : null;
 
     // Store raw channel rows
     CHANNEL_ROWS = parseRows(channelData);
+
+    // Store raw source rows
+    SOURCE_ROWS = parseRows(sourcesData);
 
     // Store "all" data in cache
     _bucketCache['all'] = { pages: parseRows(pagesData), utm: parseRows(utmData) };
@@ -565,7 +570,7 @@ async function load(){
   }
 }
 
-// v8: sessions doughnut chart (SVG)
+// v8: sessions-by-source doughnut chart (SVG)
 const DONUT_COLORS = [
   '#059669','#1d4ed8','#6d28d9','#c44a1e','#0891b2','#d97706','#be185d','#4f46e5',
   '#9e9789' // "Other" always last
@@ -573,34 +578,35 @@ const DONUT_COLORS = [
 
 function renderDonut(){
   const wrap = document.getElementById('donutWrap');
-  const rows = getFilteredChannelRows(ACTIVE_BUCKET);
-  if(!rows.length){ wrap.innerHTML = ''; return; }
+  if(!SOURCE_ROWS.length){ wrap.innerHTML = ''; return; }
 
   // Top 8 + Other rollup
-  const sorted = [...rows].sort((a,b) => b.vals[0] - a.vals[0]);
+  const sorted = [...SOURCE_ROWS].sort((a,b) => b.vals[0] - a.vals[0]);
   const top = sorted.slice(0, 8);
   const rest = sorted.slice(8);
   const restSum = rest.reduce((s,r) => s + (r.vals[0]||0), 0);
-  const slices = top.map((r,i) => ({ label: r.dims[0], value: r.vals[0]||0, color: DONUT_COLORS[i], channel: r.dims[0] }));
+  const slices = top.map((r,i) => {
+    const src = r.dims[0] || '(direct)';
+    return { label: src, value: r.vals[0]||0, color: DONUT_COLORS[i], source: r.dims[0] };
+  });
   if(restSum > 0){
-    slices.push({ label: `Other (${rest.length})`, value: restSum, color: DONUT_COLORS[8], channel: null });
+    slices.push({ label: `Other (${rest.length})`, value: restSum, color: DONUT_COLORS[8], source: null });
   }
   const total = slices.reduce((s,sl) => s + sl.value, 0);
   if(total === 0){ wrap.innerHTML = ''; return; }
 
   // Build SVG arcs
   const cx=80, cy=80, R=70, r=45;
-  let angle = -Math.PI/2; // start at top
+  let angle = -Math.PI/2;
   let paths = '';
-  const sliceAngles = []; // for click handling
 
   for(const sl of slices){
     const frac = sl.value / total;
     const sweep = frac * 2 * Math.PI;
-    const gap = 0.02; // small gap between slices
+    const gap = 0.02;
     const startA = angle + gap/2;
     const endA = angle + sweep - gap/2;
-    if(sweep < 0.01){ angle += sweep; sliceAngles.push({startA,endA,channel:sl.channel}); continue; }
+    if(sweep < 0.01){ angle += sweep; continue; }
 
     const x1o = cx + R * Math.cos(startA);
     const y1o = cy + R * Math.sin(startA);
@@ -613,30 +619,27 @@ function renderDonut(){
     const large = sweep > Math.PI ? 1 : 0;
 
     const d = `M${x1o},${y1o} A${R},${R} 0 ${large},1 ${x2o},${y2o} L${x1i},${y1i} A${r},${r} 0 ${large},0 ${x2i},${y2i} Z`;
-    const esc = sl.channel ? sl.channel.replace(/'/g,"\\'") : '';
-    const click = sl.channel ? ` onclick="_drawerJustOpened=true;drillChannel('${esc}')" style="cursor:pointer"` : '';
+    const esc = sl.source ? sl.source.replace(/'/g,"\\'") : '';
+    const click = sl.source ? ` onclick="_drawerJustOpened=true;drillSource('${esc}')" style="cursor:pointer"` : '';
     paths += `<path d="${d}" fill="${sl.color}"${click}><title>${sl.label}: ${fmt(sl.value)}</title></path>`;
-    sliceAngles.push({startA,endA,channel:sl.channel});
     angle += sweep;
   }
 
-  // Center label
   const centerText = `<text x="${cx}" y="${cy-4}" text-anchor="middle" fill="var(--text)" font-family="DM Serif Display,serif" font-size="18">${fmt(total)}</text>`;
   const centerSub = `<text x="${cx}" y="${cy+12}" text-anchor="middle" fill="var(--text3)" font-size="9">Sessions</text>`;
-
   const svg = `<svg viewBox="0 0 160 160" width="160" height="160" xmlns="http://www.w3.org/2000/svg">${paths}${centerText}${centerSub}</svg>`;
 
   // Legend
   let legend = '';
   for(const sl of slices){
-    const esc = sl.channel ? sl.channel.replace(/'/g,"\\'") : '';
-    const click = sl.channel ? `onclick="_drawerJustOpened=true;drillChannel('${esc}')"` : '';
+    const esc = sl.source ? sl.source.replace(/'/g,"\\'") : '';
+    const click = sl.source ? `onclick="_drawerJustOpened=true;drillSource('${esc}')"` : '';
     legend += `<div class="leg-row" ${click}><span class="leg-dot" style="background:${sl.color}"></span><span class="leg-label">${sl.label}</span><span class="leg-val">${fmt(sl.value)}</span></div>`;
   }
 
   wrap.innerHTML = `
     <div>
-      <div class="donut-title">Sessions by Channel</div>
+      <div class="donut-title">Sessions by Source</div>
       <div class="donut-svg-wrap">${svg}</div>
     </div>
     <div class="donut-legend">${legend}</div>
@@ -1066,6 +1069,92 @@ async function drillUtm(campaign){
   }catch(err){
     body.innerHTML = `<div style="color:var(--accent);font-size:12px">${err.message}</div>`;
   }
+}
+
+// v8: source drill — Pages / UTM toggle, filtered by sessionSource
+let _drillSourceCache = {};
+
+async function drillSource(source){
+  _drawerJustOpened = true;
+  const drawer = document.getElementById('drill-drawer');
+  document.getElementById('drill-title').textContent = source || '(direct)';
+  document.getElementById('drill-subtitle').textContent = '';
+  const body = document.getElementById('drill-body');
+  body.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0">Loading…</div>';
+  drawer.classList.add('on');
+
+  try{
+    const {start,end} = getDateRange();
+    const dateRanges = [{ startDate: start, endDate: end }];
+    const dimFilter = {
+      filter: { fieldName: 'sessionSource', stringFilter: { matchType: 'EXACT', value: source } },
+    };
+
+    const [pagesData, utmData] = await Promise.all([
+      ga4Report({
+        dateRanges,
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }, { name: 'sessions' }],
+        dimensionFilter: dimFilter,
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 50,
+      }),
+      ga4Report({
+        dateRanges,
+        dimensions: [{ name: 'sessionCampaignName' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' }, { name: 'screenPageViews' }],
+        dimensionFilter: dimFilter,
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        limit: 50,
+      }),
+    ]);
+
+    _drillSourceCache[source] = { pages: parseRows(pagesData), utm: parseRows(utmData) };
+    renderSourceDrill(source, 'pages');
+  }catch(err){
+    body.innerHTML = `<div style="color:var(--accent);font-size:12px">${err.message}</div>`;
+  }
+}
+
+function renderSourceDrill(source, mode){
+  const body = document.getElementById('drill-body');
+  const cache = _drillSourceCache[source];
+  if(!cache){ body.innerHTML = '<div style="color:var(--text3);font-size:12px">No data.</div>'; return; }
+
+  const esc = (source||'').replace(/'/g,"\\'");
+  let html = '<div class="drill-toggle">';
+  html += `<button class="${mode==='pages'?'active':''}" onclick="renderSourceDrill('${esc}','pages')">Pages</button>`;
+  html += `<button class="${mode==='utm'?'active':''}" onclick="renderSourceDrill('${esc}','utm')">UTM Campaigns</button>`;
+  html += '</div>';
+
+  const thStyle = 'text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)';
+  const thStyleR = 'text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3)';
+  const tdStyleR = 'text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7';
+  const tdStyleTrunc = 'padding:6px 8px;border-bottom:1px solid #f0ede7;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+
+  if(mode === 'pages'){
+    const rows = cache.pages;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No page data.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += `<thead><tr><th style="${thStyle}">Page</th><th style="${thStyleR}">Views</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">Sessions</th></tr></thead><tbody>`;
+    for(const r of rows){
+      html += `<tr><td style="${tdStyleTrunc}" title="${r.dims[0]}">${r.dims[0]}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.vals[0])}</td><td style="${tdStyleR}">${fmt(r.vals[1])}</td><td style="${tdStyleR}">${fmt(r.vals[2])}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  } else {
+    const rows = cache.utm;
+    if(!rows.length){ html += '<div style="color:var(--text3);font-size:12px">No UTM data.</div>'; body.innerHTML = html; return; }
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    html += `<thead><tr><th style="${thStyle}">Campaign</th><th style="${thStyleR}">Sessions</th><th style="${thStyleR}">Users</th><th style="${thStyleR}">New Users</th><th style="${thStyleR}">Views</th></tr></thead><tbody>`;
+    for(const r of rows){
+      const campaign = r.dims[0] || '(not set)';
+      html += `<tr><td style="${tdStyleTrunc}" title="${campaign}">${campaign}</td>`;
+      html += `<td style="${tdStyleR}">${fmt(r.vals[0])}</td><td style="${tdStyleR}">${fmt(r.vals[1])}</td><td style="${tdStyleR}">${fmt(r.vals[2])}</td><td style="${tdStyleR}">${fmt(r.vals[3])}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  body.innerHTML = html;
 }
 
 // ── Drawer management ─────────────────────────────────────────────────────────
