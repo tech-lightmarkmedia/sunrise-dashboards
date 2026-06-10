@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v5)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v6)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -110,7 +110,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v5</span>
+    <span class="vpill">v6</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -804,15 +804,13 @@ function closeAllDrawers(){
   document.getElementById('drill-drawer').classList.remove('on');
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeAllDrawers(); });
-// v2: track when a drawer was just opened so click-outside doesn't
-// immediately close it on the same event.
+// v5: click-outside only closes the guide. Drill drawer closes via × or Esc
+// only — the toggle pills and table row clicks were fighting with click-outside.
 let _drawerJustOpened = false;
 document.addEventListener('click', e => {
   if(_drawerJustOpened){ _drawerJustOpened = false; return; }
   const guide = document.getElementById('guide');
-  const drill = document.getElementById('drill-drawer');
   if(guide.classList.contains('on') && !guide.contains(e.target)) guide.classList.remove('on');
-  if(drill.classList.contains('on') && !drill.contains(e.target)) drill.classList.remove('on');
 });
 
 // ── Auto-load on page open ────────────────────────────────────────────────────
