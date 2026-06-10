@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v6)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v7)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -51,6 +51,11 @@ td.delta-cell{font-size:11px;font-weight:600}
 td.delta-cell.up{color:var(--green)}
 td.delta-cell.down{color:var(--red)}
 td.delta-cell.flat{color:var(--text3)}
+/* v7: bucket toggle */
+.bucket-toggle{display:flex;gap:3px;margin-left:8px}
+.bt-pill{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.bt-pill:hover{border-color:var(--text3)}
+.bt-pill.active{background:var(--text);color:#fff;border-color:var(--text)}
 .section-head{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400;margin:28px 0 12px;color:var(--text)}
 .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -110,7 +115,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v6</span>
+    <span class="vpill">v7</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -148,6 +153,13 @@ tbody tr:hover{background:#faf8f4}
   </div>
   <div class="cdates" id="cdates">
     <input type="date" id="from"> <span>to</span> <input type="date" id="to">
+  </div>
+  <!-- v7: traffic bucket toggle -->
+  <div class="bucket-toggle" id="bucketToggle">
+    <button class="bt-pill active" data-bucket="all">All</button>
+    <button class="bt-pill" data-bucket="paid">Paid</button>
+    <button class="bt-pill" data-bucket="organic">Organic</button>
+    <button class="bt-pill" data-bucket="direct">Direct</button>
   </div>
   <button id="btn" onclick="load()">Refresh</button>
 </div>
@@ -188,28 +200,40 @@ tbody tr:hover{background:#faf8f4}
   <h3>Data source</h3>
   <p>Google Analytics 4 property (ID 324853644) via the GA4 Data API. Data is fetched live on each load — not cached. Refresh cadence depends on GA4's own processing pipeline (typically 24–48 hours for finalized data; recent data may shift slightly).</p>
 
+  <h3>Traffic filter (All / Paid / Organic / Direct)</h3>
+  <p>The toggle bar filters the entire dashboard to a traffic bucket. <strong>All</strong> shows everything. <strong>Paid</strong> includes Paid Social, Paid Search, Paid Shopping, Paid Video, and Paid Other. <strong>Direct</strong> is direct traffic only. <strong>Organic</strong> is everything else — Organic Social, Organic Search, Organic Video, Email, Referral, and any other non-paid, non-direct channels.</p>
+  <p>When a bucket is selected, KPIs re-aggregate to that bucket, the channel table filters, and Top Pages / UTM Campaigns re-fetch from GA4 scoped to the selected channels. Results are cached per bucket — switching back is instant.</p>
+  <p>Note: <strong>Avg Duration</strong> shows "—" for non-All buckets because GA4 doesn't provide per-channel session duration in the channel breakdown. All other KPIs are accurately re-aggregated. Engagement Rate is weighted by sessions.</p>
+
   <h3>KPI tiles</h3>
   <p><strong>Sessions:</strong> Total sessions in the period. A session is a group of user interactions within a time frame (default 30 minutes of inactivity ends a session).</p>
   <p><strong>Users:</strong> Total active users (unique visitors identified by cookie/device).</p>
   <p><strong>New Users:</strong> Users visiting for the first time in the period.</p>
-  <p><strong>Avg Duration:</strong> Average engagement time per session (time the page was in the foreground).</p>
+  <p><strong>Avg Duration:</strong> Average engagement time per session (time the page was in the foreground). Only available in the All view.</p>
   <p><strong>Engagement Rate:</strong> Percentage of sessions that were "engaged" — lasted longer than 10 seconds, had a conversion event, or had 2+ page views.</p>
   <p><strong>Pageviews:</strong> Total page views (one page load = one pageview, even revisits).</p>
 
+  <h3>Period comparison</h3>
+  <p>The <strong>vs</strong> dropdown enables comparison against the previous period (same-length window immediately before the selected range). When active, KPI tiles show green/red deltas (percentage change for counts, percentage-point change for rates), and the channel table adds a <strong>Δ Sessions</strong> column showing per-channel change. Set to "None" to hide comparisons.</p>
+
   <h3>Traffic by Channel</h3>
-  <p>Rows are GA4's default channel groupings: Organic Search, Paid Social, Direct, Referral, Organic Social, Email, etc. Click any row to drill into the top pages for that channel.</p>
+  <p>Rows are GA4's default channel groupings: Organic Search, Paid Social, Direct, Referral, Organic Social, Email, etc. Filtered by the active traffic bucket. Click any column header to sort. Click any row to open a drill drawer.</p>
 
   <h3>Top Pages</h3>
-  <p>Most-viewed pages across all channels. The "Page" column shows the URL path (e.g., <code>/fund-5</code>). Click a row to drill into which channels drove traffic to that page.</p>
+  <p>Most-viewed pages, scoped to the active traffic bucket. The "Page" column shows the URL path (e.g., <code>/fund-5</code>). Click a row to drill into which channels drove traffic to that page.</p>
 
   <h3>UTM Campaigns</h3>
-  <p>Traffic grouped by the <code>utm_campaign</code> parameter. Only appears for traffic that arrived with UTM tags. "(not set)" means no campaign tag was present. Click a row to drill into pages within that campaign.</p>
+  <p>Traffic grouped by the <code>utm_campaign</code> parameter, scoped to the active traffic bucket. "(not set)" means no campaign tag was present. Click a row to drill into pages within that campaign.</p>
 
   <h3>Drill drawer</h3>
-  <p>Click any row in any table to open a drill-down panel on the right showing the next level of detail for that row.</p>
+  <p>Click any row in any table to open a drill-down panel on the right. Channel drills have three toggle views:</p>
+  <p><strong>Pages:</strong> Top pages visited by traffic from that channel.</p>
+  <p><strong>UTM Campaigns:</strong> Campaign-level breakdown for that channel.</p>
+  <p><strong>Sources:</strong> Source / medium pairs (e.g., <code>youtube.com / referral</code>, <code>google / cpc</code>) — shows exactly where within a channel the traffic originates.</p>
+  <p>All three views are fetched in parallel when the drawer opens and cached for instant toggling. The drawer closes via the × button or Esc key.</p>
 
   <h3>Date ranges</h3>
-  <p>All ranges are relative to today. "Last 30 Days" means the 30 days ending yesterday (GA4 convention — today's data is partial). Custom dates use the date pickers; click Refresh to apply.</p>
+  <p>Preset ranges include Today, This Week, Last Week, This Month (default), Last Month, This Quarter, Last Quarter, This Year, Last Year, and rolling windows (Last 7/14/30/90 Days, Last 12 Months). Custom dates use the date pickers; click Refresh to apply. Changing any preset automatically refreshes. "Last N Days" ranges end yesterday (GA4 convention — today's data is partial).</p>
 </div>
 
 <script>
@@ -344,12 +368,56 @@ function sortRows(tableId, rows, colIdx, isNum){
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let CHANNEL_ROWS = [];
-let PAGES_ROWS = [];
-let UTM_ROWS = [];
-let CMP_KPI = null; // comparison KPI values
+let CHANNEL_ROWS = [];    // all channels (raw from API)
+let PAGES_ROWS = [];      // pages for current bucket
+let UTM_ROWS = [];        // UTM for current bucket
+let CMP_KPI = null;       // comparison KPI values (all channels)
 let CMP_CHANNEL_MAP = null; // channel → vals from comparison period
 let HAS_CMP = false;
+let ACTIVE_BUCKET = 'all';
+
+// v7: bucket classification
+const PAID_CHANNELS = ['Paid Social', 'Paid Search', 'Paid Shopping', 'Paid Video', 'Paid Other'];
+const DIRECT_CHANNELS = ['Direct'];
+// Organic = everything not Paid and not Direct
+
+function classifyChannel(ch){
+  if(PAID_CHANNELS.includes(ch)) return 'paid';
+  if(DIRECT_CHANNELS.includes(ch)) return 'direct';
+  return 'organic';
+}
+
+function channelMatchesBucket(ch, bucket){
+  if(bucket === 'all') return true;
+  return classifyChannel(ch) === bucket;
+}
+
+function getFilteredChannelRows(bucket){
+  if(bucket === 'all') return CHANNEL_ROWS;
+  return CHANNEL_ROWS.filter(r => channelMatchesBucket(r.dims[0], bucket));
+}
+
+// v7: build a GA4 dimensionFilter that ORs across channels in a bucket
+function buildBucketFilter(bucket){
+  if(bucket === 'all') return undefined;
+  const filtered = CHANNEL_ROWS.filter(r => channelMatchesBucket(r.dims[0], bucket));
+  const channels = filtered.map(r => r.dims[0]);
+  if(channels.length === 0) return undefined;
+  if(channels.length === 1){
+    return { filter: { fieldName:'sessionDefaultChannelGroup', stringFilter:{ matchType:'EXACT', value:channels[0] } } };
+  }
+  return {
+    orGroup: {
+      expressions: channels.map(ch => ({
+        filter: { fieldName:'sessionDefaultChannelGroup', stringFilter:{ matchType:'EXACT', value:ch } }
+      }))
+    }
+  };
+}
+
+// v7: cache for bucket-specific pages/UTM data
+let _bucketCache = {}; // bucket → { pages, utm }
+let _lastDateKey = '';
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function load(){
@@ -372,6 +440,13 @@ async function load(){
     const cmpRange = getComparisonRange();
     HAS_CMP = !!cmpRange;
 
+    // v7: invalidate bucket cache on new date range
+    const dateKey = `${start}_${end}`;
+    if(dateKey !== _lastDateKey){
+      _bucketCache = {};
+      _lastDateKey = dateKey;
+    }
+
     el.loadMsg.textContent = 'Fetching traffic data…';
 
     const metrics_channel = [
@@ -383,7 +458,7 @@ async function load(){
       { name: 'averageSessionDuration' }, { name: 'engagementRate' }, { name: 'screenPageViews' },
     ];
 
-    // Build fetch array
+    // Build fetch array — always fetch channel-level and "all" pages/UTM/KPIs
     const fetches = [
       ga4Report({ dateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
@@ -403,33 +478,17 @@ async function load(){
     const cmpKpiData = cmpRange ? results[4] : null;
     const cmpChannelData = cmpRange ? results[5] : null;
 
-    // ── KPIs ──────────────────────────────────────────────────────────────
+    // Store raw channel rows
+    CHANNEL_ROWS = parseRows(channelData);
+
+    // Store "all" data in cache
+    _bucketCache['all'] = { pages: parseRows(pagesData), utm: parseRows(utmData) };
+
+    // KPI raw values (all channels)
     const kpi = kpiData.rows?.[0]?.metricValues?.map(v => parseFloat(v.value)) || [];
     CMP_KPI = cmpKpiData ? (cmpKpiData.rows?.[0]?.metricValues?.map(v => parseFloat(v.value)) || null) : null;
 
-    const kpiEl = document.getElementById('kpis');
-    kpiEl.innerHTML = '';
-    const kpiDefs = [
-      { label:'Sessions', value:fmt(kpi[0]), raw:kpi[0], cmpRaw:CMP_KPI?.[0], isPct:false },
-      { label:'Users', value:fmt(kpi[1]), raw:kpi[1], cmpRaw:CMP_KPI?.[1], isPct:false },
-      { label:'New Users', value:fmt(kpi[2]), raw:kpi[2], cmpRaw:CMP_KPI?.[2], isPct:false },
-      { label:'Avg Duration', value:fmtDuration(kpi[3]), raw:kpi[3], cmpRaw:CMP_KPI?.[3], isPct:false },
-      { label:'Engagement Rate', value:fmtPct(kpi[4]), raw:kpi[4], cmpRaw:CMP_KPI?.[4], isPct:true },
-      { label:'Pageviews', value:fmt(kpi[5]), raw:kpi[5], cmpRaw:CMP_KPI?.[5], isPct:false },
-    ];
-    for(const k of kpiDefs){
-      const d = document.createElement('div');
-      d.className = 'kpi';
-      let deltaHtml = '';
-      if(HAS_CMP && k.cmpRaw != null){
-        const dlt = fmtDelta(k.raw, k.cmpRaw, k.isPct);
-        if(dlt.text) deltaHtml = `<div class="delta ${dlt.cls}">${dlt.text}</div>`;
-      }
-      d.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>${deltaHtml}`;
-      kpiEl.appendChild(d);
-    }
-
-    // ── Comparison channel map ────────────────────────────────────────────
+    // Comparison channel map
     if(cmpChannelData){
       CMP_CHANNEL_MAP = {};
       for(const r of parseRows(cmpChannelData)){
@@ -439,20 +498,16 @@ async function load(){
       CMP_CHANNEL_MAP = null;
     }
 
-    // ── Tables ────────────────────────────────────────────────────────────
-    CHANNEL_ROWS = parseRows(channelData);
-    renderChannelTable();
-
-    PAGES_ROWS = parseRows(pagesData);
-    renderPagesTable();
-
-    UTM_ROWS = parseRows(utmData);
-    renderUtmTable();
+    // Store raw KPI for re-aggregation
+    window._rawKpi = kpi;
 
     // ── Timestamp ─────────────────────────────────────────────────────────
     let tsText = `${start} — ${end}`;
     if(cmpRange) tsText += `  vs  ${cmpRange.start} — ${cmpRange.end}`;
     document.getElementById('ts').textContent = tsText;
+
+    // Render with current bucket
+    await applyBucket(ACTIVE_BUCKET);
 
     el.content.style.display='';
   } catch(err){
@@ -465,10 +520,102 @@ async function load(){
   }
 }
 
+// v7: apply a bucket filter — re-aggregate KPIs, filter channel table, fetch/cache pages+UTM
+async function applyBucket(bucket){
+  ACTIVE_BUCKET = bucket;
+
+  // Update toggle UI
+  document.querySelectorAll('.bt-pill').forEach(b => {
+    b.classList.toggle('active', b.dataset.bucket === bucket);
+  });
+
+  // ── KPIs: re-aggregate from channel rows ─────────────────────────────
+  const filtered = getFilteredChannelRows(bucket);
+  let sessions=0, users=0, newUsers=0, engRate=0, pageviews=0;
+  let totalSessionsForRate = 0;
+
+  if(bucket === 'all'){
+    // Use the global KPI values (more accurate — includes avg duration)
+    renderKpis(window._rawKpi, CMP_KPI);
+  } else {
+    // Aggregate from channel rows: sessions[0], users[1], newUsers[2], engRate[3], pageviews[4]
+    for(const r of filtered){
+      sessions += r.vals[0] || 0;
+      users += r.vals[1] || 0;
+      newUsers += r.vals[2] || 0;
+      engRate += (r.vals[3] || 0) * (r.vals[0] || 0); // weighted by sessions
+      pageviews += r.vals[4] || 0;
+    }
+    const weightedEngRate = sessions > 0 ? engRate / sessions : 0;
+
+    // Build comparison from CMP_CHANNEL_MAP
+    let cmpAgg = null;
+    if(HAS_CMP && CMP_CHANNEL_MAP){
+      let cS=0, cU=0, cN=0, cE=0, cP=0;
+      for(const ch of Object.keys(CMP_CHANNEL_MAP)){
+        if(!channelMatchesBucket(ch, bucket)) continue;
+        const v = CMP_CHANNEL_MAP[ch];
+        cS += v[0]||0; cU += v[1]||0; cN += v[2]||0;
+        cE += (v[3]||0)*(v[0]||0); cP += v[4]||0;
+      }
+      cmpAgg = [cS, cU, cN, null, cS > 0 ? cE/cS : 0, cP];
+    }
+
+    // Note: avg duration not available from channel rows — show "—"
+    renderKpis([sessions, users, newUsers, null, weightedEngRate, pageviews], cmpAgg);
+  }
+
+  // ── Channel table ────────────────────────────────────────────────────
+  renderChannelTable();
+
+  // ── Pages + UTM: fetch if not cached ─────────────────────────────────
+  if(!_bucketCache[bucket]){
+    const {start, end} = getDateRange();
+    const dateRanges = [{ startDate: start, endDate: end }];
+    const dimFilter = buildBucketFilter(bucket);
+    const [pData, uData] = await Promise.all([
+      ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], dimensionFilter:dimFilter, orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
+      ga4Report({ dateRanges, dimensions:[{name:'sessionCampaignName'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'},{name:'screenPageViews'}], dimensionFilter:dimFilter, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
+    ]);
+    _bucketCache[bucket] = { pages: parseRows(pData), utm: parseRows(uData) };
+  }
+
+  PAGES_ROWS = _bucketCache[bucket].pages;
+  UTM_ROWS = _bucketCache[bucket].utm;
+  renderPagesTable();
+  renderUtmTable();
+}
+
+// v7: extracted KPI rendering into its own function
+function renderKpis(kpi, cmpKpi){
+  const kpiEl = document.getElementById('kpis');
+  kpiEl.innerHTML = '';
+  const kpiDefs = [
+    { label:'Sessions', value:fmt(kpi[0]), raw:kpi[0], cmpRaw:cmpKpi?.[0], isPct:false },
+    { label:'Users', value:fmt(kpi[1]), raw:kpi[1], cmpRaw:cmpKpi?.[1], isPct:false },
+    { label:'New Users', value:fmt(kpi[2]), raw:kpi[2], cmpRaw:cmpKpi?.[2], isPct:false },
+    { label:'Avg Duration', value:fmtDuration(kpi[3]), raw:kpi[3], cmpRaw:cmpKpi?.[3], isPct:false },
+    { label:'Engagement Rate', value:fmtPct(kpi[4]), raw:kpi[4], cmpRaw:cmpKpi?.[4], isPct:true },
+    { label:'Pageviews', value:fmt(kpi[5]), raw:kpi[5], cmpRaw:cmpKpi?.[5], isPct:false },
+  ];
+  for(const k of kpiDefs){
+    const d = document.createElement('div');
+    d.className = 'kpi';
+    let deltaHtml = '';
+    if(HAS_CMP && k.cmpRaw != null){
+      const dlt = fmtDelta(k.raw, k.cmpRaw, k.isPct);
+      if(dlt.text) deltaHtml = `<div class="delta ${dlt.cls}">${dlt.text}</div>`;
+    }
+    d.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>${deltaHtml}`;
+    kpiEl.appendChild(d);
+  }
+}
+
 // ── Render: Channel table ─────────────────────────────────────────────────────
 function renderChannelTable(){
   const tbl = document.getElementById('channelTbl');
   const hasCmp = HAS_CMP && CMP_CHANNEL_MAP;
+  const displayRows = getFilteredChannelRows(ACTIVE_BUCKET);
   const cols = [
     { label:'Channel', num:false },
     { label:'Sessions', num:true, idx:0 },
@@ -489,13 +636,13 @@ function renderChannelTable(){
     const ci = parseInt(th.dataset.col);
     if(isNaN(ci)) return;
     const col = cols[ci];
-    if(col.num) sortRows('channel', CHANNEL_ROWS, col.idx, true);
-    else sortRows('channel', CHANNEL_ROWS, 0, false);
+    if(col.num) sortRows('channel', displayRows, col.idx, true);
+    else sortRows('channel', displayRows, 0, false);
     renderChannelTable();
   }));
   const tbody = tbl.querySelector('tbody');
   tbody.innerHTML = '';
-  for(const r of CHANNEL_ROWS){
+  for(const r of displayRows){
     const tr = document.createElement('tr');
     tr.style.cursor='pointer';
     tr.addEventListener('click', (e) => { e.stopPropagation(); drillChannel(r.dims[0]); });
@@ -811,6 +958,16 @@ document.addEventListener('click', e => {
   if(_drawerJustOpened){ _drawerJustOpened = false; return; }
   const guide = document.getElementById('guide');
   if(guide.classList.contains('on') && !guide.contains(e.target)) guide.classList.remove('on');
+});
+
+// v7: bucket toggle handler
+document.querySelectorAll('.bt-pill').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const bucket = btn.dataset.bucket;
+    if(bucket === ACTIVE_BUCKET) return;
+    applyBucket(bucket);
+  });
 });
 
 // ── Auto-load on page open ────────────────────────────────────────────────────
