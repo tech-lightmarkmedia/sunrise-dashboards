@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Campaign ROI Dashboard (v1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#c44a1e;--accent-bg:#fdf3ee;
+  --green:#059669;--red:#c44a1e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--text);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:14px}
+header h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;flex:1}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+.ts{font-size:11px;color:#9e9789}
+#bar{display:flex;align-items:center;gap:14px;padding:14px 28px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+#bar .fg{display:flex;align-items:center;gap:6px}
+#bar label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+#bar select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+#bar button{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 16px;border-radius:6px;background:var(--text);color:#fff;border:none;cursor:pointer}
+.bt-pill{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.bt-pill:hover{border-color:var(--text3)}
+.bt-pill.active{background:var(--text);color:#fff;border-color:var(--text)}
+main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi .label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+.kpi .value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+.kpi .sub{font-size:11px;color:var(--text3);margin-top:2px}
+.section-head{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.tbl-scroll{max-height:600px;overflow-y:auto}
+#roiTable{width:100%;border-collapse:collapse;font-size:12px}
+#roiTable thead th{background:var(--surface2);padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:1}
+#roiTable thead th:first-child{text-align:left}
+#roiTable tbody td{padding:8px 10px;text-align:right;border-bottom:1px solid #f0ede7}
+#roiTable tbody td:first-child{text-align:left;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#roiTable tbody tr:hover{background:#fcfbf8}
+#roiTable tbody tr{cursor:pointer}
+/* Drill drawer */
+#drill-drawer{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#drill-drawer.on{transform:translateX(0)}
+#drill-drawer h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:6px}
+#drill-subtitle{font-size:11px;color:var(--text3);margin-bottom:18px}
+.drill-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+.drill-close:hover{color:var(--text)}
+/* Guide drawer */
+#guide{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:28px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:210;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#guide.on{transform:translateX(0)}
+#guide h2{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:14px}
+#guide h3{font-family:'DM Serif Display',serif;font-size:15px;margin-top:18px;margin-bottom:6px}
+#guide p{font-size:12px;line-height:1.55;color:var(--text);margin-bottom:8px}
+.drawer-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+.drawer-close:hover{color:var(--text)}
+/* Loading */
+.loading{text-align:center;padding:80px 0;color:var(--text3)}
+.loading .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error{color:var(--accent);font-size:13px;padding:20px 0}
+.guide-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAAAgCAYAAADtwH1UAAAA" alt="SCI" height="28"></a>
+  <h1>Campaign ROI<span class="vpill">v1</span></h1>
+  <span class="ts" id="ts"></span>
+  <button class="guide-btn" onclick="event.stopPropagation();document.getElementById('guide').classList.add('on')">Guide</button>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label>Cohort</label>
+    <select id="range">
+      <option value="all_time" selected>All Time</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12m">Last 12 Months</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:3px">
+    <button class="bt-pill active" data-bucket="all" onclick="setBucket('all')">All</button>
+    <button class="bt-pill" data-bucket="paid" onclick="setBucket('paid')">Paid</button>
+    <button class="bt-pill" data-bucket="organic" onclick="setBucket('organic')">Organic</button>
+    <button class="bt-pill" data-bucket="direct" onclick="setBucket('direct')">Direct</button>
+  </div>
+  <div style="display:flex;gap:3px">
+    <button class="bt-pill active" data-conv="all" onclick="setConv('all')">All Events</button>
+    <button class="bt-pill" data-conv="first" onclick="setConv('first')">First Conversion</button>
+    <button class="bt-pill" data-conv="recent" onclick="setConv('recent')">Recent Conversion</button>
+  </div>
+  <button id="btn" onclick="load()">Refresh</button>
+</div>
+
+<main>
+  <div id="error" class="error"></div>
+  <div id="loading" class="loading" style="display:none">
+    <div class="spinner"></div>
+    <div id="loadMsg">Loading…</div>
+  </div>
+  <div id="content" style="display:none">
+    <div class="kpi-row" id="kpis"></div>
+    <div class="section-head">
+      <span id="tableTitle">Campaign ROI</span>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll"><table id="roiTable"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</main>
+
+<!-- Drill drawer -->
+<div id="drill-drawer">
+  <button class="drill-close" onclick="closeDrill()">&times;</button>
+  <h2 id="drill-title">—</h2>
+  <p id="drill-subtitle">—</p>
+  <div id="drill-body"></div>
+</div>
+
+<!-- Guide drawer -->
+<div id="guide">
+  <button class="drawer-close" onclick="document.getElementById('guide').classList.remove('on')">&times;</button>
+  <h2>Campaign ROI Dashboard — Guide</h2>
+
+  <h3>What this dashboard shows</h3>
+  <p>Full-funnel ROI from lead capture through funded investment, per campaign. Every contact ever created by SCI is the universe; their investments are followed forward with no date cap, so a lead from 2024 whose investment funded in 2026 appears in the 2024 cohort.</p>
+
+  <h3>Data sources</h3>
+  <p>Contacts, investments, and meetings are read from the nightly R2 cache (rebuilt at 2 AM ET). Spend data is fetched live from the Meta and LinkedIn APIs on each load — this is the only non-cached data source and accounts for most of the load time.</p>
+
+  <h3>Cohort filter</h3>
+  <p>The <strong>Cohort</strong> dropdown selects which contacts form the cohort based on their <code>createdate</code> in HubSpot. "All Time" includes every contact since 2023. Other ranges filter by creation date. Investments are always followed forward regardless of cohort range.</p>
+
+  <h3>Source bucket toggle (All / Paid / Organic / Direct)</h3>
+  <p>Filters the table to contacts whose <code>hs_analytics_source</code> falls in the selected bucket. Paid = any source containing "Paid". Direct = "Direct Traffic". Organic = everything else.</p>
+
+  <h3>Conversion event toggle</h3>
+  <p><strong>All Events</strong> groups rows by campaign (DD2 attribution). <strong>First Conversion</strong> groups by the contact's <code>first_conversion_event_name</code>. <strong>Recent Conversion</strong> groups by <code>recent_conversion_event_name</code>. In conversion mode, booking and spend columns are hidden.</p>
+
+  <h3>Table columns</h3>
+  <p><strong>Leads:</strong> Total contacts in the cohort attributed to this campaign.</p>
+  <p><strong>AI Leads:</strong> Accredited investor contacts (<code>are_you_accredited_ = "Yes"</code>).</p>
+  <p><strong>CPAIL:</strong> Cost Per AI Lead = Spend ÷ AI Leads.</p>
+  <p><strong>Intros / Cost per Intro:</strong> Intro meetings booked by contacts in this campaign's cohort.</p>
+  <p><strong>Discoveries / Cost per Discovery:</strong> Discovery meetings booked by contacts in this campaign's cohort.</p>
+  <p><strong>Investments:</strong> Count of funded investments by contacts in this campaign's cohort (all-time, follow-forward).</p>
+  <p><strong>Capital Raised:</strong> Total dollar amount of those investments.</p>
+  <p><strong>Cost of Capital:</strong> Spend ÷ Investments.</p>
+
+  <h3>Drill-down</h3>
+  <p>Click any row to see individual contacts and their investments. Each contact shows name (linked to HubSpot), created date, accreditation status, conversion event, investment count, and capital raised. Investments are expanded inline showing fund, type, and date.</p>
+
+  <h3>Attribution</h3>
+  <p>First-touch campaign attribution using the contact's <code>hs_analytics_source_data_2</code> (DD2), falling back to DD1 then Original Source. This matches the main Ad Performance dashboard's attribution logic.</p>
+</div>
+
+<script>
+const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const HS_PORTAL = '23126809';
+
+// ── State ────────────────────────────────────────────────────────────────────
+let CONTACTS = [];     // all contacts from cache
+let INVESTMENTS = [];  // all investments from cache
+let MEETINGS = [];     // all meetings from cache
+let INV_BY_EMAIL = {}; // email → [inv]
+let BUCKET = 'all';
+let CONV = 'all';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(n){ return n == null || isNaN(n) ? '—' : Math.round(n).toLocaleString(); }
+function fmtMoney(n){ return n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString(); }
+function costPer(spend, count){ return (spend != null && count > 0) ? fmtMoney(spend / count) : '—'; }
+
+function classifyBucket(src){
+  const s = (src || '').toUpperCase().replace(/[\s_]+/g, '');
+  if(s.includes('PAID')) return 'paid';
+  if(s === 'DIRECTTRAFFIC' || s === 'DIRECT') return 'direct';
+  return 'organic';
+}
+
+function classifyMeeting(p){
+  const type = (p.hs_activity_type || p.call_and_meeting_type || '').toUpperCase();
+  const title = (p.hs_meeting_title || '').toUpperCase();
+  if(type.includes('INTRO') || title.includes('INTRO')) return 'intro';
+  if(type.includes('DISCOVERY') || type.includes('DISCO') || title.includes('DISCOVERY') || title.includes('DISCO')) return 'discovery';
+  return 'other';
+}
+
+function getDateRange(){
+  const key = document.getElementById('range').value;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  switch(key){
+    case 'all_time': return { from: new Date('2023-01-01'), to: now, label: 'All Time' };
+    case 'this_year': return { from: new Date(y,0,1), to: now, label: 'This Year' };
+    case 'last_year': return { from: new Date(y-1,0,1), to: new Date(y-1,11,31,23,59,59,999), label: 'Last Year' };
+    case 'last_12m': { const d = new Date(now); d.setMonth(d.getMonth()-12); return { from: d, to: now, label: 'Last 12 Months' }; }
+    case 'this_quarter': { const qm = Math.floor(m/3)*3; return { from: new Date(y,qm,1), to: now, label: 'This Quarter' }; }
+    case 'last_quarter': { const qm = Math.floor(m/3)*3; return { from: new Date(y,qm-3,1), to: new Date(y,qm,0,23,59,59,999), label: 'Last Quarter' }; }
+    case 'this_month': return { from: new Date(y,m,1), to: now, label: 'This Month' };
+    case 'last_month': return { from: new Date(y,m-1,1), to: new Date(y,m,0,23,59,59,999), label: 'Last Month' };
+    default: return { from: new Date('2023-01-01'), to: now, label: 'All Time' };
+  }
+}
+
+// ── Toggles ──────────────────────────────────────────────────────────────────
+function setBucket(b){
+  BUCKET = b;
+  document.querySelectorAll('[data-bucket]').forEach(el => el.classList.toggle('active', el.dataset.bucket === b));
+  renderTable();
+}
+function setConv(c){
+  CONV = c;
+  document.querySelectorAll('[data-conv]').forEach(el => el.classList.toggle('active', el.dataset.conv === c));
+  renderTable();
+}
+
+// ── Cache fetchers ───────────────────────────────────────────────────────────
+async function fetchCache(key){
+  const r = await fetch(`${WORKER_URL}/${key}`);
+  if(!r.ok) throw new Error(`Cache ${key}: ${r.status}`);
+  const d = await r.json();
+  return d.results || [];
+}
+
+// ── Load ─────────────────────────────────────────────────────────────────────
+async function load(){
+  const el = {
+    loading: document.getElementById('loading'),
+    content: document.getElementById('content'),
+    error: document.getElementById('error'),
+    loadMsg: document.getElementById('loadMsg'),
+    btn: document.getElementById('btn'),
+  };
+  el.loading.style.display = '';
+  el.content.style.display = 'none';
+  el.error.style.display = 'none';
+  el.btn.disabled = true;
+
+  try{
+    el.loadMsg.textContent = 'Loading contacts…';
+    const [rawContacts, rawInvestments, rawMeetings] = await Promise.all([
+      fetchCache('cached-contacts'),
+      fetchCache('cached-investments'),
+      fetchCache('cached-meetings'),
+    ]);
+
+    // Normalize contacts
+    CONTACTS = rawContacts.map(c => {
+      const p = c.properties || {};
+      return {
+        id: String(c.id),
+        createdTs: p.createdate ? new Date(p.createdate).getTime() : null,
+        email: (p.email || '').trim().toLowerCase(),
+        src: (p.hs_analytics_source || '').trim(),
+        dd1: (p.hs_analytics_source_data_1 || '').trim(),
+        dd2: (p.hs_analytics_source_data_2 || '').trim(),
+        accredited: (p.are_you_accredited_ === 'Yes'),
+        accreditedRaw: (p.are_you_accredited_ || '').trim(),
+        firstConv: (p.first_conversion_event_name || '').trim(),
+        recentConv: (p.recent_conversion_event_name || '').trim(),
+        name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',
+      };
+    });
+
+    // Normalize investments
+    INVESTMENTS = rawInvestments.map(r => {
+      const p = r.properties || {};
+      return {
+        id: String(r.id),
+        email: (p.email_address || '').trim().toLowerCase(),
+        amount: parseFloat(p.investment_amount) || 0,
+        fund: (p.fund_invested || '').trim(),
+        type: (p.type_of_investment || '').trim(),
+        createdTs: p.hs_createdate ? new Date(p.hs_createdate).getTime() : null,
+      };
+    });
+
+    // Build email → investments map
+    INV_BY_EMAIL = {};
+    for(const inv of INVESTMENTS){
+      if(!inv.email) continue;
+      if(!INV_BY_EMAIL[inv.email]) INV_BY_EMAIL[inv.email] = [];
+      INV_BY_EMAIL[inv.email].push(inv);
+    }
+
+    // Normalize meetings (only intros + discoveries)
+    MEETINGS = [];
+    for(const r of rawMeetings){
+      const p = r.properties || {};
+      const type = classifyMeeting(p);
+      if(type === 'other') continue;
+      MEETINGS.push({
+        id: String(r.id),
+        type,
+        createdTs: p.hs_createdate ? new Date(p.hs_createdate).getTime() : null,
+        ts: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : null,
+      });
+    }
+
+    // Fetch meeting → contact associations for all meetings
+    el.loadMsg.textContent = 'Fetching meeting-contact associations…';
+    const meetingIds = MEETINGS.map(m => m.id);
+    const meetingContactMap = {};
+    for(let i = 0; i < meetingIds.length; i += 100){
+      const batch = meetingIds.slice(i, i + 100);
+      el.loadMsg.textContent = `Fetching associations… batch ${Math.floor(i/100)+1}`;
+      try{
+        const r = await fetch(`${WORKER_URL}/hs-api/crm/v4/associations/meetings/contacts/batch/read`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ inputs: batch.map(id => ({id})) }),
+        });
+        if(r.ok){
+          const d = await r.json();
+          for(const res of (d.results || [])){
+            const mId = String(res.from?.id);
+            const cIds = (res.to || []).map(t => String(t.toObjectId));
+            if(cIds.length) meetingContactMap[mId] = cIds[0]; // first contact
+          }
+        }
+      }catch(e){ console.warn('Meeting assoc batch failed:', e.message); }
+    }
+
+    // Attach contact IDs to meetings
+    for(const m of MEETINGS){
+      m.contactId = meetingContactMap[m.id] || null;
+    }
+
+    // Build contact email → id map for meeting attribution
+    const emailToContactId = {};
+    for(const c of CONTACTS){
+      if(c.email) emailToContactId[c.email] = c.id;
+    }
+
+    // Timestamp
+    const meta = await fetch(`${WORKER_URL}/cache-meta`).then(r => r.json()).catch(() => null);
+    if(meta?.lastUpdated){
+      const d = new Date(meta.lastUpdated);
+      document.getElementById('ts').textContent = 'Cache: ' + d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+
+    el.loadMsg.textContent = 'Rendering…';
+    renderTable();
+
+    el.content.style.display = '';
+  }catch(err){
+    console.error('Load failed:', err);
+    el.error.textContent = err.message;
+    el.error.style.display = '';
+  }finally{
+    el.loading.style.display = 'none';
+    el.btn.disabled = false;
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+let _roiRows = [];
+
+function renderTable(){
+  const {from, to, label} = getDateRange();
+  const fromMs = from.getTime();
+  const toMs = to.getTime();
+
+  // Filter contacts by cohort date range
+  const cohort = CONTACTS.filter(c => {
+    if(!c.createdTs) return false;
+    return c.createdTs >= fromMs && c.createdTs <= toMs;
+  });
+
+  // Filter by bucket
+  const filtered = BUCKET === 'all' ? cohort : cohort.filter(c => classifyBucket(c.src) === BUCKET);
+
+  // Build contact ID set for meeting lookup
+  const cohortIds = new Set(filtered.map(c => c.id));
+
+  // Build rows
+  const roiMap = {};
+  for(const c of filtered){
+    let groupKey, groupLabel;
+    if(CONV === 'first'){
+      groupKey = c.firstConv || '(none)';
+      groupLabel = groupKey;
+    } else if(CONV === 'recent'){
+      groupKey = c.recentConv || '(none)';
+      groupLabel = groupKey;
+    } else {
+      groupKey = c.dd2 || c.dd1 || c.src || '(not set)';
+      groupLabel = groupKey;
+    }
+
+    if(!roiMap[groupKey]) roiMap[groupKey] = {
+      key: groupKey, label: groupLabel,
+      leads:0, aiLeads:0, intros:0, discs:0, invCount:0, capital:0,
+      contacts: [],
+    };
+    const row = roiMap[groupKey];
+    row.leads++;
+    if(c.accredited) row.aiLeads++;
+    row.contacts.push(c);
+
+    // Follow-forward investments
+    if(c.email){
+      const invs = INV_BY_EMAIL[c.email] || [];
+      for(const inv of invs){
+        row.invCount++;
+        row.capital += inv.amount;
+      }
+    }
+  }
+
+  // Count meetings per row (only in campaign mode)
+  if(CONV === 'all'){
+    for(const m of MEETINGS){
+      if(!m.contactId || !cohortIds.has(m.contactId)) continue;
+      // Find which row this contact belongs to
+      const c = filtered.find(ct => ct.id === m.contactId);
+      if(!c) continue;
+      const key = c.dd2 || c.dd1 || c.src || '(not set)';
+      if(!roiMap[key]) continue;
+      if(m.type === 'intro') roiMap[key].intros++;
+      else if(m.type === 'discovery') roiMap[key].discs++;
+    }
+  }
+
+  // Sort by capital desc, then leads desc
+  const sorted = Object.values(roiMap).sort((a,b) => {
+    if(b.capital !== a.capital) return b.capital - a.capital;
+    return b.leads - a.leads;
+  });
+  _roiRows = sorted;
+
+  // KPIs
+  let totLeads=0, totAi=0, totIntros=0, totDiscs=0, totInv=0, totCap=0;
+  for(const r of sorted){
+    totLeads += r.leads; totAi += r.aiLeads;
+    totIntros += r.intros; totDiscs += r.discs;
+    totInv += r.invCount; totCap += r.capital;
+  }
+
+  const kpis = document.getElementById('kpis');
+  kpis.innerHTML = '';
+  const kpiDefs = [
+    {label:'Cohort', value:label, sub:`${fmt(filtered.length)} contacts`},
+    {label:'AI Leads', value:fmt(totAi)},
+    {label:'Intros', value:fmt(totIntros)},
+    {label:'Discoveries', value:fmt(totDiscs)},
+    {label:'Investments', value:fmt(totInv)},
+    {label:'Capital Raised', value:fmtMoney(totCap)},
+  ];
+  for(const k of kpiDefs){
+    const d = document.createElement('div');
+    d.className = 'kpi';
+    d.innerHTML = `<div class="label">${k.label}</div><div class="value">${k.value}</div>${k.sub ? `<div class="sub">${k.sub}</div>` : ''}`;
+    kpis.appendChild(d);
+  }
+
+  // Table title
+  const colLabel = CONV === 'all' ? 'Campaign' : (CONV === 'first' ? 'First Conversion' : 'Recent Conversion');
+  document.getElementById('tableTitle').textContent = CONV === 'all' ? 'Campaign ROI' : `ROI by ${CONV === 'first' ? 'First' : 'Recent'} Conversion Event`;
+
+  const showBookings = (CONV === 'all');
+  const tbl = document.getElementById('roiTable');
+
+  let headHtml = '<tr>';
+  headHtml += `<th style="text-align:left">${colLabel}</th>`;
+  headHtml += '<th>Leads</th><th>AI Leads</th>';
+  if(showBookings) headHtml += '<th>Intros</th><th>Discos</th>';
+  headHtml += '<th>Investments</th><th>Capital Raised</th>';
+  headHtml += '</tr>';
+  tbl.querySelector('thead').innerHTML = headHtml;
+
+  let bodyHtml = '';
+  for(const r of sorted){
+    bodyHtml += `<tr onclick="event.stopPropagation();drillRow('${r.key.replace(/'/g, "\\'")}')" title="${r.label}">`;
+    bodyHtml += `<td>${r.label}</td>`;
+    bodyHtml += `<td>${fmt(r.leads)}</td><td>${fmt(r.aiLeads)}</td>`;
+    if(showBookings) bodyHtml += `<td>${fmt(r.intros)}</td><td>${fmt(r.discs)}</td>`;
+    bodyHtml += `<td>${fmt(r.invCount)}</td>`;
+    bodyHtml += `<td>${r.capital > 0 ? fmtMoney(r.capital) : '—'}</td>`;
+    bodyHtml += '</tr>';
+  }
+
+  // Totals
+  bodyHtml += '<tr style="font-weight:700;border-top:2px solid var(--border)">';
+  bodyHtml += '<td>Total</td>';
+  bodyHtml += `<td>${fmt(totLeads)}</td><td>${fmt(totAi)}</td>`;
+  if(showBookings) bodyHtml += `<td>${fmt(totIntros)}</td><td>${fmt(totDiscs)}</td>`;
+  bodyHtml += `<td>${fmt(totInv)}</td>`;
+  bodyHtml += `<td>${totCap > 0 ? fmtMoney(totCap) : '—'}</td>`;
+  bodyHtml += '</tr>';
+
+  tbl.querySelector('tbody').innerHTML = bodyHtml;
+}
+
+// ── Drill ────────────────────────────────────────────────────────────────────
+function drillRow(key){
+  const row = _roiRows.find(r => r.key === key);
+  if(!row || !row.contacts.length) return;
+
+  const drawer = document.getElementById('drill-drawer');
+  document.getElementById('drill-title').textContent = row.label;
+  document.getElementById('drill-subtitle').textContent = `${row.contacts.length} contact${row.contacts.length!==1?'s':''} · ${row.invCount} investment${row.invCount!==1?'s':''} · ${row.capital > 0 ? fmtMoney(row.capital) : '$0'} raised`;
+  const body = document.getElementById('drill-body');
+
+  const td = 'padding:6px 8px;border-bottom:1px solid #f0ede7;font-size:11px';
+  const tdR = 'text-align:right;padding:6px 8px;border-bottom:1px solid #f0ede7;font-size:11px';
+  const th = 'text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.3px';
+  const thR = 'text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.3px';
+
+  let html = '<table style="width:100%;border-collapse:collapse">';
+  html += `<thead><tr><th style="${th}">Contact</th><th style="${th}">Created</th><th style="${th}">AI</th><th style="${th}">1st Conv</th><th style="${thR}">Inv</th><th style="${thR}">Capital</th></tr></thead><tbody>`;
+
+  const sorted = [...row.contacts].sort((a,b) => {
+    const aI = (INV_BY_EMAIL[a.email]||[]).reduce((s,i) => s+i.amount, 0);
+    const bI = (INV_BY_EMAIL[b.email]||[]).reduce((s,i) => s+i.amount, 0);
+    return bI - aI;
+  });
+
+  for(const c of sorted){
+    const invs = INV_BY_EMAIL[c.email] || [];
+    const invTotal = invs.reduce((s,i) => s+i.amount, 0);
+    const created = c.createdTs ? new Date(c.createdTs).toLocaleDateString() : '—';
+    const accLabel = c.accreditedRaw === 'Yes' ? 'Yes' : c.accreditedRaw === 'No' ? 'No' : '—';
+    const accColor = c.accreditedRaw === 'Yes' ? '#059669' : c.accreditedRaw === 'No' ? '#c44a1e' : 'var(--text3)';
+    const convLabel = CONV === 'recent' ? (c.recentConv || '—') : (c.firstConv || '—');
+    const hsUrl = `https://app.hubspot.com/contacts/${HS_PORTAL}/contact/${c.id}`;
+
+    html += '<tr>';
+    html += `<td style="${td}"><a href="${hsUrl}" target="_blank" style="color:var(--text);text-decoration:underline">${c.name}</a></td>`;
+    html += `<td style="${td}">${created}</td>`;
+    html += `<td style="${td};color:${accColor};font-weight:600">${accLabel}</td>`;
+    html += `<td style="${td};max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${convLabel}">${convLabel}</td>`;
+    html += `<td style="${tdR}">${invs.length > 0 ? invs.length : '—'}</td>`;
+    html += `<td style="${tdR};font-weight:600">${invTotal > 0 ? fmtMoney(invTotal) : '—'}</td>`;
+    html += '</tr>';
+
+    if(invs.length > 0){
+      for(const inv of invs){
+        const invDate = inv.createdTs ? new Date(inv.createdTs).toLocaleDateString() : '—';
+        html += `<tr style="background:#fcfbf8">`;
+        html += `<td style="${td};padding-left:24px;color:var(--text3);font-size:10px" colspan="4">↳ ${inv.fund} · ${inv.type} · ${invDate}</td>`;
+        html += `<td style="${tdR};color:var(--text3);font-size:10px">1</td>`;
+        html += `<td style="${tdR};color:var(--text3);font-size:10px">${fmtMoney(inv.amount)}</td>`;
+        html += '</tr>';
+      }
+    }
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+  drawer.classList.add('on');
+}
+
+function closeDrill(){ document.getElementById('drill-drawer').classList.remove('on'); }
+
+// Close drawers on Esc and click-outside
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeDrill(); document.getElementById('guide').classList.remove('on'); }});
+document.addEventListener('click', e => {
+  const drill = document.getElementById('drill-drawer');
+  const guide = document.getElementById('guide');
+  if(drill.classList.contains('on') && !drill.contains(e.target)) drill.classList.remove('on');
+  if(guide.classList.contains('on') && !guide.contains(e.target)) guide.classList.remove('on');
+});
+
+// Auto-refresh on dropdown change
+document.getElementById('range').addEventListener('change', () => renderTable());
+
+// Auto-load
+load();
+</script>
+</body>
+</html>
