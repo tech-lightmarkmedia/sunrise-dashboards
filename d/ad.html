@@ -349,6 +349,17 @@ tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
 #guide code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px}
 #guide-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
 #guide-close:hover{color:var(--text)}
+/* v10.8.13: ROI section styles */
+.section-head{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:6px}
+.bt-pill{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.bt-pill:hover{border-color:var(--text3)}
+.bt-pill.active{background:var(--text);color:#fff;border-color:var(--text)}
+#roiTable{width:100%;border-collapse:collapse;font-size:12px}
+#roiTable thead th{background:var(--surface2);padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+#roiTable thead th:first-child{text-align:left}
+#roiTable tbody td{padding:8px 10px;text-align:right;border-bottom:1px solid #f0ede7}
+#roiTable tbody td:first-child{text-align:left;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#roiTable tbody tr:hover{background:#fcfbf8}
 </style>
 </head>
 <body>
@@ -590,6 +601,24 @@ tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
        but not matched to any HubSpot row (i.e., no leads or meetings ever
        attributed to that campaign_name via DD2). Hidden when there are no
        orphans, since the panel has no value if everything reconciles. -->
+  <!-- v10.8.13: Campaign ROI section — cohort/follow-forward -->
+  <div class="section-head" style="display:flex;align-items:center;gap:12px;margin-top:24px">
+    <span>Campaign ROI — Cohort</span>
+    <div id="roiBucketToggle" style="display:flex;gap:3px">
+      <button class="bt-pill active" data-roi-bucket="all" onclick="setRoiBucket('all')">All</button>
+      <button class="bt-pill" data-roi-bucket="paid" onclick="setRoiBucket('paid')">Paid</button>
+      <button class="bt-pill" data-roi-bucket="organic" onclick="setRoiBucket('organic')">Organic</button>
+      <button class="bt-pill" data-roi-bucket="direct" onclick="setRoiBucket('direct')">Direct</button>
+    </div>
+  </div>
+  <div class="section-sub" style="font-size:11px;color:var(--text3);margin-bottom:12px">
+    Contacts created in the selected period, investments followed forward with no date cap. First-touch campaign attribution (DD2).
+  </div>
+  <div class="tbl-wrap" id="roiTableWrap" style="display:none">
+    <table id="roiTable"><thead></thead><tbody></tbody></table>
+  </div>
+  <div id="roiEmpty" style="display:none;font-size:12px;color:var(--text3);padding:12px 0">No data for this view.</div>
+
   <div id="orphan-panel" class="orphan-panel" style="display:none">
     <div class="orphan-head">
       <h3>Spend Without HubSpot Attribution<span class="title-filter" id="orphan-filter"></span></h3>
@@ -684,6 +713,13 @@ tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
   <p style="padding-left:14px"><strong>Level 3 — Contacts:</strong> Individual contacts with name (linked to HubSpot), created date, and accreditation status.</p>
   <p>A <strong>Current Period / Previous Period</strong> toggle at the top of the drawer lets you switch between the two comparison windows. All data comes from HubSpot contacts already in memory — no extra API calls.</p>
 
+  <h3>Campaign ROI — Cohort table</h3>
+  <p>Below the main campaign table, the <strong>Campaign ROI</strong> section shows the full funnel from lead capture through funded investment, per campaign. This uses <strong>cohort/follow-forward</strong> logic: contacts created in the selected date range are the cohort, and their investments are counted regardless of when they occurred (even months later).</p>
+  <p>Columns: Campaign, Leads, AI Leads, CPAIL (Cost Per AI Lead), Intros booked, Cost/Intro, Discoveries booked, Cost/Discovery, Investments funded (count), Capital Raised ($), Cost of Capital (spend ÷ investments).</p>
+  <p>A <strong>All / Paid / Organic / Direct</strong> toggle filters rows by source bucket. The table also respects the page-level source filter dropdown.</p>
+  <p>Campaign attribution is first-touch (DD2 from the contact's creation). Spend data comes from the same Meta/LinkedIn API integration as the main table — campaigns without platform spend show "—" in cost columns.</p>
+  <p>Investment matching uses the contact's email address joined to the Investment custom object's <code>email_address</code> field.</p>
+
   <h3>What this dashboard doesn't show yet</h3>
   <p><strong>Google Ads per-row Spend.</strong> Pending API integration. Google campaign rows currently show "—" in Spend and CPAIL until that ships.</p>
   <p><strong>Meeting attribution from events.</strong> Intros and Discoveries still resolve attribution from contact properties, not events — meeting-having contacts can have createdates from years ago, and fetching full event histories for them is a much bigger scope.</p>
@@ -714,7 +750,7 @@ const CONTACT_PROPS=['hs_analytics_source','hs_analytics_source_data_1','hs_anal
 // Adds createdate (used as the in-range filter — see the contact search) and
 // the are_you_accredited_ enum ("Yes" | "No"). The trailing underscore on the
 // property name is HubSpot-generated from the label "Are You Accredited?".
-const CONTACT_LEAD_PROPS=['createdate','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','first_conversion_event_name','firstname','lastname'];
+const CONTACT_LEAD_PROPS=['createdate','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','first_conversion_event_name','firstname','lastname','email'];
 
 // Maps lowercased DD1 / source attribution values to the spend tab they
 // correspond to. Reserved for future use: once per-campaign spend is
@@ -1140,9 +1176,61 @@ async function fetchLeadContacts(fromMs, toMs){
       accredited: (p.are_you_accredited_ === 'Yes'),
       accreditedRaw: (p.are_you_accredited_ || '').trim(),
       firstConv:(p.first_conversion_event_name || '').trim(),
-      name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',  // v10.8.12
+      name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',
+      email: (p.email || '').trim().toLowerCase(),  // v10.8.13: join key for investments
     };
   });
+}
+
+// v10.8.13: Fetch ALL investments (no date filter — cohort/follow-forward
+// means we show all investments ever made by contacts created in the period).
+// Returns array of {id, email, amount, fund, type, createdTs}.
+const INV_PROPS = ['investment_amount','email_address','fund_invested','type_of_investment','hs_createdate'];
+let ALL_INVESTMENTS = [];
+let INV_BY_EMAIL = {};  // email → [{amount, fund, type, createdTs}]
+
+async function fetchAllInvestments(){
+  let all = [];
+  let after = null, page = 0;
+  while(true){
+    page++;
+    setLoadingMsg('Fetching investments…', `page ${page}`);
+    const body = {
+      filterGroups: [],
+      properties: INV_PROPS,
+      sorts: [{propertyName:'hs_createdate', direction:'ASCENDING'}],
+      limit: 200,
+      ...(after ? {after} : {}),
+    };
+    const d = await api('/crm/v3/objects/2-59402465/search', body);
+    all = all.concat(d.results || []);
+    if(d.paging?.next?.after) after = d.paging.next.after;
+    else break;
+    await sleep(HS_DELAY_MS);
+    if(page > 50) break;
+  }
+  // Normalize
+  return all.map(r => {
+    const p = r.properties || {};
+    return {
+      id: String(r.id),
+      email: (p.email_address || '').trim().toLowerCase(),
+      amount: parseFloat(p.investment_amount) || 0,
+      fund: (p.fund_invested || '').trim(),
+      type: (p.type_of_investment || '').trim(),
+      createdTs: p.hs_createdate ? new Date(p.hs_createdate).getTime() : null,
+    };
+  });
+}
+
+function buildInvByEmail(investments){
+  const map = {};
+  for(const inv of investments){
+    if(!inv.email) continue;
+    if(!map[inv.email]) map[inv.email] = [];
+    map[inv.email].push(inv);
+  }
+  return map;
 }
 
 // Fetch per-campaign spend AND lead counts from Meta Marketing API via the
@@ -3233,6 +3321,163 @@ function renderBucketDrillContacts(contacts){
   return html;
 }
 
+// v10.8.13: Campaign ROI table — cohort/follow-forward
+let ROI_BUCKET = 'all';
+
+function setRoiBucket(bucket){
+  ROI_BUCKET = bucket;
+  document.querySelectorAll('[data-roi-bucket]').forEach(b => {
+    b.classList.toggle('active', b.dataset.roiBucket === bucket);
+  });
+  renderRoiTable();
+}
+
+function renderRoiTable(){
+  const wrap = document.getElementById('roiTableWrap');
+  const empty = document.getElementById('roiEmpty');
+  const tbl = document.getElementById('roiTable');
+
+  // Get source-filtered contacts for the current period
+  const contacts = filterContactsBySourceFilter(LEAD_CONTACTS);
+
+  // Build per-campaign rollup
+  const campaigns = {}; // key → {leads, aiLeads, intros, discs, invCount, capital, spend}
+
+  for(const c of contacts){
+    // Apply ROI bucket filter
+    const bucket = classifySourceBucket(c.src);
+    if(ROI_BUCKET !== 'all' && bucket !== ROI_BUCKET) continue;
+
+    // Campaign key — first-touch DD2
+    const key = c.dd2 || c.dd1 || c.src || '(not set)';
+    if(!campaigns[key]) campaigns[key] = {key, leads:0, aiLeads:0, intros:0, discs:0, invCount:0, capital:0, spend:null};
+    const row = campaigns[key];
+
+    row.leads++;
+    if(c.accredited) row.aiLeads++;
+
+    // Find investments by this contact (follow-forward — all time)
+    const invs = INV_BY_EMAIL[c.email] || [];
+    for(const inv of invs){
+      row.invCount++;
+      row.capital += inv.amount;
+    }
+  }
+
+  // Count intros and discoveries per campaign from MEETINGS
+  // (already filtered by SOURCE_FILTER via aggregate, but we need per-campaign counts here)
+  const useSrc = sourceFilterActive();
+  for(const m of MEETINGS){
+    if(!m.contactId) continue;
+    // Find the contact's campaign key
+    const cId = String(m.contactId);
+    const contact = LEAD_CONTACTS.find(c => String(c.id) === cId);
+    if(!contact) continue;
+
+    // Apply source filter
+    if(useSrc && !SOURCE_FILTER.has(effectiveLeadContactSrc(contact))) continue;
+
+    // Apply ROI bucket filter
+    const bucket = classifySourceBucket(contact.src);
+    if(ROI_BUCKET !== 'all' && bucket !== ROI_BUCKET) continue;
+
+    const key = contact.dd2 || contact.dd1 || contact.src || '(not set)';
+    if(!campaigns[key]) continue; // contact not in our set
+
+    if(m.type === 'intro') campaigns[key].intros++;
+    else if(m.type === 'discovery') campaigns[key].discs++;
+  }
+
+  // Add spend from aggregate rows — match by key
+  const {rows: aggRows} = aggregate();
+  for(const r of aggRows){
+    const key = r.key;
+    if(campaigns[key] && r.spend != null){
+      campaigns[key].spend = (campaigns[key].spend || 0) + r.spend;
+    }
+  }
+
+  // Sort by capital raised desc, then leads desc
+  const sorted = Object.values(campaigns).sort((a,b) => {
+    if(b.capital !== a.capital) return b.capital - a.capital;
+    return b.leads - a.leads;
+  });
+
+  if(!sorted.length){
+    wrap.style.display = 'none';
+    empty.style.display = '';
+    return;
+  }
+  wrap.style.display = '';
+  empty.style.display = 'none';
+
+  const fm = (v) => v == null || isNaN(v) ? '—' : Math.round(v).toLocaleString();
+  const fmD = (v) => v == null || isNaN(v) ? '—' : '$' + Math.round(v).toLocaleString();
+  const costPer = (spend, count) => (spend != null && count > 0) ? fmD(spend / count) : '—';
+
+  // Compute totals
+  let totLeads=0, totAi=0, totIntros=0, totDiscs=0, totInv=0, totCap=0, totSpend=0;
+  let hasSpend = false;
+  for(const r of sorted){
+    totLeads += r.leads;
+    totAi += r.aiLeads;
+    totIntros += r.intros;
+    totDiscs += r.discs;
+    totInv += r.invCount;
+    totCap += r.capital;
+    if(r.spend != null){ totSpend += r.spend; hasSpend = true; }
+  }
+
+  let headHtml = '<tr>';
+  headHtml += '<th style="text-align:left">Campaign</th>';
+  headHtml += '<th>Leads</th>';
+  headHtml += '<th>AI Leads</th>';
+  headHtml += '<th>CPAIL</th>';
+  headHtml += '<th>Intros</th>';
+  headHtml += '<th>Cost/Intro</th>';
+  headHtml += '<th>Discos</th>';
+  headHtml += '<th>Cost/Disco</th>';
+  headHtml += '<th>Investments</th>';
+  headHtml += '<th>Capital Raised</th>';
+  headHtml += '<th>Cost of Capital</th>';
+  headHtml += '</tr>';
+  tbl.querySelector('thead').innerHTML = headHtml;
+
+  let bodyHtml = '';
+  for(const r of sorted){
+    bodyHtml += '<tr>';
+    bodyHtml += `<td title="${r.key}">${r.key}</td>`;
+    bodyHtml += `<td>${fm(r.leads)}</td>`;
+    bodyHtml += `<td>${fm(r.aiLeads)}</td>`;
+    bodyHtml += `<td>${costPer(r.spend, r.aiLeads)}</td>`;
+    bodyHtml += `<td>${fm(r.intros)}</td>`;
+    bodyHtml += `<td>${costPer(r.spend, r.intros)}</td>`;
+    bodyHtml += `<td>${fm(r.discs)}</td>`;
+    bodyHtml += `<td>${costPer(r.spend, r.discs)}</td>`;
+    bodyHtml += `<td>${fm(r.invCount)}</td>`;
+    bodyHtml += `<td>${r.capital > 0 ? fmD(r.capital) : '—'}</td>`;
+    bodyHtml += `<td>${costPer(r.spend, r.invCount)}</td>`;
+    bodyHtml += '</tr>';
+  }
+
+  // Totals row
+  bodyHtml += '<tr style="font-weight:700;border-top:2px solid var(--border)">';
+  bodyHtml += '<td>Total</td>';
+  bodyHtml += `<td>${fm(totLeads)}</td>`;
+  bodyHtml += `<td>${fm(totAi)}</td>`;
+  bodyHtml += `<td>${hasSpend ? costPer(totSpend, totAi) : '—'}</td>`;
+  bodyHtml += `<td>${fm(totIntros)}</td>`;
+  bodyHtml += `<td>${hasSpend ? costPer(totSpend, totIntros) : '—'}</td>`;
+  bodyHtml += `<td>${fm(totDiscs)}</td>`;
+  bodyHtml += `<td>${hasSpend ? costPer(totSpend, totDiscs) : '—'}</td>`;
+  bodyHtml += `<td>${fm(totInv)}</td>`;
+  bodyHtml += `<td>${totCap > 0 ? fmD(totCap) : '—'}</td>`;
+  bodyHtml += `<td>${hasSpend && totInv > 0 ? fmD(totSpend / totInv) : '—'}</td>`;
+  bodyHtml += '</tr>';
+
+  tbl.querySelector('tbody').innerHTML = bodyHtml;
+}
+
 function render(rangeLabel, fromDate, toDate){
   // Capture args so source-filter changes can re-trigger render without
   // needing the original click context.
@@ -3268,6 +3513,9 @@ function render(rangeLabel, fromDate, toDate){
   // Spend + CPAIL totals are computed inside rerenderTable from the visible
   // (filtered) rows, replacing the old aggregate summary line.
   rerenderTable();
+
+  // v10.8.13: Campaign ROI cohort table
+  renderRoiTable();
 
   // v10.2: populate the date-range tag next to the Campaign Performance
   // title — makes screenshots of just the table self-contained without
@@ -5325,6 +5573,10 @@ async function load(){
         console.log(`[v10.8.4.9] LinkedIn lead-ad enrichment: matched ${enrichedCount} contacts to named LinkedIn campaigns via contact-level dd2.`);
       }
     }
+
+    // ── Phase 2b (v10.8.13): fetch all investments for cohort ROI table ─
+    ALL_INVESTMENTS = await fetchAllInvestments();
+    INV_BY_EMAIL = buildInvByEmail(ALL_INVESTMENTS);
 
     // ── Phase 3: rebuild source-filter options from this load's data (v8) ─
     // Sources can vary load-to-load as new ones get stamped on contacts, so
