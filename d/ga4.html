@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v12)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v13)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +129,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v12</span>
+    <span class="vpill">v13</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -216,6 +216,7 @@ tbody tr:hover{background:#faf8f4}
 
   <h3>Data source</h3>
   <p>Google Analytics 4 property (ID 324853644) via the GA4 Data API. Data is fetched live on each load — not cached. Refresh cadence depends on GA4's own processing pipeline (typically 24–48 hours for finalized data; recent data may shift slightly).</p>
+  <p>Both the worker and the dashboard handle Google's rate limits automatically. If the GA4 API returns a 429 (too many requests), the worker retries up to 3 times with increasing delays (1.5s, 3s, 6s). The dashboard also retries on its side (2s, 4s, 8s) and batches its requests to avoid overwhelming the API — main data fetches first, then comparison period fetches.</p>
 
   <h3>Layout</h3>
   <p>The top hero block shows KPI tiles (3×2 grid) on the left and the Sessions by Source doughnut on the right. Below that: the channel table, top pages, and UTM campaigns.</p>
@@ -345,16 +346,25 @@ document.getElementById('cmp').addEventListener('change', function(){ load(); })
 
 // ── GA4 API call helper ──────────────────────────────────────────────────────
 async function ga4Report(body){
-  const r = await fetch(`${WORKER_URL}/ga4-api`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if(!r.ok){
-    const t = await r.text().catch(()=>'');
-    throw new Error(`GA4 API ${r.status}: ${t.slice(0,300)}`);
+  const backoffs = [2000, 4000, 8000];
+  for(let attempt = 0; attempt <= backoffs.length; attempt++){
+    const r = await fetch(`${WORKER_URL}/ga4-api`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if(r.status === 429 && attempt < backoffs.length){
+      console.warn(`[ga4] 429 from worker, client retry ${attempt+1}/${backoffs.length} in ${backoffs[attempt]}ms`);
+      await new Promise(resolve => setTimeout(resolve, backoffs[attempt]));
+      continue;
+    }
+    if(!r.ok){
+      const t = await r.text().catch(()=>'');
+      throw new Error(`GA4 API ${r.status}: ${t.slice(0,300)}`);
+    }
+    return r.json();
   }
-  return r.json();
+  throw new Error('GA4 API rate-limited after client retries');
 }
 
 // ── Format helpers ────────────────────────────────────────────────────────────
@@ -531,26 +541,30 @@ async function load(){
       { name: 'averageSessionDuration' }, { name: 'engagementRate' }, { name: 'screenPageViews' },
     ];
 
-    // Build fetch array — always fetch channel-level, sources, and "all" pages/UTM/KPIs
-    const fetches = [
+    // Build fetch array — main data (5 requests), then comparison (2 requests).
+    // Batched to avoid hitting GA4's per-property concurrent request limit.
+    el.loadMsg.textContent = 'Fetching traffic data…';
+    const mainResults = await Promise.all([
       ga4Report({ dateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'pagePath'}], metrics:[{name:'screenPageViews'},{name:'activeUsers'},{name:'sessions'},{name:'engagementRate'}], orderBys:[{metric:{metricName:'screenPageViews'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, dimensions:[{name:'sessionCampaignName'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'},{name:'screenPageViews'}], orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
       ga4Report({ dateRanges, metrics:metrics_kpi }),
       ga4Report({ dateRanges, dimensions:[{name:'sessionSource'}], metrics:[{name:'sessions'},{name:'activeUsers'},{name:'newUsers'}], orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
-    ];
+    ]);
 
-    // Comparison fetches (KPIs + channel table)
+    let cmpKpiData = null, cmpChannelData = null;
     if(cmpRange){
+      el.loadMsg.textContent = 'Fetching comparison period…';
       const cmpDateRanges = [{ startDate: cmpRange.start, endDate: cmpRange.end }];
-      fetches.push(ga4Report({ dateRanges:cmpDateRanges, metrics:metrics_kpi }));
-      fetches.push(ga4Report({ dateRanges:cmpDateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }));
+      const cmpResults = await Promise.all([
+        ga4Report({ dateRanges:cmpDateRanges, metrics:metrics_kpi }),
+        ga4Report({ dateRanges:cmpDateRanges, dimensions:[{name:'sessionDefaultChannelGroup'}], metrics:metrics_channel, orderBys:[{metric:{metricName:'sessions'},desc:true}], limit:50 }),
+      ]);
+      cmpKpiData = cmpResults[0];
+      cmpChannelData = cmpResults[1];
     }
 
-    const results = await Promise.all(fetches);
-    const [channelData, pagesData, utmData, kpiData, sourcesData] = results;
-    const cmpKpiData = cmpRange ? results[5] : null;
-    const cmpChannelData = cmpRange ? results[6] : null;
+    const [channelData, pagesData, utmData, kpiData, sourcesData] = mainResults;
 
     // Store raw channel rows
     CHANNEL_ROWS = parseRows(channelData);
