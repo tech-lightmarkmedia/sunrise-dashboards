@@ -51,6 +51,8 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 #roiTable tbody td:first-child{text-align:left;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #roiTable tbody tr:hover{background:#fcfbf8}
 #roiTable tbody tr{cursor:pointer}
+#roiTable tfoot td{padding:8px 10px;text-align:right;font-weight:700;background:var(--surface2);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:1}
+#roiTable tfoot td:first-child{text-align:left}
 /* Drill drawer */
 #drill-drawer{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
 #drill-drawer.on{transform:translateX(0)}
@@ -137,7 +139,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
     <div id="spendNote" style="font-size:11px;color:var(--text3);margin-bottom:12px"></div>
     <div id="bucketNote" style="font-size:11px;color:var(--text2);margin-bottom:12px;display:none"></div>
     <div class="tbl-wrap">
-      <div class="tbl-scroll"><table id="roiTable"><thead></thead><tbody></tbody></table></div>
+      <div class="tbl-scroll"><table id="roiTable"><thead></thead><tbody></tbody><tfoot id="totalsRow"></tfoot></table></div>
     </div>
   </div>
 </main>
@@ -907,23 +909,24 @@ function renderTable(){
     bodyHtml += '</tr>';
   }
 
-  // Totals
-  bodyHtml += '<tr style="font-weight:700;border-top:2px solid var(--border)">';
-  bodyHtml += '<td>Total</td>';
-  bodyHtml += `<td>${fmt(totLeads)}</td><td>${fmt(totAi)}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend ? fmtMoney(totSpend) : '—'}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend ? costPer(totSpend, totAi) : '—'}</td>`;
-  if(showBookings) bodyHtml += `<td>${fmt(totIntros)}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend ? costPer(totSpend, totIntros) : '—'}</td>`;
-  if(showBookings) bodyHtml += `<td>${fmt(totDiscs)}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend ? costPer(totSpend, totDiscs) : '—'}</td>`;
-  bodyHtml += `<td>${fmt(totInv)}</td>`;
-  bodyHtml += `<td>${totCap > 0 ? fmtMoney(totCap) : '—'}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend && totInv > 0 ? fmtMoney(totSpend / totInv) : '—'}</td>`;
-  if(showBookings) bodyHtml += `<td>${hasSpend && totCap > 0 ? fmtMoney((totSpend / totCap) * 100000) : '—'}</td>`;
-  bodyHtml += '</tr>';
-
   tbl.querySelector('tbody').innerHTML = bodyHtml;
+
+  // Totals row — sticky tfoot, always visible at bottom of scroll area
+  let totHtml = '<tr>';
+  totHtml += '<td>Total</td>';
+  totHtml += `<td>${fmt(totLeads)}</td><td>${fmt(totAi)}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend ? fmtMoney(totSpend) : '—'}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend ? costPer(totSpend, totAi) : '—'}</td>`;
+  if(showBookings) totHtml += `<td>${fmt(totIntros)}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend ? costPer(totSpend, totIntros) : '—'}</td>`;
+  if(showBookings) totHtml += `<td>${fmt(totDiscs)}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend ? costPer(totSpend, totDiscs) : '—'}</td>`;
+  totHtml += `<td>${fmt(totInv)}</td>`;
+  totHtml += `<td>${totCap > 0 ? fmtMoney(totCap) : '—'}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend && totInv > 0 ? fmtMoney(totSpend / totInv) : '—'}</td>`;
+  if(showBookings) totHtml += `<td>${hasSpend && totCap > 0 ? fmtMoney((totSpend / totCap) * 100000) : '—'}</td>`;
+  totHtml += '</tr>';
+  tbl.querySelector('tfoot').innerHTML = totHtml;
 }
 
 // ── Drill ────────────────────────────────────────────────────────────────────
