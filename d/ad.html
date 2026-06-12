@@ -715,7 +715,7 @@ const CONTACT_PROPS=['hs_analytics_source','hs_analytics_source_data_1','hs_anal
 // Adds createdate (used as the in-range filter — see the contact search) and
 // the are_you_accredited_ enum ("Yes" | "No"). The trailing underscore on the
 // property name is HubSpot-generated from the label "Are You Accredited?".
-const CONTACT_LEAD_PROPS=['createdate','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','first_conversion_event_name','firstname','lastname'];
+const CONTACT_LEAD_PROPS=['createdate','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','first_conversion_event_name','firstname','lastname','email'];
 
 // Maps lowercased DD1 / source attribution values to the spend tab they
 // correspond to. Reserved for future use: once per-campaign spend is
@@ -1184,7 +1184,7 @@ async function fetchLeadContacts(fromMs, toMs){
       accredited: (p.are_you_accredited_ === 'Yes'),
       accreditedRaw: (p.are_you_accredited_ || '').trim(),
       firstConv:(p.first_conversion_event_name || '').trim(),
-      name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',  // v10.8.12
+      name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || (p.email || '(unnamed)'),  // v10.8.12
     };
   });
 }
@@ -5394,7 +5394,7 @@ async function load(){
           accredited: (p.are_you_accredited_ === 'Yes'),
           accreditedRaw: (p.are_you_accredited_ || '').trim(),
           firstConv: (p.first_conversion_event_name || '').trim(),
-          name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',
+          name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || (p.email || '(unnamed)'),
         };
       });
       console.log(`[cache] new contacts in range: ${LEAD_CONTACTS.length}`);
@@ -5432,7 +5432,7 @@ async function load(){
             accredited: (p.are_you_accredited_ === 'Yes'),
             accreditedRaw: (p.are_you_accredited_ || '').trim(),
             firstConv: (p.first_conversion_event_name || '').trim(),
-            name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',
+            name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || (p.email || '(unnamed)'),
           };
         });
         console.log(`[cache] comparison contacts: ${CMP_LEAD_CONTACTS.length}`);
