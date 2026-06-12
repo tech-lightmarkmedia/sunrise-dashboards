@@ -63,7 +63,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 #roiTable tfoot td{padding:8px 10px;text-align:right;font-weight:700;background:var(--surface2);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:1}
 #roiTable tfoot td:first-child{text-align:left}
 /* Drill drawer */
-#drill-drawer{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#drill-drawer{position:fixed;top:0;right:0;width:fit-content;max-width:85vw;min-width:480px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;overflow-x:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
 #drill-drawer.on{transform:translateX(0)}
 #drill-drawer h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:6px}
 #drill-subtitle{font-size:11px;color:var(--text3);margin-bottom:18px}
