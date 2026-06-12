@@ -166,8 +166,8 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 
   <h3>Source bucket toggle (All / Paid / Organic / Direct / Imported)</h3>
   <p>Filters the table by how each contact was acquired. Classification starts with HubSpot's <code>hs_analytics_source</code> but is <strong>overridden by ad-platform engagement data</strong> where available (see below).</p>
-  <p><strong>Ad-engagement override (v15):</strong> HubSpot's <code>hs_analytics_source</code> is set by session-level tracking at the moment a contact converts (fills out a form). If a person clicks a Meta ad, leaves the site, and returns days later via an organic link or direct visit to fill out the form, HubSpot tags them as "Organic Social" or "Direct Traffic" — not "Paid Social." The ad click is lost in HubSpot's source classification even though Meta recorded the engagement. This caused paid campaigns to appear in the Organic and Direct buckets with misleading cost metrics. To fix this, any contact with a Meta campaign ID (<code>hsa_cam</code> from engagement events) is classified as <strong>Paid</strong> regardless of what <code>hs_analytics_source</code> says. The ad click is the stronger acquisition signal.</p>
-  <p><strong>Bucket definitions after override:</strong> Paid = any contact with <code>hsa_cam</code>, OR whose <code>hs_analytics_source</code> contains "Paid". Direct = "Direct Traffic" (with no <code>hsa_cam</code>). Imported = INTEGRATION, IMPORT, OFFLINE, or API sources. Organic = everything else that isn't Paid, Direct, or Imported.</p>
+  <p><strong>Ad-engagement override (v15):</strong> HubSpot's <code>hs_analytics_source</code> is set by session-level tracking at the moment a contact converts (fills out a form). If a person clicks a Meta ad, leaves the site, and returns days later via an organic link or direct visit to fill out the form, HubSpot tags them as "Organic Social" or "Direct Traffic" — not "Paid Social." Similarly, contacts migrated from a previous CRM (Infusionsoft) had their source overwritten to IMPORT/INTEGRATION during bulk import, even if they originally came from a paid ad. In both cases the ad click is lost in HubSpot's source classification even though Meta recorded the engagement. To fix this, any contact with a Meta campaign ID (<code>hsa_cam</code> from engagement events) is classified as <strong>Paid</strong> regardless of what <code>hs_analytics_source</code> says — including imported contacts. The ad click is the stronger acquisition signal.</p>
+  <p><strong>Bucket definitions after override:</strong> Paid = any contact with <code>hsa_cam</code>, OR whose <code>hs_analytics_source</code> contains "Paid". Imported = INTEGRATION, IMPORT, OFFLINE, or API sources <em>without</em> <code>hsa_cam</code> (contacts with no known ad interaction who came in through bulk import). Direct = "Direct Traffic" (with no <code>hsa_cam</code>). Organic = everything else that isn't Paid, Direct, or Imported.</p>
   <p><strong>All</strong> shows Paid + Organic + Direct but <strong>excludes Imported</strong>. This prevents the ~24k CRM migration contacts from polluting campaign attribution. To see the imported population and what it produced, select the Imported bucket explicitly.</p>
   <p>When <strong>Paid</strong> is selected, a platform dropdown appears allowing you to filter by ad platform: <strong>Meta</strong> (Facebook/Instagram), <strong>LinkedIn</strong>, or <strong>Google</strong>. All three are checked by default. Uncheck a platform to exclude its contacts. Platform classification uses <code>hs_analytics_source_data_1</code> (DD1) — values containing "facebook", "fb", "ig", or "instagram" map to Meta; "linkedin" or "lnkd" to LinkedIn; "google" or "adwords" to Google. Contacts reclassified via <code>hsa_cam</code> override are always classified as Meta.</p>
 
@@ -402,15 +402,16 @@ function classifyBucket(contact){
   // v15: Ad-platform engagement override. If a contact has a Meta campaign ID
   // (hsa_cam from engagement events), they interacted with a paid ad — classify
   // as 'paid' regardless of what HubSpot's session-level hs_analytics_source says.
-  // HubSpot often misclassifies paid contacts as organic/direct when the converting
-  // session differs from the original ad click session.
+  // This includes CRM migration contacts (IMPORT/INTEGRATION source) — the bulk
+  // import overwrote their original source, but the ad engagement data is the truth.
   const src = typeof contact === 'string' ? contact : (contact.src || '');
   const hsaCam = typeof contact === 'string' ? '' : (contact.hsaCam || '');
   const s = (src || '').toUpperCase().replace(/[\s_]+/g, '');
-  // INTEGRATION and IMPORT are CRM migration contacts — separate bucket (never overridden)
-  if(s === 'INTEGRATION' || s === 'IMPORT' || s.includes('OFFLINE') || s === 'API') return 'imported';
-  // hsa_cam override: Meta ad engagement proves paid acquisition
+  // hsa_cam override first: Meta ad engagement proves paid acquisition,
+  // regardless of source tag (including IMPORT/INTEGRATION from CRM migration)
   if(hsaCam) return 'paid';
+  // INTEGRATION and IMPORT are CRM migration contacts — separate bucket
+  if(s === 'INTEGRATION' || s === 'IMPORT' || s.includes('OFFLINE') || s === 'API') return 'imported';
   if(s.includes('PAID')) return 'paid';
   if(s === 'DIRECTTRAFFIC' || s === 'DIRECT') return 'direct';
   return 'organic';
@@ -853,11 +854,14 @@ function renderTable(){
     const overrideCount = filtered.filter(c => c.hsaCam && !((c.src||'').toUpperCase().replace(/[\s_]+/g,'')).includes('PAID')).length;
     if(overrideCount > 0){
       bucketNoteEl.style.display = '';
-      bucketNoteEl.textContent = `${overrideCount.toLocaleString()} contacts reclassified as Paid via Meta ad engagement data (hsa_cam) — HubSpot originally tagged them as Organic, Direct, or other. See Guide for details.`;
+      bucketNoteEl.textContent = `${overrideCount.toLocaleString()} contacts reclassified as Paid via Meta ad engagement data (hsa_cam) — HubSpot originally tagged them as Organic, Direct, Imported, or other. See Guide for details.`;
     } else { bucketNoteEl.style.display = 'none'; }
   } else if(BUCKET === 'organic' || BUCKET === 'direct'){
     bucketNoteEl.style.display = '';
     bucketNoteEl.textContent = `Contacts with Meta ad engagement (hsa_cam) have been moved to the Paid bucket even if HubSpot classified their converting session as ${BUCKET === 'organic' ? 'organic' : 'direct'} traffic. Numbers here reflect contacts with no known paid ad interaction.`;
+  } else if(BUCKET === 'imported'){
+    bucketNoteEl.style.display = '';
+    bucketNoteEl.textContent = 'CRM migration contacts whose source was overwritten during import. Contacts with Meta ad engagement (hsa_cam) have been moved to the Paid bucket — they came from ads, not from the import itself.';
   } else {
     bucketNoteEl.style.display = 'none';
   }
