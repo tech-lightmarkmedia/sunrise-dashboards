@@ -1,0 +1,2 @@
+# Internal-only paths: present in repo for tooling, never served.
+/_internal/*  /404  404
