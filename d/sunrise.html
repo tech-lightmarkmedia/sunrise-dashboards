@@ -396,18 +396,23 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
     <h3>Investor LTV section</h3>
     <p>Tracks investor lifetime value across all fund Investment records (Fund 1 through Fund 5).</p>
     <div class="gtip"><strong>Important:</strong> This section <strong>ignores all dashboard filters</strong> (date, fund, class, type). LTV is a lifetime metric — it doesn't make sense to compute it within a date range.</div>
-    <p>Six tiles:</p>
+    <p><strong>How first vs follow-on is derived:</strong> For each contact, all Investment records are sorted by <code>funds_received</code> date. The earliest investment is the "first investment"; every subsequent investment by the same contact is "follow-on." This chronological derivation doesn't depend on the <code>type_of_investment</code> field.</p>
+    <p>Eight tiles in two rows:</p>
     <dl>
+      <dt>Total investors</dt>
+      <dd>Count of unique contacts with at least one matched Investment record. Should match the Funded Investments count at the top when viewing All funds with no date filter (modulo any unmatched investments that lack a contact association).</dd>
+      <dt>Total investments</dt>
+      <dd>Count of Investment records with a matched contact. Should match the Funded Investments count at the top of the dashboard.</dd>
+      <dt>Portfolio LTV</dt>
+      <dd>Sum of all <code>investment_amount</code> across all matched Investment records. Should match Total Capital Raised at the top of the dashboard.</dd>
+      <dt>Avg LTV per investor</dt>
+      <dd>Portfolio LTV ÷ total investors.</dd>
       <dt>First-time investors</dt>
-      <dd>Count of contacts with at least one New-type Investment record.</dd>
+      <dd>Same as total investors — every contact who has at least one investment is a first-time investor (their earliest record is their "first").</dd>
       <dt>Total first-invest capital</dt>
-      <dd>Sum of each first-time investor's New-type investment amounts.</dd>
+      <dd>Sum of each contact's earliest investment amount (by <code>funds_received</code> date).</dd>
       <dt>Avg first investment</dt>
       <dd>Total first-invest capital ÷ first-time investors.</dd>
-      <dt>Portfolio LTV</dt>
-      <dd>Sum of all investments across all investors. Should match Total Capital Raised at the top of the dashboard.</dd>
-      <dt>Avg LTV per investor</dt>
-      <dd>Portfolio LTV ÷ count of first-time investors.</dd>
       <dt>LTV / first investment</dt>
       <dd>The average multiplier — how many dollars of total LTV does each first-investment dollar produce?</dd>
     </dl>
@@ -638,15 +643,20 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 
   <!-- LTV Section -->
   <div class="ltv-stag">Investor LTV — First-time investors &amp; lifetime capital (All funds · Investment object)</div>
-  <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;margin-top:-2px">LTV is a lifetime metric — this section always reflects <strong style="color:var(--text2)">all loaded investments</strong> and is not affected by the date, fund, or class filters above.</div>
+  <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:4px;margin-top:-2px">LTV is a lifetime metric — this section always reflects <strong style="color:var(--text2)">all loaded investments</strong> and is not affected by the date, fund, or class filters above.</div>
+  <div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:10px;font-style:italic">First vs follow-on is derived chronologically: each contact's investments are sorted by funds-received date — the earliest is "first investment," all subsequent are "follow-on."</div>
 
   <!-- LTV KPI tiles -->
   <div class="ltv-krow">
-    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">First-time investors</div><div class="kv" id="ltv-k1">—</div><div class="ks">New-type investment record</div></div>
-    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">Total first-invest capital</div><div class="kv" id="ltv-k2">—</div><div class="ks">sum of New-type amounts</div></div>
-    <div class="kpi"><div class="kl">Avg first investment</div><div class="kv" id="ltv-k6">—</div><div class="ks">total first-invest capital ÷ first-time investors</div></div>
-    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Portfolio LTV</div><div class="kv" id="ltv-k3">—</div><div class="ks">all investments · all investors</div></div>
-    <div class="kpi"><div class="kl">Avg LTV per investor</div><div class="kv" id="ltv-k4">—</div><div class="ks">across investors with any investment</div></div>
+    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Total investors</div><div class="kv" id="ltv-total-investors">—</div><div class="ks">unique contacts with investments</div></div>
+    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Total investments</div><div class="kv" id="ltv-total-investments">—</div><div class="ks">investment records (match top KPI)</div></div>
+    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Portfolio LTV</div><div class="kv" id="ltv-k3">—</div><div class="ks">all investments · all investors (match top KPI)</div></div>
+    <div class="kpi clickable" onclick="ddLtvAll()"><div class="kl">Avg LTV per investor</div><div class="kv" id="ltv-k4">—</div><div class="ks">portfolio LTV ÷ total investors</div></div>
+  </div>
+  <div class="ltv-krow">
+    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">First-time investors</div><div class="kv" id="ltv-k1">—</div><div class="ks">contacts with ≥1 investment</div></div>
+    <div class="kpi clickable" onclick="ddLtvFirstTime()"><div class="kl">Total first-invest capital</div><div class="kv" id="ltv-k2">—</div><div class="ks">sum of each contact's earliest investment</div></div>
+    <div class="kpi"><div class="kl">Avg first investment</div><div class="kv" id="ltv-k6">—</div><div class="ks">first-invest capital ÷ investors</div></div>
     <div class="kpi"><div class="kl">LTV / first investment</div><div class="kv" id="ltv-k5">—</div><div class="ks">portfolio LTV ÷ first-invest capital</div></div>
   </div>
 
@@ -1638,44 +1648,50 @@ function renderAdSpend(spend, dcbCount, fundedCount, capitalRaised, prevSpend, p
 }
 
 // ── LTV computation ───────────────────────────────────────
-// Now that Fund 1/2/3 Investment records exist, LTV is computed purely from
-// Investment records. The old fund_3_total_investment_amount backfill path
-// has been removed. First-time investors = contacts with a "New" type investment.
+// First vs follow-on is derived chronologically: for each contact, investments
+// are sorted by funds_received date. The earliest investment is "first"; all
+// subsequent investments are "follow-on". This avoids dependence on the
+// type_of_investment field which may not be reliably tagged across all funds.
 function computeLTV(allFunded, invContactMap){
+  // Group investments by contact, collecting amounts + dates
   const byContact={};
+  let totalInvCount=0;
   allFunded.forEach(inv=>{
     const cid=invContactMap[String(inv.id)];
     if(!cid) return;
     const amt=parseFloat(inv.properties.investment_amount)||0;
-    const typ=(inv.properties.type_of_investment||'').trim();
-    if(!byContact[cid]) byContact[cid]={firstAmt:0, followonAmt:0, count:0};
-    byContact[cid].count++;
-    if(typ==='New') byContact[cid].firstAmt+=amt;
-    else byContact[cid].followonAmt+=amt;
+    const dt=inv.properties.funds_received||inv.properties.createdate||'9999';
+    if(!byContact[cid]) byContact[cid]={investments:[]};
+    byContact[cid].investments.push({amt, dt, id:inv.id});
+    totalInvCount++;
   });
 
   const rows=[];
   Object.keys(byContact).forEach(cid=>{
     const cd=CONTACT_DATA[cid]||{name:'Contact '+cid};
-    const inv=byContact[cid];
-    const isNew=inv.firstAmt>0;
-    const ltv=inv.firstAmt+inv.followonAmt;
-    if(!isNew) return; // only first-time investors contribute to LTV tiles
-    rows.push({cid, name:cd.name, firstAmt:inv.firstAmt, followonAmt:inv.followonAmt, ltv, count:inv.count, isNew, isF3:false});
+    const invs=byContact[cid].investments;
+    // Sort chronologically — earliest first
+    invs.sort((a,b)=>a.dt.localeCompare(b.dt));
+    const firstAmt=invs[0].amt;
+    const followonAmt=invs.slice(1).reduce((s,i)=>s+i.amt,0);
+    const ltv=firstAmt+followonAmt;
+    rows.push({cid, name:cd.name, firstAmt, followonAmt, ltv, count:invs.length, isNew:true, isF3:false});
   });
 
-  return rows;
+  return {rows, totalInvCount, totalContacts:Object.keys(byContact).length};
 }
 
-function renderLTV(rows){
-  const firstInvestors=rows.filter(r=>r.isNew);
-  const totalFirstCapital=firstInvestors.reduce((s,r)=>s+r.firstAmt,0);
+function renderLTV(ltvResult){
+  const {rows, totalInvCount, totalContacts} = ltvResult;
+  const totalFirstCapital=rows.reduce((s,r)=>s+r.firstAmt,0);
   const portfolioLTV=rows.reduce((s,r)=>s+r.ltv,0);
   const avgLTV=rows.length>0?portfolioLTV/rows.length:0;
 
-  document.getElementById('ltv-k1').textContent=firstInvestors.length.toLocaleString();
+  document.getElementById('ltv-total-investors').textContent=totalContacts.toLocaleString();
+  document.getElementById('ltv-total-investments').textContent=totalInvCount.toLocaleString();
+  document.getElementById('ltv-k1').textContent=rows.length.toLocaleString();
   document.getElementById('ltv-k2').textContent=fmt(totalFirstCapital);
-  document.getElementById('ltv-k6').textContent=(firstInvestors.length>0)?fmt(Math.round(totalFirstCapital/firstInvestors.length)):'—';
+  document.getElementById('ltv-k6').textContent=(rows.length>0)?fmt(Math.round(totalFirstCapital/rows.length)):'—';
   document.getElementById('ltv-k3').textContent=fmt(portfolioLTV);
   document.getElementById('ltv-k4').textContent=fmt(Math.round(avgLTV));
   document.getElementById('ltv-k5').textContent=(totalFirstCapital>0)?(portfolioLTV/totalFirstCapital).toFixed(2)+'x':'—';
@@ -2431,15 +2447,15 @@ function ddLtvTile(filterFn, title){
   });
 }
 
-// LTV tile: First-time investors → all New-type investments
+// LTV tile: First-time investors → show all investments (every contact's earliest is their "first")
 function ddLtvFirstTime(){
   ddLtvTile(
-    i => (i.properties?.type_of_investment === 'New'),
-    'First-time investors — New-type investments'
+    () => true,
+    'First-time investors — all investments (earliest per contact = first)'
   );
 }
 
-// LTV tile: Portfolio LTV → all investments
+// LTV tile: Portfolio LTV / Total investors / Total investments → all investments
 function ddLtvAll(){
   ddLtvTile(
     () => true,
