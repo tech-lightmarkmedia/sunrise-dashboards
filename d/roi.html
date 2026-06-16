@@ -896,7 +896,7 @@ async function load(){
     catch(e){ console.warn('Google Ads spend failed:', e.message); GOOGLE_SPEND = {}; GOOGLE_SPEND_BY_ID = {}; GOOGLE_ADGROUP_SPEND = {}; }
 
     // Store spend window for UI note
-    window._spendFromDate = new Date('2023-06-01'); // Meta archive goes back to Jun 2023
+    window._spendFromDate = new Date(2023, 5, 1); // Meta archive goes back to Jun 2023 (local time)
 
     el.loadMsg.textContent = 'Rendering…';
     renderTable();
