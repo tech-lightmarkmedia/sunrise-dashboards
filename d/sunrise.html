@@ -1630,7 +1630,7 @@ async function fetchAdSpend(from, to){
     const campaigns = [];
     let start = 0;
     while(true){
-      const lr = await fetch(`${LINKEDIN_PROXY_URL}/rest/adCampaigns?q=search&search=(status:(values:List(ACTIVE,PAUSED,ARCHIVED,COMPLETED,CANCELED,DRAFT)))&start=${start}&count=100`);
+      const lr = await fetch(`${LINKEDIN_PROXY_URL}/rest/adAccounts/${LINKEDIN_AD_ACCOUNT_ID}/adCampaigns?q=search&search=(status:(values:List(ACTIVE,PAUSED,ARCHIVED,COMPLETED,CANCELED,DRAFT)))&start=${start}&count=100`);
       if(!lr.ok) break;
       const ld = await lr.json();
       for(const el of (ld.elements || [])){
