@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunrise Capital — KPI Tracker v1</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0d1117;color:#e6e1d6;min-height:100vh}
+a{color:#d4a853;text-decoration:none}
+a:hover{text-decoration:underline}
+header{display:flex;align-items:center;gap:12px;padding:12px 24px;background:#161b22;border-bottom:1px solid rgba(255,255,255,.06)}
+header .sci-logo{height:36px}
+header .vpill{font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px}
+header .spacer{flex:1}
+header .cache-age{font-size:11px;color:#9e9789}
+header .btn{background:rgba(255,255,255,.08);color:#e6e1d6;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600}
+header .btn:hover{background:rgba(255,255,255,.15)}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 24px;background:#161b22;border-bottom:1px solid rgba(255,255,255,.06)}
+.month-nav .btn-arrow{background:none;border:1px solid rgba(255,255,255,.15);color:#e6e1d6;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px}
+.month-nav .btn-arrow:hover{background:rgba(255,255,255,.08)}
+.month-nav .month-label{font-size:18px;font-weight:700;letter-spacing:.02em;min-width:180px;text-align:center}
+#main{padding:24px}
+.kpi-table{width:100%;border-collapse:collapse;font-size:13px}
+.kpi-table th,.kpi-table td{padding:8px 12px;text-align:right;border-bottom:1px solid rgba(255,255,255,.06)}
+.kpi-table th{font-weight:600;color:#9e9789;font-size:11px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;background:#0d1117;z-index:2}
+.kpi-table th:first-child,.kpi-table td:first-child{text-align:left;position:sticky;left:0;background:#0d1117;z-index:1;min-width:260px}
+.kpi-table th:first-child{z-index:3}
+.kpi-table tr.section-head td{font-weight:700;font-size:12px;color:#d4a853;text-transform:uppercase;letter-spacing:.06em;padding-top:18px;border-bottom:2px solid rgba(212,168,83,.25)}
+.kpi-table tr.data-row td{color:#e6e1d6}
+.kpi-table tr.data-row:hover td{background:rgba(255,255,255,.03)}
+.kpi-table td.metric-name{font-weight:600;color:#c8c3b8}
+.kpi-table td.editable{position:relative}
+.kpi-table td.editable input{background:transparent;border:1px dashed rgba(212,168,83,.4);color:#d4a853;text-align:right;width:100%;padding:4px 8px;border-radius:4px;font-size:13px;font-family:inherit}
+.kpi-table td.editable input:focus{outline:none;border-color:#d4a853;background:rgba(212,168,83,.08)}
+.kpi-table td.editable input::placeholder{color:rgba(212,168,83,.35)}
+.kpi-table td.total-col{font-weight:700;background:rgba(255,255,255,.02)}
+.kpi-table th.total-col{background:rgba(255,255,255,.04)}
+.pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;margin-left:4px}
+.pill.new{background:rgba(72,186,131,.15);color:#48ba83}
+.pill.repeat{background:rgba(212,168,83,.15);color:#d4a853}
+.pill.funded{background:rgba(72,186,131,.15);color:#48ba83}
+.pill.warn{background:rgba(234,179,8,.12);color:#eab308}
+.loading{text-align:center;padding:60px;color:#9e9789;font-size:14px}
+.loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.1);border-top-color:#d4a853;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.note{font-size:11px;color:#9e9789;padding:8px 24px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <a href="/"><img src="data:image/png;base64,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" alt="Sunrise Capital Investors" class="sci-logo" height="36"></a>
+  <span class="vpill">v1</span>
+  <span class="spacer"></span>
+  <span class="cache-age" id="cache-age"></span>
+  <button class="btn" onclick="refreshData()">↻ Refresh</button>
+</header>
+
+<div class="month-nav">
+  <button class="btn-arrow" onclick="navMonth(-1)">◀</button>
+  <span class="month-label" id="month-label"></span>
+  <button class="btn-arrow" onclick="navMonth(1)">▶</button>
+</div>
+
+<div id="main">
+  <div class="loading" id="loading"><span class="spinner"></span> Loading KPI data…</div>
+  <div id="table-wrap" style="display:none;overflow-x:auto">
+    <table class="kpi-table" id="kpi-table"></table>
+  </div>
+</div>
+
+<div class="note">
+  All metrics pull from live HubSpot data via the nightly cache (2 AM ET).
+  Projected raises are manually entered and stored server-side.
+  Closing ratio uses a rolling 60-day window, new investments only, excluding no-shows.
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────
+const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev/hs-api';
+const CACHE_BASE_URL = WORKER_URL.replace(/\/hs-api$/, '');
+const INV_OBJECT_TYPE = '2-59402465';
+const COMMITMENT_OBJECT_TYPE = '2-60063290';
+const MAIN_PIPELINE_ID = '134921120';
+
+// HubSpot deal stage IDs for discovery calls
+const DC_DONE_STAGE = '233853874'; // DC Done
+const INVESTNEXT_COMMITTED_STAGE = '234597471'; // Investnext Committed (fallback for soft commits)
+
+// Setter owner IDs
+const SETTER_IDS = {
+  '1750115047': 'Kayla D.', '80677823': 'Cierra M.',
+  '82187398': 'Alex W.', '85017246': 'Aidan C.'
+};
+
+// Closer owner IDs
+const CLOSER_IDS = {
+  '650567768': 'Alex Z.', '266072428': 'Kelvin E.',
+  '601355604': 'Jonny C.', '424254278': 'Bronson P.'
+};
+
+// Account Manager IDs (closers who also manage repeat investors)
+const AM_IDS = { '85544039': 'Daniel A.', '650567768': 'Alex Z.' };
+
+// All tracked owner IDs (setters + closers + AMs for meeting/call queries)
+const ALL_OWNER_IDS = new Set([...Object.keys(SETTER_IDS), ...Object.keys(CLOSER_IDS), ...Object.keys(AM_IDS)]);
+
+// Partner tags to track
+const PARTNER_TAGS = ['Passive Pockets', '506 Group', 'Freedom Founders'];
+
+// Discovery meeting type values
+const DISCOVERY_TYPES = new Set(['Discovery Call - Main', 'Discovery Call - Setters']);
+
+// Fund V is the current active fund
+const FUND_V_LABEL = 'Fund 5';
+
+// ── State ─────────────────────────────────────────────────
+let currentMonth = new Date(); // tracks which month we're viewing
+currentMonth.setDate(1); currentMonth.setHours(0,0,0,0);
+
+let ALL_INVESTMENTS = [];
+let ALL_DEALS = [];
+let ALL_MEETINGS = [];
+let ALL_CONTACTS = [];
+let MANUAL_DATA = {}; // {weekKey: {projectedWeekly, projectedMonthly}}
+
+// ── Date helpers ──────────────────────────────────────────
+function monthStart(d) { const m = new Date(d); m.setDate(1); m.setHours(0,0,0,0); return m; }
+function monthEnd(d) { const m = new Date(d); m.setMonth(m.getMonth()+1); m.setDate(0); m.setHours(23,59,59,999); return m; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmtDate(d) { return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtMonth(d) { return d.toLocaleDateString('en-US', {month:'long', year:'numeric'}); }
+function weekKey(start) { return `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`; }
+
+// Get Mon–Sun weeks that fall within (or overlap) the given month
+function getWeeksForMonth(monthDate) {
+  const ms = monthStart(monthDate);
+  const me = monthEnd(monthDate);
+  const weeks = [];
+  // Find the Monday on or before the 1st
+  let d = new Date(ms);
+  const dow = d.getDay(); // 0=Sun
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + mondayOffset);
+  while (d <= me) {
+    const wStart = new Date(d);
+    const wEnd = addDays(d, 6);
+    wEnd.setHours(23,59,59,999);
+    // Only include weeks whose Monday falls within the month
+    if (wStart.getMonth() === ms.getMonth() && wStart.getFullYear() === ms.getFullYear()) {
+      weeks.push({ start: wStart, end: wEnd, key: weekKey(wStart) });
+    } else if (wStart < ms && wEnd >= ms) {
+      // Partial week at start of month — include it, anchored to the Monday
+      weeks.push({ start: wStart, end: wEnd, key: weekKey(wStart) });
+    }
+    d = addDays(d, 7);
+  }
+  return weeks;
+}
+
+// Check if a timestamp falls within a date range
+function inRange(tsMs, start, end) {
+  return tsMs >= start.getTime() && tsMs <= end.getTime();
+}
+
+// ── Cache fetch ───────────────────────────────────────────
+async function fetchFromCache(endpoint, label) {
+  const r = await fetch(`${CACHE_BASE_URL}/${endpoint}`);
+  if (r.status === 404) throw new Error(`${label} cache not yet populated`);
+  if (!r.ok) throw new Error(`${label} cache read failed: ${r.status}`);
+  const d = await r.json();
+  if (!d || !Array.isArray(d.results)) throw new Error(`${label} cache returned unexpected shape`);
+  return d.results;
+}
+
+async function fetchCacheMeta() {
+  try {
+    const r = await fetch(`${CACHE_BASE_URL}/cache-meta`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+// HubSpot API helper (via proxy)
+async function api(path, body, retryCount=0) {
+  const url = (WORKER_URL + path).replace(/([^:])\/{2,}/g, '$1/');
+  const r = await fetch(url, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  if (r.status === 429 && retryCount < 5) {
+    await new Promise(res => setTimeout(res, Math.min(1000 * Math.pow(2, retryCount), 8000)));
+    return api(path, body, retryCount + 1);
+  }
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.message || 'HTTP ' + r.status); }
+  return r.json();
+}
+
+// Fetch all pages of a HubSpot search
+async function fetchAll(path, qs) {
+  let results = [], after = undefined;
+  do {
+    const body = { ...qs, limit: 100, ...(after ? { after } : {}) };
+    const d = await api(path, body);
+    results = results.concat(d.results || []);
+    after = d.paging?.next?.after;
+  } while (after);
+  return results;
+}
+
+// ── Data loading ──────────────────────────────────────────
+async function loadAllData() {
+  document.getElementById('loading').style.display = '';
+  document.getElementById('table-wrap').style.display = 'none';
+
+  try {
+    // Parallel cache reads
+    const [invRaw, dealRaw, meetRaw, contactRaw, meta] = await Promise.all([
+      fetchFromCache('cached-investments', 'investments'),
+      fetchFromCache('cached-deals', 'deals'),
+      fetchFromCache('cached-meetings', 'meetings'),
+      fetchFromCache('cached-contacts', 'contacts'),
+      fetchCacheMeta()
+    ]);
+
+    // Show cache age
+    if (meta && meta.lastBuildTime) {
+      const age = Math.round((Date.now() - new Date(meta.lastBuildTime).getTime()) / 60000);
+      document.getElementById('cache-age').textContent = `Cache: ${age}m ago`;
+    }
+
+    // Normalize investments
+    ALL_INVESTMENTS = invRaw.map(r => ({
+      id: r.id,
+      amount: parseFloat(r.properties?.investment_amount || 0),
+      fundsReceived: r.properties?.funds_received ? new Date(r.properties.funds_received).getTime() : null,
+      fund: r.properties?.fund_invested || '',
+      type: r.properties?.type_of_investment || '',
+      closer: r.properties?.closer || '',
+      setter: r.properties?.setter || '',
+      email: (r.properties?.email_address || '').toLowerCase().trim()
+    })).filter(i => i.fundsReceived);
+
+    // Normalize deals
+    ALL_DEALS = dealRaw.map(r => ({
+      id: r.id,
+      stage: r.properties?.dealstage || '',
+      pipeline: r.properties?.pipeline || '',
+      closedate: r.properties?.closedate ? new Date(r.properties.closedate).getTime() : null,
+      createdate: r.properties?.createdate ? new Date(r.properties.createdate).getTime() : null,
+      setter_owner: r.properties?.setter_owner || '',
+      dcDoneTs: r.properties?.hs_v2_date_entered_233853874 ? new Date(r.properties.hs_v2_date_entered_233853874).getTime() : null
+    })).filter(d => d.pipeline === MAIN_PIPELINE_ID);
+
+    // Normalize meetings
+    ALL_MEETINGS = meetRaw.map(r => {
+      const type = r.properties?.hs_activity_type || r.properties?.call_and_meeting_type || '';
+      return {
+        id: r.id,
+        ts: r.properties?.hs_timestamp ? new Date(r.properties.hs_timestamp).getTime() : null,
+        startTime: r.properties?.hs_meeting_start_time ? new Date(r.properties.hs_meeting_start_time).getTime() : null,
+        outcome: r.properties?.hs_meeting_outcome || '',
+        ownerId: r.properties?.hubspot_owner_id || '',
+        type,
+        isDiscovery: DISCOVERY_TYPES.has(type),
+        createdate: r.properties?.hs_createdate ? new Date(r.properties.hs_createdate).getTime() : null
+      };
+    }).filter(m => m.ts);
+
+    // Normalize contacts (we need lightmarks_tags, but it's not cached — we'll fetch live below)
+    ALL_CONTACTS = contactRaw.map(r => ({
+      id: r.id,
+      email: (r.properties?.email || '').toLowerCase().trim(),
+      name: [r.properties?.firstname, r.properties?.lastname].filter(Boolean).join(' '),
+      setter_owner: r.properties?.setter_owner || ''
+    }));
+
+    // Load manual data (projected raises)
+    await loadManualData();
+
+    render();
+  } catch (e) {
+    document.getElementById('loading').innerHTML = `<span style="color:#f87171">Error: ${e.message}</span>`;
+    console.error(e);
+  }
+}
+
+// ── Manual data (stored in R2 via worker) ─────────────────
+// For v1: use localStorage as a fallback until the worker route is built.
+// Worker route /kpi-data will be built next.
+function loadManualData() {
+  try {
+    const raw = localStorage.getItem('kpi-manual-data');
+    if (raw) MANUAL_DATA = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function saveManualData() {
+  localStorage.setItem('kpi-manual-data', JSON.stringify(MANUAL_DATA));
+}
+
+function getManual(weekKeyStr, field) {
+  return MANUAL_DATA[weekKeyStr]?.[field] ?? '';
+}
+
+function setManual(weekKeyStr, field, value) {
+  if (!MANUAL_DATA[weekKeyStr]) MANUAL_DATA[weekKeyStr] = {};
+  MANUAL_DATA[weekKeyStr][field] = value;
+  saveManualData();
+}
+
+// ── Month navigation ──────────────────────────────────────
+function navMonth(delta) {
+  currentMonth.setMonth(currentMonth.getMonth() + delta);
+  render();
+}
+
+// ── Metrics computation ───────────────────────────────────
+function computeMetrics(weeks) {
+  const ms = monthStart(currentMonth);
+  const me = monthEnd(currentMonth);
+
+  const results = weeks.map(w => {
+    const wStart = w.start.getTime();
+    const wEnd = w.end.getTime();
+
+    // -- Discovery Calls Set (internal team = tracked setters)
+    const setterMeetings = ALL_MEETINGS.filter(m =>
+      m.isDiscovery && m.createdate && m.createdate >= wStart && m.createdate <= wEnd
+    );
+    const internalDCS = setterMeetings.filter(m => SETTER_IDS[m.ownerId]).length;
+    const outsourcedDCS = setterMeetings.filter(m => !SETTER_IDS[m.ownerId] && !CLOSER_IDS[m.ownerId] && !AM_IDS[m.ownerId]).length;
+
+    // -- Investments funded this week (new only, Fund V only for soft commits)
+    const weekInvs = ALL_INVESTMENTS.filter(i => i.fundsReceived >= wStart && i.fundsReceived <= wEnd);
+    const newInvs = weekInvs.filter(i => i.type === 'New');
+    const repeatInvs = weekInvs.filter(i => i.type !== 'New');
+    const fundVInvs = weekInvs.filter(i => i.fund === FUND_V_LABEL);
+
+    const totalCapital = weekInvs.reduce((s, i) => s + i.amount, 0);
+    const newCapital = newInvs.reduce((s, i) => s + i.amount, 0);
+    const repeatCapital = repeatInvs.reduce((s, i) => s + i.amount, 0);
+
+    // -- Soft Commitments (Fund V): deals entering Investnext Committed stage this week
+    // (Commitment object query would be better, but for v1 we use deal stage as fallback)
+    const softCommitDeals = ALL_DEALS.filter(d => {
+      const enteredTs = d.closedate; // approximation — ideally stage entry timestamp
+      return enteredTs && enteredTs >= wStart && enteredTs <= wEnd &&
+             d.stage === INVESTNEXT_COMMITTED_STAGE;
+    });
+    const softCommitCount = softCommitDeals.length;
+    // Soft commit dollar amount: sum of investments linked to those deals (approximate)
+    const softCommitDollars = fundVInvs.reduce((s, i) => s + i.amount, 0);
+
+    return {
+      weekLabel: `${fmtDate(w.start)}–${fmtDate(w.end)}`,
+      weekKey: w.key,
+      internalDCS,
+      outsourcedDCS,
+      softCommitCount,
+      softCommitDollars,
+      totalCapital,
+      newCapital,
+      repeatCapital,
+      newInvsCount: newInvs.length,
+      repeatInvsCount: repeatInvs.length,
+      totalInvsCount: weekInvs.length
+    };
+  });
+
+  // -- Closing Ratio: rolling 60 days from end of month, new investments only, excl no-shows
+  const sixtyDaysAgo = addDays(me, -60).getTime();
+  const meMs = me.getTime();
+
+  // Discoveries completed (DC Done stage entered) in 60-day window
+  const discoveriesCompleted = ALL_DEALS.filter(d =>
+    d.dcDoneTs && d.dcDoneTs >= sixtyDaysAgo && d.dcDoneTs <= meMs
+  );
+  // Exclude no-shows: meetings with outcome = 'NOSHOW' or 'NO SHOW' — but we check by deal stage
+  // For simplicity, we count deals that entered DC Done (which means the call happened)
+  const dcDoneCount = discoveriesCompleted.length;
+
+  // New investments funded in that same 60-day window
+  const newInvsFunded60 = ALL_INVESTMENTS.filter(i =>
+    i.type === 'New' && i.fundsReceived >= sixtyDaysAgo && i.fundsReceived <= meMs
+  ).length;
+
+  const closingRatio = dcDoneCount > 0 ? (newInvsFunded60 / dcDoneCount * 100).toFixed(1) : '—';
+
+  // -- Monthly totals
+  const msMs = ms.getTime();
+  const monthInvs = ALL_INVESTMENTS.filter(i => i.fundsReceived >= msMs && i.fundsReceived <= meMs);
+  const monthCapital = monthInvs.reduce((s, i) => s + i.amount, 0);
+
+  // -- Annual totals (Jan 1 of current year to end of month)
+  const yearStart = new Date(currentMonth.getFullYear(), 0, 1).getTime();
+  const annualInvs = ALL_INVESTMENTS.filter(i => i.fundsReceived >= yearStart && i.fundsReceived <= meMs);
+  const annualCapital = annualInvs.reduce((s, i) => s + i.amount, 0);
+
+  return { weeks: results, closingRatio, monthCapital, annualCapital };
+}
+
+// ── Currency formatter ────────────────────────────────────
+function fmtDollar(v) {
+  if (v == null || isNaN(v)) return '—';
+  if (v >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'K';
+  return '$' + v.toLocaleString();
+}
+
+function fmtCount(v) { return v == null ? '—' : v.toLocaleString(); }
+
+// ── Render ────────────────────────────────────────────────
+function render() {
+  document.getElementById('month-label').textContent = fmtMonth(currentMonth);
+
+  const weeks = getWeeksForMonth(currentMonth);
+  const metrics = computeMetrics(weeks);
+  const data = metrics.weeks;
+
+  // Build header row
+  let html = '<thead><tr><th>Metric</th>';
+  data.forEach(d => { html += `<th>${d.weekLabel}</th>`; });
+  html += '<th class="total-col">Month Total</th></tr></thead><tbody>';
+
+  // Helper: sum a field across weeks
+  const weekSum = (field) => data.reduce((s, d) => s + (d[field] || 0), 0);
+
+  // ── Section: Activity ──
+  html += sectionRow('Activity');
+  html += dataRow('Discovery Calls Set (Internal)', data.map(d => fmtCount(d.internalDCS)), fmtCount(weekSum('internalDCS')));
+  html += dataRow('Discovery Calls Set (Outsourced)', data.map(d => fmtCount(d.outsourcedDCS)), fmtCount(weekSum('outsourcedDCS')));
+  html += dataRow('Closing Ratio (60d rolling, new only)', data.map(() => ''), metrics.closingRatio + '%');
+
+  // ── Section: Commitments ──
+  html += sectionRow('Soft Commitments — Fund V');
+  html += dataRow('Soft Commits Signed (count)', data.map(d => fmtCount(d.softCommitCount)), fmtCount(weekSum('softCommitCount')));
+  html += dataRow('Total $ of Soft Commits This Week', data.map(d => fmtDollar(d.softCommitDollars)), fmtDollar(weekSum('softCommitDollars')));
+
+  // ── Section: Capital Raise ──
+  html += sectionRow('Capital Raise');
+  html += dataRow('Total Monthly Capital Raise So Far', data.map(() => ''), fmtDollar(metrics.monthCapital));
+  html += dataRow('New Capital', data.map(d => fmtDollar(d.newCapital)), fmtDollar(weekSum('newCapital')));
+  html += dataRow('Repeat Capital', data.map(d => fmtDollar(d.repeatCapital)), fmtDollar(weekSum('repeatCapital')));
+  html += dataRow('Total Annual Capital Raise', data.map(() => ''), fmtDollar(metrics.annualCapital));
+
+  // ── Section: Projections (manual entry) ──
+  html += sectionRow('Projections (manual)');
+  html += editableRow('Projected Capital Raise This Week', data, 'projectedWeekly');
+  html += editableRow('Projected Capital Raise This Month', data, 'projectedMonthly');
+
+  html += '</tbody>';
+
+  document.getElementById('kpi-table').innerHTML = html;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('table-wrap').style.display = '';
+
+  // Wire up editable inputs
+  document.querySelectorAll('.kpi-editable').forEach(input => {
+    input.addEventListener('change', (e) => {
+      setManual(e.target.dataset.week, e.target.dataset.field, e.target.value);
+    });
+  });
+}
+
+function sectionRow(label) {
+  const weeks = getWeeksForMonth(currentMonth);
+  const cols = weeks.length + 1; // +1 for total col
+  return `<tr class="section-head"><td colspan="${cols + 1}">${label}</td></tr>`;
+}
+
+function dataRow(label, weekValues, totalValue) {
+  let html = `<tr class="data-row"><td class="metric-name">${label}</td>`;
+  weekValues.forEach(v => { html += `<td>${v}</td>`; });
+  html += `<td class="total-col">${totalValue}</td></tr>`;
+  return html;
+}
+
+function editableRow(label, weekData, field) {
+  let html = `<tr class="data-row"><td class="metric-name">${label}</td>`;
+  weekData.forEach(d => {
+    const val = getManual(d.weekKey, field);
+    html += `<td class="editable"><input class="kpi-editable" type="text" placeholder="$0" data-week="${d.weekKey}" data-field="${field}" value="${val}"></td>`;
+  });
+  // Total col: no input for projections at month level (it's its own manual field)
+  const monthKey = weekKey(monthStart(currentMonth));
+  const monthVal = field === 'projectedMonthly' ? getManual(monthKey, field) : '';
+  if (field === 'projectedMonthly') {
+    html += `<td class="total-col editable"><input class="kpi-editable" type="text" placeholder="$0" data-week="${monthKey}" data-field="${field}" value="${monthVal}"></td>`;
+  } else {
+    html += `<td class="total-col">—</td>`;
+  }
+  html += '</tr>';
+  return html;
+}
+
+function refreshData() {
+  loadAllData();
+}
+
+// ── Init ──────────────────────────────────────────────────
+// Set to current month
+currentMonth = monthStart(new Date());
+loadAllData();
+</script>
+</body>
+</html>
