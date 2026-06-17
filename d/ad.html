@@ -3096,6 +3096,13 @@ function aggregate(){
     // googleCampaignName into ea and the bucket collects names into
     // bucketGoogleNames. Join by normalized name against GOOGLE_DATA_BY_NAME.
     const gNames = bucketGoogleNames[row.key];
+    if(gNames && gNames.size > 0){
+      // DIAGNOSTIC: log what names are being looked up
+      for(const name of gNames){
+        const gd = GOOGLE_DATA_BY_NAME[name];
+        if(!gd) console.log('[DIAG] Google name NOT found in GOOGLE_DATA_BY_NAME:', JSON.stringify(name), 'row.key:', row.key);
+      }
+    }
     if(gNames){
       for(const name of gNames){
         const gd = GOOGLE_DATA_BY_NAME[name];
@@ -6073,6 +6080,11 @@ async function load(){
     for(const [id, gd] of Object.entries(GOOGLE_DATA_BY_ID)){
       const nk = (gd.name || '').toLowerCase().trim();
       if(nk) GOOGLE_DATA_BY_NAME[nk] = {...gd, id};
+    }
+    // DIAGNOSTIC: log Google name keys that have spend
+    {
+      const withSpend = Object.entries(GOOGLE_DATA_BY_NAME).filter(([k,v]) => v.spend > 0);
+      if(withSpend.length) console.log('[DIAG] GOOGLE_DATA_BY_NAME keys with spend:', withSpend.map(([k,v]) => `"${k}" → $${v.spend.toFixed(2)}`));
     }
 
     {
