@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Review Builder v0.2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgenjs.bundle.js"></script>
+<style>
+:root {
+  --navy: #14213D;
+  --navy-light: #1F2733;
+  --blue-card: #D9E0EA;
+  --blue-bg: #F3F6FB;
+  --green: #2E7D5B;
+  --red: #B23A48;
+  --amber: #C47F17;
+  --chart-actual: #3E5C8A;
+  --chart-budget: #A8B8D0;
+  --text: #1F2733;
+  --text-muted: #5A6A7A;
+  --border: #D0D8E4;
+  --white: #FFFFFF;
+  --radius: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--blue-bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+.header .vpill {
+  font-size: 11px;
+  background: rgba(255,255,255,0.15);
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+/* ── Phases ── */
+.phase { display: none; padding: 32px; max-width: 1200px; margin: 0 auto; }
+.phase.active { display: block; }
+
+/* ── Phase 1: Upload ── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 80px 40px;
+  text-align: center;
+  background: var(--white);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--chart-actual);
+  background: #EDF1F8;
+}
+.upload-zone h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.upload-zone p { color: var(--text-muted); font-size: 14px; }
+.upload-zone input[type="file"] { display: none; }
+.upload-icon {
+  width: 48px; height: 48px; margin: 0 auto 16px;
+  background: var(--blue-card);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: var(--chart-actual);
+}
+
+/* ── Phase 2: Processing ── */
+.processing { text-align: center; padding: 120px 40px; }
+.processing h2 { font-size: 20px; margin-bottom: 12px; }
+.processing p { color: var(--text-muted); font-size: 14px; }
+.spinner {
+  width: 40px; height: 40px; margin: 0 auto 24px;
+  border: 3px solid var(--blue-card);
+  border-top-color: var(--chart-actual);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Phase 3: Staging ── */
+.section-block {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.section-header {
+  padding: 16px 20px;
+  background: var(--navy);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+.section-header .badge {
+  font-size: 11px;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.section-body { padding: 20px; }
+.section-body.collapsed { display: none; }
+
+/* ── KPI Summary Row ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--blue-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.kpi-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px; }
+.kpi-card .value { font-size: 24px; font-weight: 700; }
+.kpi-card .sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.kpi-card .value.green { color: var(--green); }
+.kpi-card .value.red { color: var(--red); }
+
+/* ── Property Table ── */
+.prop-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.prop-table th {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.prop-table td { padding: 8px 12px; border-bottom: 1px solid #EEF1F6; }
+.prop-table tr:hover td { background: var(--blue-bg); }
+.prop-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.prop-table .green { color: var(--green); }
+.prop-table .red { color: var(--red); }
+
+/* ── Spotlight Picker ── */
+.spotlight-list { display: flex; flex-direction: column; gap: 8px; }
+.spotlight-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--blue-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.spotlight-item .rank { font-weight: 700; color: var(--text-muted); width: 24px; text-align: center; }
+.spotlight-item .name { flex: 1; font-weight: 600; }
+.spotlight-item .var-badge {
+  font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+}
+.spotlight-item .var-badge.positive { background: #E8F5E9; color: var(--green); }
+.spotlight-item .var-badge.negative { background: #FDECEA; color: var(--red); }
+.spotlight-item .remove-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 16px; padding: 4px;
+}
+.spotlight-item .remove-btn:hover { color: var(--red); }
+
+.add-spotlight {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.add-spotlight select {
+  flex: 1; padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 13px; background: var(--white);
+}
+
+/* ── Editable Narrative ── */
+.narrative-block { margin-bottom: 20px; }
+.narrative-block label {
+  display: block; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.narrative-block textarea {
+  width: 100%; min-height: 120px; padding: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: inherit; font-size: 13px; line-height: 1.6;
+  resize: vertical; color: var(--text);
+}
+.narrative-block textarea:focus {
+  outline: none; border-color: var(--chart-actual);
+  box-shadow: 0 0 0 3px rgba(62,92,138,0.12);
+}
+.narrative-block .regen-btn {
+  margin-top: 6px; font-size: 12px;
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 4px 12px;
+  cursor: pointer; color: var(--text-muted);
+}
+.narrative-block .regen-btn:hover { border-color: var(--chart-actual); color: var(--chart-actual); }
+
+/* ── Build Button ── */
+.build-bar {
+  position: sticky; bottom: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+}
+.build-bar .status { font-size: 13px; color: var(--text-muted); flex: 1; }
+.btn {
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-primary:hover { background: #1a2d52; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: var(--blue-card); color: var(--navy); }
+.btn-secondary:hover { background: #c5d0e2; }
+
+/* ── Phase 4: Building ── */
+.build-progress { text-align: center; padding: 80px 40px; }
+.build-progress h2 { font-size: 20px; margin-bottom: 8px; }
+.progress-bar-track {
+  width: 400px; max-width: 100%; height: 6px;
+  background: var(--blue-card); border-radius: 3px;
+  margin: 20px auto 12px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--chart-actual);
+  border-radius: 3px; transition: width 0.3s;
+  width: 0%;
+}
+.build-log {
+  max-width: 500px; margin: 16px auto 0;
+  font-size: 12px; color: var(--text-muted);
+  text-align: left; max-height: 200px; overflow-y: auto;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  background: var(--navy); color: #8899AA;
+  padding: 12px 16px; border-radius: var(--radius);
+}
+.build-log .entry { padding: 2px 0; }
+.build-log .entry.done { color: var(--green); }
+.build-log .entry.error { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Portfolio Review Builder</h1>
+  <span class="vpill">v0.2</span>
+</div>
+
+<!-- ── Phase 1: Upload ── -->
+<div id="phase-upload" class="phase active">
+  <div class="upload-zone" id="dropZone">
+    <div class="upload-icon">📊</div>
+    <h2>Upload Budget to Actual workbook</h2>
+    <p>Drop an .xlsb or .xlsx file here, or click to browse</p>
+    <input type="file" id="fileInput" accept=".xlsb,.xlsx,.xls">
+  </div>
+</div>
+
+<!-- ── Phase 2: Processing ── -->
+<div id="phase-processing" class="phase">
+  <div class="processing">
+    <div class="spinner"></div>
+    <h2 id="procTitle">Reading workbook…</h2>
+    <p id="procSub">Parsing sheets and computing metrics</p>
+  </div>
+</div>
+
+<!-- ── Phase 3: Staging ── -->
+<div id="phase-staging" class="phase">
+
+  <!-- Portfolio KPIs -->
+  <div class="section-block">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>Portfolio Summary</span>
+      <span class="badge" id="periodBadge">YTD 2026</span>
+    </div>
+    <div class="section-body" id="summaryBody">
+      <div class="kpi-row" id="kpiRow"></div>
+    </div>
+  </div>
+
+  <!-- Fund Performance -->
+  <div class="section-block">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>Fund Performance</span>
+      <span class="badge" id="fundCount"></span>
+    </div>
+    <div class="section-body" id="fundBody">
+      <table class="prop-table" id="fundTable">
+        <thead><tr>
+          <th>Fund</th><th>Properties</th>
+          <th class="num">YTD Income</th><th class="num">Inc vs Bud</th>
+          <th class="num">YTD NOI</th><th class="num">NOI vs Bud</th>
+          <th class="num">NOI Margin</th>
+        </tr></thead>
+        <tbody id="fundTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Property Rankings -->
+  <div class="section-block">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>All Properties — by NOI Variance</span>
+      <span class="badge" id="propCount"></span>
+    </div>
+    <div class="section-body" id="propBody">
+      <table class="prop-table" id="propTable">
+        <thead><tr>
+          <th>Property</th><th>Fund</th>
+          <th class="num">YTD Income</th><th class="num">YTD NOI</th>
+          <th class="num">NOI Var $</th><th class="num">NOI Var %</th>
+          <th class="num">DSCR</th><th>Status</th>
+        </tr></thead>
+        <tbody id="propTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Spotlight Picks -->
+  <div class="section-block">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>Spotlight Properties</span>
+      <span class="badge">Editable</span>
+    </div>
+    <div class="section-body" id="spotlightBody">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+        Top and bottom performers get dedicated spotlight slides. Drag to reorder, click ✕ to remove, or add from the dropdown.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:var(--green);margin-bottom:8px;">Winners</h4>
+          <div class="spotlight-list" id="winnersSpotlight"></div>
+          <div class="add-spotlight" style="margin-top:8px;">
+            <select id="addWinnerSelect"><option value="">Add property…</option></select>
+            <button class="btn btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="addSpotlight('winners')">Add</button>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:var(--red);margin-bottom:8px;">Underperformers</h4>
+          <div class="spotlight-list" id="losersSpotlight"></div>
+          <div class="add-spotlight" style="margin-top:8px;">
+            <select id="addLoserSelect"><option value="">Add property…</option></select>
+            <button class="btn btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="addSpotlight('losers')">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Narratives -->
+  <div class="section-block">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span>Narrative Sections</span>
+      <span class="badge">AI-Generated · Editable</span>
+    </div>
+    <div class="section-body" id="narrativeBody">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        These narratives are generated from the data and placed into the deck. Edit freely — your changes go directly into the slides.
+      </p>
+      <div class="narrative-block">
+        <label>Executive Summary — What is working</label>
+        <textarea id="narr-working"></textarea>
+        <button class="regen-btn" onclick="regenNarrative('working')">↻ Regenerate</button>
+      </div>
+      <div class="narrative-block">
+        <label>Executive Summary — What needs attention</label>
+        <textarea id="narr-attention"></textarea>
+        <button class="regen-btn" onclick="regenNarrative('attention')">↻ Regenerate</button>
+      </div>
+      <div class="narrative-block">
+        <label>Forward Outlook — Recommended Actions</label>
+        <textarea id="narr-actions"></textarea>
+        <button class="regen-btn" onclick="regenNarrative('actions')">↻ Regenerate</button>
+      </div>
+      <div class="narrative-block">
+        <label>Forward Outlook — Key Risks</label>
+        <textarea id="narr-risks"></textarea>
+        <button class="regen-btn" onclick="regenNarrative('risks')">↻ Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Build Bar -->
+  <div class="build-bar">
+    <span class="status" id="buildStatus"></span>
+    <button class="btn btn-secondary" onclick="goToUpload()">← Different file</button>
+    <button class="btn btn-primary" id="buildBtn" onclick="buildDeck()">Build Deck →</button>
+  </div>
+</div>
+
+<!-- ── Phase 4: Building ── -->
+<div id="phase-building" class="phase">
+  <div class="build-progress">
+    <h2 id="buildTitle">Assembling deck…</h2>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <p id="buildStep" style="font-size:13px;color:var(--text-muted);"></p>
+    <div class="build-log" id="buildLog"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════════
+const WORKER_BASE = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+let WB = null;           // parsed workbook
+let DATA = null;         // computed portfolio data
+let SPOTLIGHTS = { winners: [], losers: [] };
+
+// ═══════════════════════════════════════════════════════════════════
+// PHASE NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById('phase-' + id).classList.add('active');
+}
+function toggleSection(el) {
+  el.nextElementSibling.classList.toggle('collapsed');
+}
+function goToUpload() { showPhase('upload'); }
+
+// ═══════════════════════════════════════════════════════════════════
+// PHASE 1: FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  showPhase('processing');
+  try {
+    const data = await file.arrayBuffer();
+    WB = XLSX.read(data, { type: 'array' });
+    updateProc('Workbook loaded', `${WB.SheetNames.length} sheets found`);
+    await new Promise(r => setTimeout(r, 300));
+
+    updateProc('Computing metrics…', 'Parsing property data');
+    DATA = parseWorkbook(WB);
+    await new Promise(r => setTimeout(r, 200));
+
+    updateProc('Generating narratives…', 'Calling AI for executive summary');
+    await generateAllNarratives();
+
+    renderStaging();
+    showPhase('staging');
+  } catch (err) {
+    updateProc('Error reading file', err.message);
+    console.error(err);
+  }
+}
+
+function updateProc(title, sub) {
+  document.getElementById('procTitle').textContent = title;
+  document.getElementById('procSub').textContent = sub;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PHASE 2: WORKBOOK PARSING
+// ═══════════════════════════════════════════════════════════════════
+function sheetToRows(name) {
+  const ws = WB.Sheets[name];
+  if (!ws) return [];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+}
+
+function parseWorkbook(wb) {
+  const out = { properties: [], funds: [], portfolio: {}, monthly: [], dscr: {}, cashRunway: {}, highlights: {} };
+
+  // ── Executive Summary ──
+  // Row 4: header (Metric | Actual | Budget | Variance $ | Variance %)
+  // Row 5: Total Income, Row 6: Total Expense, Row 7: NOI
+  // Row 10: fund header, Rows 11-14: funds (Fund III, Fund IV, Fund V, PORTFOLIO)
+  // Row 17: monthly header, Rows 18-24: monthly trends (Jan–Apr)
+  const es = sheetToRows('Executive Summary');
+  if (es.length > 7) {
+    out.portfolio = {
+      income:     { actual: n(es[5]?.[1]), budget: n(es[5]?.[2]), varDollar: n(es[5]?.[3]), varPct: n(es[5]?.[4]) },
+      expense:    { actual: n(es[6]?.[1]), budget: n(es[6]?.[2]), varDollar: n(es[6]?.[3]), varPct: n(es[6]?.[4]) },
+      noi:        { actual: n(es[7]?.[1]), budget: n(es[7]?.[2]), varDollar: n(es[7]?.[3]), varPct: n(es[7]?.[4]) },
+    };
+    // Monthly trends — rows 18-24
+    const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+    for (let m = 0; m < 4; m++) {
+      out.monthly.push({
+        month: months[m],
+        incActual: n(es[18]?.[m+1]), incBudget: n(es[19]?.[m+1]),
+        expActual: n(es[20]?.[m+1]), expBudget: n(es[21]?.[m+1]),
+        noiActual: n(es[22]?.[m+1]), noiBudget: n(es[23]?.[m+1]),
+        noiVar:    n(es[24]?.[m+1]),
+      });
+    }
+    // Fund rows 11-14 (Fund III, Fund IV, Fund V, PORTFOLIO)
+    for (let r = 11; r <= 14; r++) {
+      if (!es[r] || !es[r][0]) continue;
+      const fname = String(es[r][0]).trim();
+      out.funds.push({
+        name: fname,
+        propCount: n(es[r][1]),
+        incActual: n(es[r][2]), incBudget: n(es[r][3]), incVarPct: n(es[r][4]),
+        noiActual: n(es[r][5]), noiBudget: n(es[r][6]), noiVarDollar: n(es[r][7]), noiVarPct: n(es[r][8]),
+      });
+    }
+  }
+
+  // ── Fund Summary (per-property) ──
+  // Row 2: header row (Property | Actual Income | Budget Income | ... )
+  // CRITICAL: Columns 1-12 are JANUARY ONLY (not YTD)
+  //   Jan: cols 1-12 (Inc actual/budget/var$/var%, Exp actual/budget/var$/var%, NOI actual/budget/var$/var%)
+  //   Feb: cols 13-24, Mar: cols 25-36, Apr: cols 37-48
+  // YTD per-property = sum of all 4 months
+  // Row 3: "Fund III" (fund header), Row 4+: property rows, "Fund III TOTAL" etc.
+  const fs = sheetToRows('Fund Summary');
+  let currentFund = '';
+  for (let r = 3; r < fs.length; r++) {
+    const row = fs[r];
+    if (!row || row[0] === null || row[0] === undefined) continue;
+    const raw = String(row[0]);
+    const name = raw.trim();
+    if (!name) continue;
+
+    // Fund header rows
+    if (/^Fund\s+(III|IV|V|VI)$/i.test(name)) { currentFund = name; continue; }
+    // Total/summary rows
+    if (/TOTAL$/i.test(name) || /^PORTFOLIO/i.test(name)) continue;
+    // Header row
+    if (/^Property$/i.test(name)) continue;
+    // Below PORTFOLIO TOTAL are fund-level summary KPIs — stop
+    if (/^FUND-LEVEL/i.test(name) || /^#\s*Properties$/i.test(name) ||
+        /^Total\s+(Actual|Budget)/i.test(name) || /^(Income|Expense|NOI)\s+(Variance|Margin|Ratio)/i.test(name) ||
+        /^%\s+of\s+Portfolio/i.test(name)) break;
+
+    // Monthly columns: Jan=[1..12], Feb=[13..24], Mar=[25..36], Apr=[37..48]
+    // Within each: [+0]=incActual, [+1]=incBudget, [+2]=incVar$, [+3]=incVar%,
+    //              [+4]=expActual, [+5]=expBudget, [+6]=expVar$, [+7]=expVar%,
+    //              [+8]=noiActual, [+9]=noiBudget, [+10]=noiVar$, [+11]=noiVar%
+    const mo = [
+      { off: 1,  label: 'Jan' },
+      { off: 13, label: 'Feb' },
+      { off: 25, label: 'Mar' },
+      { off: 37, label: 'Apr' },
+    ];
+
+    const monthly = mo.map(m => ({
+      month: m.label,
+      incActual: n(row[m.off + 0]),  incBudget: n(row[m.off + 1]),
+      incVarDollar: n(row[m.off + 2]), incVarPct: n(row[m.off + 3]),
+      expActual: n(row[m.off + 4]),  expBudget: n(row[m.off + 5]),
+      expVarDollar: n(row[m.off + 6]), expVarPct: n(row[m.off + 7]),
+      noiActual: n(row[m.off + 8]),  noiBudget: n(row[m.off + 9]),
+      noiVarDollar: n(row[m.off + 10]), noiVarPct: n(row[m.off + 11]),
+    }));
+
+    // Compute YTD by summing the 4 months
+    const sum = (arr, field) => arr.reduce((s, m) => s + (m[field] || 0), 0);
+    const ytdInc = sum(monthly, 'incActual');
+    const ytdIncBud = sum(monthly, 'incBudget');
+    const ytdExp = sum(monthly, 'expActual');
+    const ytdExpBud = sum(monthly, 'expBudget');
+    const ytdNOI = sum(monthly, 'noiActual');
+    const ytdNOIBud = sum(monthly, 'noiBudget');
+
+    const prop = {
+      name: name,
+      fund: currentFund,
+      incActual: ytdInc, incBudget: ytdIncBud,
+      incVarDollar: ytdInc - ytdIncBud,
+      incVarPct: ytdIncBud ? (ytdInc - ytdIncBud) / ytdIncBud : null,
+      expActual: ytdExp, expBudget: ytdExpBud,
+      expVarDollar: ytdExp - ytdExpBud,
+      expVarPct: ytdExpBud ? (ytdExp - ytdExpBud) / ytdExpBud : null,
+      noiActual: ytdNOI, noiBudget: ytdNOIBud,
+      noiVarDollar: ytdNOI - ytdNOIBud,
+      noiVarPct: ytdNOIBud ? (ytdNOI - ytdNOIBud) / ytdNOIBud : null,
+      monthly: monthly,
+      dscr: null,
+      excluded: false,
+      unbudgeted: false,
+    };
+
+    // Special cases
+    if (/excluded|hidden forest/i.test(raw)) prop.excluded = true;
+    if (/foxfire/i.test(name) && ytdIncBud === 0) prop.unbudgeted = true;
+
+    out.properties.push(prop);
+  }
+
+  // ── DSCR ──
+  // Structure: FUND header → property rows w/ monthly DS → "DSCR (NOI / YTD DS)" row
+  // Property names in DSCR sheet differ from Fund Summary (e.g. "Dutch Gardens MHC" vs "Dutch Gardens")
+  const dscrSheet = sheetToRows('DSCR YTD 2026');
+  let dscrFund = '';
+  for (let r = 0; r < dscrSheet.length; r++) {
+    const row = dscrSheet[r];
+    if (!row) continue;
+    const cell0 = String(row[0] || '').trim();
+    if (!cell0) continue;
+
+    if (/^FUND\s+(III|IV|V)/i.test(cell0)) {
+      dscrFund = cell0.replace(/^FUND/i, 'Fund');
+      continue;
+    }
+    if (/^PORTFOLIO$/i.test(cell0)) { dscrFund = 'PORTFOLIO'; continue; }
+
+    // Fund-level DSCR
+    if (/^DSCR/i.test(cell0) || /^PORTFOLIO DSCR/i.test(cell0)) {
+      const val = n(row[1]);
+      if (val && dscrFund) out.dscr[dscrFund] = val;
+      continue;
+    }
+
+    // Skip non-property rows
+    if (/Total|Property|YTD|Source|Summary|Fund\s+V\s+Fund|Zanesville/i.test(cell0)) continue;
+
+    // Property-level: match by name to get monthly debt service
+    const monthlyDS = n(row[1]);
+    if (monthlyDS != null && cell0) {
+      // Fuzzy match DSCR property name to Fund Summary property name
+      const match = out.properties.find(p => dscrNameMatch(p.name, cell0));
+      if (match && monthlyDS > 0) {
+        const ytdDS = monthlyDS * 4; // 4 months YTD
+        match.dscr = match.noiActual / ytdDS;
+        match.monthlyDS = monthlyDS;
+      }
+    }
+  }
+
+  // ── Highlights ──
+  // Rows 5-39: April highlights (Property | Fund | Flag | Highlight text | April NOI Variance)
+  // Rows 43+: YTD highlights (same structure)
+  const hl = sheetToRows('Highlights');
+  for (let r = 5; r < hl.length; r++) {
+    const row = hl[r];
+    if (!row || !row[0]) continue;
+    const name = String(row[0]).trim();
+    if (!name || /^SECTION/i.test(name) || /^Property$/i.test(name)) continue;
+    const flag = String(row[2] || '').trim();
+    const text = String(row[3] || '').trim();
+    if (!text) continue;
+
+    // Use a canonical key for matching
+    const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!out.highlights[key]) out.highlights[key] = [];
+    out.highlights[key].push({ flag, text, section: r < 41 ? 'april' : 'ytd' });
+  }
+
+  // ── Cash Runway ──
+  const cr = sheetToRows('Cash Runway');
+  if (cr.length > 19) {
+    out.cashRunway = {
+      startingCash: n(cr[3]?.[1]),
+      noiAnnual: n(cr[6]?.[1]),
+      debtService: n(cr[7]?.[1]),
+      capex: n(cr[8]?.[1]),
+      infill: n(cr[9]?.[1]),
+      saleOfUnits: n(cr[10]?.[1]),
+      reserves: n(cr[11]?.[1]),
+      netCashFlow: n(cr[12]?.[1]),
+      distributions: n(cr[13]?.[1]),
+      acquisitions: n(cr[14]?.[1]),
+      allInNetCash: n(cr[15]?.[1]),
+      weeklyBurn: n(cr[16]?.[1]),
+      runwayWeeks: n(cr[17]?.[1]),
+      runwayYears: n(cr[18]?.[1]),
+    };
+  }
+
+  // ── Sort properties by NOI variance (best first) ──
+  out.properties.sort((a, b) => (b.noiVarDollar || 0) - (a.noiVarDollar || 0));
+
+  // ── Auto-pick spotlights ──
+  const eligible = out.properties.filter(p => !p.excluded && !p.unbudgeted);
+  SPOTLIGHTS.winners = eligible.filter(p => (p.noiVarDollar || 0) > 0).slice(0, 3).map(p => p.name);
+  SPOTLIGHTS.losers = eligible.filter(p => (p.noiVarDollar || 0) < 0)
+    .sort((a, b) => (a.noiVarDollar || 0) - (b.noiVarDollar || 0))
+    .slice(0, 3).map(p => p.name);
+
+  return out;
+}
+
+// ── Helpers ──
+function n(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const x = Number(v);
+  return isNaN(x) ? null : x;
+}
+
+function fuzzyMatch(a, b) {
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return norm(a).includes(norm(b)) || norm(b).includes(norm(a));
+}
+
+// DSCR sheet uses full names ("Dutch Gardens MHC", "American Presidential Estates (APE)")
+// Fund Summary uses short names ("Dutch Gardens", "APE")
+// Build a mapping table for known mismatches, then fall back to fuzzy
+const DSCR_NAME_MAP = {
+  'princess st parking': 'princess',
+  'dutch gardens mhc': 'dutch gardens',
+  'tilghman mhc': 'tilghman',
+  'timberview mhc': 'timberview',
+  'north beach parking plaza': 'mnl',  // MNL = North Beach complex
+  'south towne meadows mhc': 'stm',
+  'meadows of n lewisburg mhc': 'mnl', // alt name?
+  'ridgebrook hills mhc': 'ridgebrook',
+  'lakeridge estates mhc': 'lakeridge',
+  'hidden forest estates mhc': 'hidden forest',
+  'miami village mhc': 'miami village',
+  'american presidential estates (ape)': 'ape',
+  'charlotte garage': 'charlotte',
+  'luhrs city center garage': 'luhrs/phx',
+  'cedarhurst mhc': 'cedarhurst',
+  'walston mhc': 'walston',
+  'bellecrest mhc': 'bellecrest',
+  'sherman estates': 'sherman',
+  'courtyard': 'courtyard estates',
+  'the meadows': 'meadows mhp',
+};
+
+function dscrNameMatch(fundSummaryName, dscrName) {
+  const fsLower = fundSummaryName.toLowerCase().trim();
+  const dscrLower = dscrName.toLowerCase().trim();
+
+  // Direct match
+  if (fsLower === dscrLower) return true;
+
+  // Check mapping table
+  const mapped = DSCR_NAME_MAP[dscrLower];
+  if (mapped && fsLower.includes(mapped)) return true;
+  if (mapped === fsLower) return true;
+
+  // Fallback: check if one contains the other
+  return fsLower.includes(dscrLower) || dscrLower.includes(fsLower);
+}
+
+function fmtDollar(v, decimals) {
+  if (v == null) return '—';
+  const d = decimals ?? 0;
+  const abs = Math.abs(v);
+  let str;
+  if (abs >= 1e6) str = '$' + (abs/1e6).toFixed(2) + 'M';
+  else if (abs >= 1e3) str = '$' + Math.round(abs/1e3).toLocaleString() + 'K';
+  else str = '$' + abs.toFixed(d);
+  return v < 0 ? '-' + str : str;
+}
+
+function fmtPct(v) {
+  if (v == null) return '—';
+  const s = (v * 100).toFixed(1) + '%';
+  return v > 0 ? '+' + s : s;
+}
+
+function fmtDSCR(v) {
+  if (v == null) return '—';
+  return v.toFixed(2) + 'x';
+}
+
+function varClass(v) {
+  if (v == null) return '';
+  return v >= 0 ? 'green' : 'red';
+}
+
+function noiStatus(p) {
+  if (p.excluded) return 'Excluded';
+  if (p.unbudgeted) return 'Unbudgeted';
+  const pct = p.noiVarPct;
+  if (pct == null) return '—';
+  if (pct > 0.01) return 'Ahead';
+  if (pct < -0.01) return 'Behind';
+  return 'On Budget';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PHASE 3: STAGING UI
+// ═══════════════════════════════════════════════════════════════════
+function renderStaging() {
+  const d = DATA;
+
+  // KPI row
+  const kpiRow = document.getElementById('kpiRow');
+  kpiRow.innerHTML = `
+    <div class="kpi-card">
+      <div class="label">YTD NOI</div>
+      <div class="value ${varClass(d.portfolio.noi?.varDollar)}">${fmtDollar(d.portfolio.noi?.actual)}</div>
+      <div class="sub">${fmtPct(d.portfolio.noi?.varPct)} vs budget</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">YTD Income</div>
+      <div class="value">${fmtDollar(d.portfolio.income?.actual)}</div>
+      <div class="sub">${fmtPct(d.portfolio.income?.varPct)} vs budget</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">YTD Expense</div>
+      <div class="value ${varClass(-(d.portfolio.expense?.varDollar || 0))}">${fmtDollar(d.portfolio.expense?.actual)}</div>
+      <div class="sub">${fmtPct(d.portfolio.expense?.varPct)} vs budget</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Cash Runway</div>
+      <div class="value">${d.cashRunway.runwayYears ? '~' + d.cashRunway.runwayYears.toFixed(1) + ' yrs' : '—'}</div>
+      <div class="sub">${d.cashRunway.runwayWeeks ? Math.round(d.cashRunway.runwayWeeks) + ' weeks' : ''}</div>
+    </div>
+  `;
+
+  // Fund table
+  document.getElementById('fundCount').textContent = d.funds.length + ' funds';
+  const ftb = document.getElementById('fundTableBody');
+  ftb.innerHTML = d.funds.map(f => `<tr>
+    <td style="font-weight:600">${f.name}</td>
+    <td class="num">${f.propCount || '—'}</td>
+    <td class="num">${fmtDollar(f.incActual)}</td>
+    <td class="num ${varClass(f.incVarPct)}">${fmtPct(f.incVarPct)}</td>
+    <td class="num">${fmtDollar(f.noiActual)}</td>
+    <td class="num ${varClass(f.noiVarPct)}">${fmtPct(f.noiVarPct)}</td>
+    <td class="num">${f.noiActual && f.incActual ? (f.noiActual/f.incActual*100).toFixed(1)+'%' : '—'}</td>
+  </tr>`).join('');
+
+  // Property table
+  document.getElementById('propCount').textContent = d.properties.length + ' properties';
+  const ptb = document.getElementById('propTableBody');
+  ptb.innerHTML = d.properties.map(p => `<tr>
+    <td style="font-weight:500">${p.name}</td>
+    <td>${p.fund}</td>
+    <td class="num">${fmtDollar(p.incActual)}</td>
+    <td class="num">${fmtDollar(p.noiActual)}</td>
+    <td class="num ${varClass(p.noiVarDollar)}">${fmtDollar(p.noiVarDollar)}</td>
+    <td class="num ${varClass(p.noiVarPct)}">${fmtPct(p.noiVarPct)}</td>
+    <td class="num">${fmtDSCR(p.dscr)}</td>
+    <td><span style="font-size:11px;font-weight:600;color:${
+      noiStatus(p)==='Ahead' ? 'var(--green)' :
+      noiStatus(p)==='Behind' ? 'var(--red)' : 'var(--text-muted)'
+    }">${noiStatus(p)}</span></td>
+  </tr>`).join('');
+
+  // Spotlight picks
+  renderSpotlights();
+
+  // Populate add-property dropdowns
+  populateSpotlightDropdowns();
+
+  // Status
+  document.getElementById('buildStatus').textContent =
+    `${d.properties.length} properties · ${d.funds.length} funds · Ready to build`;
+}
+
+function renderSpotlights() {
+  ['winners', 'losers'].forEach(type => {
+    const el = document.getElementById(type + 'Spotlight');
+    const list = SPOTLIGHTS[type];
+    el.innerHTML = list.map((name, i) => {
+      const p = DATA.properties.find(x => x.name === name);
+      if (!p) return '';
+      const isPos = (p.noiVarDollar || 0) >= 0;
+      return `<div class="spotlight-item">
+        <span class="rank">${i+1}</span>
+        <span class="name">${p.name}</span>
+        <span class="var-badge ${isPos ? 'positive' : 'negative'}">${fmtDollar(p.noiVarDollar)}</span>
+        <button class="remove-btn" onclick="removeSpotlight('${type}',${i})">✕</button>
+      </div>`;
+    }).join('');
+  });
+}
+
+function removeSpotlight(type, idx) {
+  SPOTLIGHTS[type].splice(idx, 1);
+  renderSpotlights();
+}
+
+function addSpotlight(type) {
+  const sel = document.getElementById(type === 'winners' ? 'addWinnerSelect' : 'addLoserSelect');
+  const name = sel.value;
+  if (!name) return;
+  if (!SPOTLIGHTS[type].includes(name)) {
+    SPOTLIGHTS[type].push(name);
+    renderSpotlights();
+  }
+  sel.value = '';
+}
+
+function populateSpotlightDropdowns() {
+  const allNames = DATA.properties.map(p => p.name);
+  ['addWinnerSelect', 'addLoserSelect'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Add property…</option>' +
+      allNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AI NARRATIVE GENERATION
+// ═══════════════════════════════════════════════════════════════════
+async function callClaude(prompt) {
+  try {
+    const resp = await fetch(WORKER_BASE + '/claude-api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    const data = await resp.json();
+    const text = data.content?.map(c => c.text || '').join('') || '';
+    return text.trim();
+  } catch (err) {
+    console.error('Claude API error:', err);
+    return '(AI generation failed — please write manually)';
+  }
+}
+
+function buildDataContext() {
+  const d = DATA;
+  const p = d.portfolio;
+  let ctx = `Portfolio Performance: YTD (4 months)\n`;
+  ctx += `NOI: ${fmtDollar(p.noi?.actual)} (${fmtPct(p.noi?.varPct)} vs budget, ${fmtDollar(p.noi?.varDollar)} variance)\n`;
+  ctx += `Income: ${fmtDollar(p.income?.actual)} (${fmtPct(p.income?.varPct)} vs budget)\n`;
+  ctx += `Expense: ${fmtDollar(p.expense?.actual)} (${fmtPct(p.expense?.varPct)} vs budget)\n`;
+  ctx += `Cash runway: ~${d.cashRunway.runwayYears?.toFixed(1) || '?'} years (${Math.round(d.cashRunway.runwayWeeks||0)} weeks)\n\n`;
+
+  ctx += `Fund performance:\n`;
+  d.funds.forEach(f => {
+    ctx += `  ${f.name}: ${f.propCount} props, NOI ${fmtDollar(f.noiActual)} (${fmtPct(f.noiVarPct)})\n`;
+  });
+
+  ctx += `\nTop performers (by NOI variance):\n`;
+  d.properties.filter(x => !x.excluded && (x.noiVarDollar||0) > 0).slice(0, 5).forEach(x => {
+    ctx += `  ${x.name} (${x.fund}): NOI ${fmtDollar(x.noiActual)}, beat by ${fmtDollar(x.noiVarDollar)} (${fmtPct(x.noiVarPct)})\n`;
+  });
+
+  ctx += `\nUnderperformers:\n`;
+  d.properties.filter(x => !x.excluded && (x.noiVarDollar||0) < 0)
+    .sort((a,b) => (a.noiVarDollar||0) - (b.noiVarDollar||0))
+    .slice(0, 5).forEach(x => {
+    ctx += `  ${x.name} (${x.fund}): NOI ${fmtDollar(x.noiActual)}, missed by ${fmtDollar(Math.abs(x.noiVarDollar))} (${fmtPct(x.noiVarPct)})\n`;
+  });
+
+  ctx += `\nDSCR watch-list (below 1.25x):\n`;
+  d.properties.filter(x => x.dscr != null && x.dscr < 1.25 && !x.excluded).forEach(x => {
+    ctx += `  ${x.name}: ${x.dscr.toFixed(2)}x\n`;
+  });
+
+  if (d.cashRunway.distributions) {
+    ctx += `\nCash flow: distributions ${fmtDollar(Math.abs(d.cashRunway.distributions))}/yr, acquisitions ${fmtDollar(Math.abs(d.cashRunway.acquisitions||0))}/yr\n`;
+  }
+
+  return ctx;
+}
+
+async function generateAllNarratives() {
+  const ctx = buildDataContext();
+  const base = `You are a real-estate portfolio analyst writing for the executive committee of a private-equity real-estate fund (Sunrise Capital Investors). The audience is sophisticated — use concise, specific language with dollar figures and percentages. No fluff. Write in present tense. Do not use markdown formatting — just plain paragraphs.\n\nData:\n${ctx}\n\n`;
+
+  const prompts = {
+    working: base + `Write 3-4 sentences for the "What is working" section of the executive summary. Highlight the key positive: the NOI beat, what's driving it (expense discipline vs revenue), and which funds/properties stand out. Be specific with numbers.`,
+    attention: base + `Write 3-4 sentences for the "What needs attention" section. Highlight the biggest drags, any DSCR concerns, management company losses if relevant, and the liquidity/runway situation. Be direct about risks.`,
+    actions: base + `Write 4-6 recommended actions for the executive committee, numbered. Each should be 1-2 sentences: a clear directive plus its rationale. Cover runway management, the biggest underperformer, DSCR watch-list, and any structural issues. Be specific — name properties and dollar amounts.`,
+    risks: base + `Write 4-5 key forward-looking risks, each as a short title plus 1-2 sentence explanation. Cover liquidity/runway, interest rate exposure, concentration risk, and any property-specific operational risks. Be specific.`,
+  };
+
+  // Run in parallel
+  const results = await Promise.all(
+    Object.entries(prompts).map(async ([key, prompt]) => {
+      const text = await callClaude(prompt);
+      return [key, text];
+    })
+  );
+
+  results.forEach(([key, text]) => {
+    document.getElementById('narr-' + key).value = text;
+  });
+}
+
+async function regenNarrative(key) {
+  const btn = document.querySelector(`#narr-${key}`).parentElement.querySelector('.regen-btn');
+  btn.textContent = '↻ Generating…';
+  btn.disabled = true;
+
+  const ctx = buildDataContext();
+  const base = `You are a real-estate portfolio analyst writing for the executive committee of Sunrise Capital Investors. Concise, specific, no markdown.\n\nData:\n${ctx}\n\n`;
+
+  const prompts = {
+    working: base + `Write 3-4 sentences for "What is working." NOI beat driver, standout funds/properties. Specific numbers.`,
+    attention: base + `Write 3-4 sentences for "What needs attention." Biggest drags, DSCR concerns, runway. Direct about risks.`,
+    actions: base + `Write 4-6 numbered recommended actions, 1-2 sentences each. Cover runway, underperformers, DSCR, structural issues. Name properties and amounts.`,
+    risks: base + `Write 4-5 key risks. Title + 1-2 sentences each. Liquidity, rates, concentration, operational. Specific.`,
+  };
+
+  const text = await callClaude(prompts[key]);
+  document.getElementById('narr-' + key).value = text;
+  btn.textContent = '↻ Regenerate';
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PHASE 4: BUILD DECK
+// ═══════════════════════════════════════════════════════════════════
+async function buildDeck() {
+  showPhase('building');
+  const log = document.getElementById('buildLog');
+  const fill = document.getElementById('progressFill');
+  log.innerHTML = '';
+
+  function logMsg(msg, cls) {
+    const div = document.createElement('div');
+    div.className = 'entry' + (cls ? ' ' + cls : '');
+    div.textContent = msg;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+  function setProgress(pct, step) {
+    fill.style.width = pct + '%';
+    document.getElementById('buildStep').textContent = step;
+  }
+
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE'; // 13.33" x 7.5"
+
+    // ── Color constants matching the original deck ──
+    const NAVY = '14213D';
+    const WHITE = 'FFFFFF';
+    const CARD_BG = 'D9E0EA';
+    const LIGHT_BG = 'F3F6FB';
+    const GREEN = '2E7D5B';
+    const RED = 'B23A48';
+    const TEXT_DARK = '1F2733';
+    const TEXT_MUTED = '5A6A7A';
+    const CHART_ACT = '3E5C8A';
+    const CHART_BUD = 'A8B8D0';
+    const FOOTER_SIZE = 8;
+
+    function addFooter(slide, pageNum) {
+      slide.addText('Sunrise Capital Investors  ·  Confidential — Executive Committee', {
+        x: 0.5, y: 6.9, w: 9, h: 0.4, fontSize: FOOTER_SIZE, color: TEXT_MUTED, fontFace: 'Arial',
+      });
+      slide.addText('Budget vs Actual  ·  April 2026 & YTD', {
+        x: 9.5, y: 6.9, w: 3, h: 0.4, fontSize: FOOTER_SIZE, color: TEXT_MUTED, fontFace: 'Arial', align: 'right',
+      });
+      if (pageNum != null) {
+        slide.addText(String(pageNum), {
+          x: 12.5, y: 6.9, w: 0.5, h: 0.4, fontSize: FOOTER_SIZE, color: TEXT_MUTED, fontFace: 'Arial', align: 'right',
+        });
+      }
+    }
+
+    let pageNum = 0;
+
+    // ════════════════════════════════════════
+    // SLIDE 1: Title
+    // ════════════════════════════════════════
+    logMsg('Building title slide…');
+    setProgress(5, 'Title slide');
+    {
+      const slide = pptx.addSlide();
+      slide.background = { color: NAVY };
+      slide.addText('SUNRISE CAPITAL INVESTORS', {
+        x: 0.8, y: 0.6, w: 11, h: 0.5, fontSize: 12, color: 'AABBCC',
+        fontFace: 'Arial', letterSpacing: 3, bold: true,
+      });
+      slide.addText('Portfolio Performance Review', {
+        x: 0.8, y: 1.5, w: 11, h: 1, fontSize: 36, color: WHITE,
+        fontFace: 'Arial', bold: true,
+      });
+      slide.addText('Budget vs Actual  —  April 2026 and Year-to-Date (January–April)', {
+        x: 0.8, y: 2.6, w: 11, h: 0.5, fontSize: 16, color: 'AABBCC', fontFace: 'Arial',
+      });
+      slide.addText([
+        { text: 'Expanded Edition  ·  Prepared for the Executive Committee\n', options: { fontSize: 12, color: '8899AA' } },
+        { text: `Funds III, IV and V  ·  ${DATA.properties.length} operating properties`, options: { fontSize: 12, color: '8899AA' } },
+      ], { x: 0.8, y: 3.5, w: 11, h: 0.8, fontFace: 'Arial' });
+      slide.addText('CONFIDENTIAL  ·  Source: Budget to Actual model (live-linked).  Figures unaudited management estimates.', {
+        x: 0.8, y: 6.3, w: 11, h: 0.4, fontSize: 9, color: '667788', fontFace: 'Arial',
+      });
+    }
+
+    // ════════════════════════════════════════
+    // SLIDE 2: Executive Summary
+    // ════════════════════════════════════════
+    logMsg('Building executive summary…');
+    setProgress(10, 'Executive summary');
+    {
+      const slide = pptx.addSlide();
+      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+      slide.addText('THE STORY IN BRIEF', { x: 0.5, y: 0.08, w: 5, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2 });
+      slide.addText('Executive Summary', { x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK });
+
+      // KPI cards
+      const kpis = [
+        { label: 'YTD NOI', value: fmtDollar(DATA.portfolio.noi?.actual), sub: `${fmtPct(DATA.portfolio.noi?.varPct)} vs ${fmtDollar(DATA.portfolio.noi?.budget)}` },
+        { label: 'YTD INCOME', value: fmtDollar(DATA.portfolio.income?.actual), sub: `${fmtPct(DATA.portfolio.income?.varPct)} vs budget` },
+        { label: 'YTD OP. EXPENSE', value: fmtDollar(DATA.portfolio.expense?.actual), sub: `${fmtPct(DATA.portfolio.expense?.varPct)} — under budget` },
+        { label: 'CASH RUNWAY', value: `~${DATA.cashRunway.runwayYears?.toFixed(1) || '?'} yrs`, sub: `${Math.round(DATA.cashRunway.runwayWeeks||0)} wks` },
+      ];
+      kpis.forEach((k, i) => {
+        const x = 0.5 + i * 3.05;
+        slide.addShape(pptx.shapes.RECTANGLE, { x, y: 1.35, w: 2.85, h: 0.9, fill: { color: CARD_BG }, rectRadius: 0.05 });
+        slide.addText(k.label, { x: x+0.15, y: 1.4, w: 2.5, h: 0.25, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial', bold: true });
+        slide.addText(k.value, { x: x+0.15, y: 1.6, w: 2.5, h: 0.35, fontSize: 22, color: TEXT_DARK, fontFace: 'Arial', bold: true });
+        slide.addText(k.sub, { x: x+0.15, y: 1.95, w: 2.5, h: 0.2, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial' });
+      });
+
+      // What is working / What needs attention
+      const working = document.getElementById('narr-working').value;
+      const attention = document.getElementById('narr-attention').value;
+
+      slide.addText('What is working', { x: 0.5, y: 2.5, w: 5.8, h: 0.35, fontSize: 13, fontFace: 'Arial', bold: true, color: GREEN });
+      slide.addText(working, { x: 0.5, y: 2.85, w: 5.8, h: 3.5, fontSize: 10, fontFace: 'Arial', color: TEXT_DARK, lineSpacingMultiple: 1.3, valign: 'top' });
+
+      slide.addText('What needs attention', { x: 6.8, y: 2.5, w: 5.8, h: 0.35, fontSize: 13, fontFace: 'Arial', bold: true, color: RED });
+      slide.addText(attention, { x: 6.8, y: 2.85, w: 5.8, h: 3.5, fontSize: 10, fontFace: 'Arial', color: TEXT_DARK, lineSpacingMultiple: 1.3, valign: 'top' });
+
+      addFooter(slide, ++pageNum);
+    }
+
+    // ════════════════════════════════════════
+    // SLIDE 3: YTD Scorecard with chart
+    // ════════════════════════════════════════
+    logMsg('Building YTD scorecard…');
+    setProgress(15, 'YTD scorecard');
+    {
+      const slide = pptx.addSlide();
+      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+      slide.addText('PORTFOLIO · YTD JANUARY–APRIL 2026', { x: 0.5, y: 0.08, w: 8, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2 });
+      slide.addText('Year-to-Date Scorecard', { x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK });
+
+      // KPI cards
+      const d = DATA.portfolio;
+      const kpis = [
+        { label: 'YTD INCOME', val: fmtDollar(d.income?.actual), sub: `${fmtPct(d.income?.varPct)} vs ${fmtDollar(d.income?.budget)}`, color: varClass(d.income?.varPct) === 'red' ? RED : GREEN },
+        { label: 'YTD OPERATING EXPENSE', val: fmtDollar(d.expense?.actual), sub: `${fmtPct(d.expense?.varPct)} vs ${fmtDollar(d.expense?.budget)}`, color: GREEN },
+        { label: 'YTD NOI', val: fmtDollar(d.noi?.actual), sub: `${fmtPct(d.noi?.varPct)} vs ${fmtDollar(d.noi?.budget)}`, color: varClass(d.noi?.varPct) === 'red' ? RED : GREEN },
+      ];
+      kpis.forEach((k, i) => {
+        const x = 0.5 + i * 4;
+        slide.addShape(pptx.shapes.RECTANGLE, { x, y: 1.35, w: 3.8, h: 0.9, fill: { color: CARD_BG }, rectRadius: 0.05 });
+        slide.addText(k.label, { x: x+0.15, y: 1.4, w: 3.5, h: 0.25, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial', bold: true });
+        slide.addText(k.val, { x: x+0.15, y: 1.6, w: 3.5, h: 0.35, fontSize: 22, color: k.color, fontFace: 'Arial', bold: true });
+        slide.addText(k.sub, { x: x+0.15, y: 1.95, w: 3.5, h: 0.2, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial' });
+      });
+
+      // Bar chart: Income / Expense / NOI — Actual vs Budget
+      slide.addChart(pptx.charts.BAR, [
+        { name: 'Actual', labels: ['Income', 'Op. Expense', 'NOI'],
+          values: [d.income?.actual/1e6, d.expense?.actual/1e6, d.noi?.actual/1e6] },
+        { name: 'Budget', labels: ['Income', 'Op. Expense', 'NOI'],
+          values: [d.income?.budget/1e6, d.expense?.budget/1e6, d.noi?.budget/1e6] },
+      ], {
+        x: 0.5, y: 2.5, w: 7, h: 3.8,
+        showTitle: true, title: 'Actual vs Budget — YTD ($M)', titleFontSize: 11, titleColor: TEXT_DARK,
+        chartColors: [CHART_ACT, CHART_BUD],
+        showValue: true, dataLabelFontSize: 9, dataLabelColor: TEXT_DARK,
+        valAxisNumFmt: '$#,##0.0"M"',
+        catAxisLabelFontSize: 10, valAxisLabelFontSize: 9,
+        showLegend: true, legendPos: 'b', legendFontSize: 9,
+      });
+
+      addFooter(slide, ++pageNum);
+    }
+
+    // ════════════════════════════════════════
+    // SLIDE 4: Fund-Level Performance
+    // ════════════════════════════════════════
+    logMsg('Building fund performance…');
+    setProgress(20, 'Fund performance');
+    {
+      const slide = pptx.addSlide();
+      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+      slide.addText('BY FUND · YTD JANUARY–APRIL', { x: 0.5, y: 0.08, w: 8, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2 });
+      slide.addText('Fund-Level Performance', { x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK });
+
+      const rows = [
+        [{ text: 'Fund', options: { bold: true, fontSize: 10, color: TEXT_MUTED } },
+         { text: 'Props', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } },
+         { text: 'YTD Income', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } },
+         { text: 'Inc vs Bud', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } },
+         { text: 'YTD NOI', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } },
+         { text: 'NOI vs Budget', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } },
+         { text: 'NOI Margin', options: { bold: true, fontSize: 10, color: TEXT_MUTED, align: 'right' } }],
+      ];
+      DATA.funds.forEach(f => {
+        const noiMargin = f.noiActual && f.incActual ? (f.noiActual/f.incActual*100).toFixed(1)+'%' : '—';
+        rows.push([
+          { text: f.name, options: { bold: true, fontSize: 11 } },
+          { text: String(f.propCount || ''), options: { align: 'right', fontSize: 11 } },
+          { text: fmtDollar(f.incActual), options: { align: 'right', fontSize: 11 } },
+          { text: fmtPct(f.incVarPct), options: { align: 'right', fontSize: 11, color: varClass(f.incVarPct)==='green'?GREEN:RED } },
+          { text: fmtDollar(f.noiActual), options: { align: 'right', fontSize: 11 } },
+          { text: fmtPct(f.noiVarPct), options: { align: 'right', fontSize: 11, color: varClass(f.noiVarPct)==='green'?GREEN:RED } },
+          { text: noiMargin, options: { align: 'right', fontSize: 11 } },
+        ]);
+      });
+
+      slide.addTable(rows, {
+        x: 0.5, y: 1.4, w: 12.3,
+        border: { type: 'solid', pt: 0.5, color: 'D0D8E4' },
+        colW: [2, 0.8, 2, 1.5, 2, 1.5, 1.5],
+        rowH: [0.35, 0.4, 0.4, 0.4, 0.4],
+        fontFace: 'Arial',
+        autoPage: false,
+      });
+
+      // Fund NOI chart
+      slide.addChart(pptx.charts.BAR, [
+        { name: 'Actual', labels: DATA.funds.filter(f => f.name !== 'PORTFOLIO').map(f => f.name),
+          values: DATA.funds.filter(f => f.name !== 'PORTFOLIO').map(f => (f.noiActual||0)/1e6) },
+        { name: 'Budget', labels: DATA.funds.filter(f => f.name !== 'PORTFOLIO').map(f => f.name),
+          values: DATA.funds.filter(f => f.name !== 'PORTFOLIO').map(f => (f.noiBudget||0)/1e6) },
+      ], {
+        x: 0.5, y: 3.5, w: 7, h: 3,
+        showTitle: true, title: 'YTD NOI — Actual vs Budget by Fund ($M)', titleFontSize: 11, titleColor: TEXT_DARK,
+        chartColors: [CHART_ACT, CHART_BUD],
+        showValue: true, dataLabelFontSize: 9,
+        valAxisNumFmt: '$#,##0.0"M"',
+        showLegend: true, legendPos: 'b', legendFontSize: 9,
+      });
+
+      addFooter(slide, ++pageNum);
+    }
+
+    // ════════════════════════════════════════
+    // SPOTLIGHT SLIDES (Winners)
+    // ════════════════════════════════════════
+    logMsg('Building winner spotlight slides…');
+    setProgress(30, 'Winner spotlights');
+
+    if (SPOTLIGHTS.winners.length > 0) {
+      // Section divider
+      const divSlide = pptx.addSlide();
+      divSlide.background = { color: NAVY };
+      divSlide.addText('Where We Are Winning', {
+        x: 0.8, y: 3, w: 11, h: 1, fontSize: 32, color: WHITE, fontFace: 'Arial', bold: true,
+      });
+      divSlide.addText('Top performing properties and the reason each is ahead of plan', {
+        x: 0.8, y: 4, w: 11, h: 0.5, fontSize: 14, color: '8899AA', fontFace: 'Arial',
+      });
+      addFooter(divSlide, ++pageNum);
+
+      for (const name of SPOTLIGHTS.winners) {
+        const p = DATA.properties.find(x => x.name === name);
+        if (p) { addPropertySlide(pptx, p, ++pageNum); }
+      }
+    }
+
+    // ════════════════════════════════════════
+    // SPOTLIGHT SLIDES (Losers)
+    // ════════════════════════════════════════
+    logMsg('Building underperformer spotlight slides…');
+    setProgress(40, 'Underperformer spotlights');
+
+    if (SPOTLIGHTS.losers.length > 0) {
+      const divSlide = pptx.addSlide();
+      divSlide.background = { color: NAVY };
+      divSlide.addText('Where We Are Falling Short', {
+        x: 0.8, y: 3, w: 11, h: 1, fontSize: 32, color: WHITE, fontFace: 'Arial', bold: true,
+      });
+      divSlide.addText('Underperforming properties and the reason each is behind plan', {
+        x: 0.8, y: 4, w: 11, h: 0.5, fontSize: 14, color: '8899AA', fontFace: 'Arial',
+      });
+      addFooter(divSlide, ++pageNum);
+
+      for (const name of SPOTLIGHTS.losers) {
+        const p = DATA.properties.find(x => x.name === name);
+        if (p) { addPropertySlide(pptx, p, ++pageNum); }
+      }
+    }
+
+    // ════════════════════════════════════════
+    // FORWARD OUTLOOK — Recommended Actions
+    // ════════════════════════════════════════
+    logMsg('Building forward outlook…');
+    setProgress(50, 'Forward outlook');
+    {
+      const slide = pptx.addSlide();
+      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+      slide.addText('FORWARD OUTLOOK · COMMITTEE ACTIONS', { x: 0.5, y: 0.08, w: 10, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2 });
+      slide.addText('Recommended Actions', { x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK });
+
+      const actions = document.getElementById('narr-actions').value;
+      slide.addText(actions, {
+        x: 0.5, y: 1.4, w: 12, h: 5, fontSize: 11, fontFace: 'Arial', color: TEXT_DARK,
+        lineSpacingMultiple: 1.4, valign: 'top',
+      });
+      addFooter(slide, ++pageNum);
+    }
+
+    // ════════════════════════════════════════
+    // FORWARD OUTLOOK — Key Risks
+    // ════════════════════════════════════════
+    {
+      const slide = pptx.addSlide();
+      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+      slide.addText('FORWARD OUTLOOK · RISK REGISTER', { x: 0.5, y: 0.08, w: 10, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2 });
+      slide.addText('Key Forward-Looking Risks', { x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK });
+
+      const risks = document.getElementById('narr-risks').value;
+      slide.addText(risks, {
+        x: 0.5, y: 1.4, w: 12, h: 5, fontSize: 11, fontFace: 'Arial', color: TEXT_DARK,
+        lineSpacingMultiple: 1.4, valign: 'top',
+      });
+      addFooter(slide, ++pageNum);
+    }
+
+    // ════════════════════════════════════════
+    // PROPERTY-BY-PROPERTY SECTION
+    // ════════════════════════════════════════
+    logMsg('Building property detail slides…');
+    setProgress(55, 'Property details');
+
+    // Section divider
+    {
+      const slide = pptx.addSlide();
+      slide.background = { color: NAVY };
+      slide.addText('Property-by-Property Detail', {
+        x: 0.8, y: 3, w: 11, h: 1, fontSize: 32, color: WHITE, fontFace: 'Arial', bold: true,
+      });
+      slide.addText('An individual page for every property, in the same format — ordered by fund, then by NOI variance versus budget', {
+        x: 0.8, y: 4, w: 11, h: 0.5, fontSize: 14, color: '8899AA', fontFace: 'Arial',
+      });
+      addFooter(slide, ++pageNum);
+    }
+
+    // Group by fund, sort within each fund
+    const fundOrder = ['Fund III', 'Fund IV', 'Fund V'];
+    const totalProps = DATA.properties.length;
+    let propsDone = 0;
+
+    for (const fund of fundOrder) {
+      const fundProps = DATA.properties.filter(p => p.fund === fund)
+        .sort((a, b) => (b.noiVarDollar || 0) - (a.noiVarDollar || 0));
+
+      if (fundProps.length === 0) continue;
+
+      // Fund divider slide
+      const divSlide = pptx.addSlide();
+      divSlide.background = { color: NAVY };
+      divSlide.addText(`${fund} — Individual Property Pages`, {
+        x: 0.8, y: 3, w: 11, h: 1, fontSize: 28, color: WHITE, fontFace: 'Arial', bold: true,
+      });
+      divSlide.addText(`${fund} holdings, ordered strongest to weakest versus budget`, {
+        x: 0.8, y: 4, w: 11, h: 0.5, fontSize: 14, color: '8899AA', fontFace: 'Arial',
+      });
+      addFooter(divSlide, ++pageNum);
+
+      for (const prop of fundProps) {
+        addPropertySlide(pptx, prop, ++pageNum);
+        propsDone++;
+        const pct = 55 + (propsDone / totalProps) * 40;
+        setProgress(Math.round(pct), `${prop.name} (${propsDone}/${totalProps})`);
+      }
+    }
+
+    // ════════════════════════════════════════
+    // GENERATE FILE
+    // ════════════════════════════════════════
+    logMsg('Generating .pptx file…');
+    setProgress(98, 'Writing file');
+
+    const blob = await pptx.write({ outputType: 'blob' });
+
+    logMsg('Done! Downloading…', 'done');
+    setProgress(100, 'Complete');
+
+    // Trigger download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Sunrise_Portfolio_Review_April_2026.pptx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    document.getElementById('buildTitle').textContent = 'Deck built successfully';
+    document.getElementById('buildStep').innerHTML =
+      `<button class="btn btn-primary" onclick="showPhase('staging')" style="margin-top:16px;">← Back to staging</button>`;
+
+  } catch (err) {
+    logMsg('ERROR: ' + err.message, 'error');
+    console.error(err);
+    document.getElementById('buildTitle').textContent = 'Build failed';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROPERTY SPOTLIGHT SLIDE BUILDER
+// ═══════════════════════════════════════════════════════════════════
+function addPropertySlide(pptx, prop, pageNum) {
+  const NAVY = '14213D';
+  const WHITE = 'FFFFFF';
+  const CARD_BG = 'D9E0EA';
+  const LIGHT_BG = 'F3F6FB';
+  const GREEN = '2E7D5B';
+  const RED = 'B23A48';
+  const TEXT_DARK = '1F2733';
+  const TEXT_MUTED = '5A6A7A';
+  const CHART_ACT = '3E5C8A';
+  const CHART_BUD = 'A8B8D0';
+
+  const slide = pptx.addSlide();
+
+  // ── Status classification ──
+  let status, statusLabel;
+  if (prop.excluded) { status = 'excluded'; statusLabel = 'EXCLUDED FROM TOTALS'; }
+  else if (prop.unbudgeted) { status = 'unbudgeted'; statusLabel = 'UNBUDGETED (NM)'; }
+  else if ((prop.noiVarPct || 0) > 0.01) { status = 'ahead'; statusLabel = 'AHEAD OF BUDGET'; }
+  else if ((prop.noiVarPct || 0) < -0.01) { status = 'behind'; statusLabel = 'BEHIND BUDGET'; }
+  else { status = 'on'; statusLabel = 'ON BUDGET'; }
+
+  const propType = /parking|garage|luhrs|charlotte|bourse|pelican/i.test(prop.name) ? 'GARAGE/OTHER' : 'MHP';
+  const isNegNOI = status === 'behind' || status === 'excluded';
+
+  // ── Header bar ──
+  slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.33, h: 0.6, fill: { color: NAVY } });
+  slide.addText(`${prop.fund.toUpperCase()} · ${propType} · ${statusLabel}`, {
+    x: 0.5, y: 0.08, w: 12, h: 0.45, fontSize: 10, color: 'AABBCC', fontFace: 'Arial', bold: true, letterSpacing: 2,
+  });
+
+  // ── Title ──
+  slide.addText(`${prop.name} — Property Spotlight`, {
+    x: 0.5, y: 0.7, w: 8, h: 0.5, fontSize: 24, fontFace: 'Arial', bold: true, color: TEXT_DARK,
+  });
+
+  // ── 4 KPI Cards ──
+  function addKPICard(x, y, w, label, value, sub, valueColor) {
+    slide.addShape(pptx.shapes.RECTANGLE, { x, y, w, h: 0.85, fill: { color: WHITE }, line: { color: CARD_BG, width: 1 }, rectRadius: 0.04 });
+    slide.addText(label, { x: x+0.12, y: y+0.05, w: w-0.24, h: 0.2, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial', bold: true });
+    slide.addText(value, { x: x+0.12, y: y+0.25, w: w-0.24, h: 0.3, fontSize: 20, color: valueColor || TEXT_DARK, fontFace: 'Arial', bold: true });
+    slide.addText(sub, { x: x+0.12, y: y+0.58, w: w-0.24, h: 0.2, fontSize: 9, color: TEXT_MUTED, fontFace: 'Arial' });
+  }
+
+  const cardY = 1.35;
+  const cardW = 2.85;
+
+  // Card 1: YTD NOI
+  const noiColor = (prop.noiVarDollar || 0) >= 0 ? GREEN : RED;
+  const noiBeatMiss = (prop.noiVarDollar || 0) >= 0
+    ? `beat budget by ${fmtDollar(Math.abs(prop.noiVarDollar))}`
+    : `missed budget by ${fmtDollar(Math.abs(prop.noiVarDollar))}`;
+  addKPICard(0.5, cardY, cardW, 'YTD NOI', fmtDollar(prop.noiActual), noiBeatMiss, noiColor);
+
+  // Card 2: Income vs Budget
+  const incColor = (prop.incVarPct || 0) >= 0 ? GREEN : RED;
+  addKPICard(0.5 + cardW + 0.2, cardY, cardW, 'INCOME VS BUDGET', fmtPct(prop.incVarPct), `${fmtDollar(prop.incActual)} actual`, incColor);
+
+  // Card 3: Expense vs Budget (inverted — under budget is good)
+  const expColor = (prop.expVarPct || 0) <= 0 ? GREEN : RED;
+  const expLabel = (prop.expVarPct || 0) <= 0 ? 'under budget' : 'over budget';
+  addKPICard(0.5 + (cardW + 0.2) * 2, cardY, cardW, 'EXPENSE VS BUDGET', fmtPct(prop.expVarPct), expLabel, expColor);
+
+  // Card 4: DSCR
+  const dscrVal = prop.dscr != null ? fmtDSCR(prop.dscr) : 'n/a';
+  const dscrColor = prop.dscr != null ? (prop.dscr >= 1.25 ? GREEN : RED) : TEXT_MUTED;
+  const dscrSub = prop.dscr != null ? (prop.dscr >= 1.25 ? 'strong coverage' : 'below ~1.25x — watch') : 'no debt service';
+  addKPICard(0.5 + (cardW + 0.2) * 3, cardY, cardW, 'DSCR', dscrVal, dscrSub, dscrColor);
+
+  // ── Chart: Income & Expense Actual vs Budget ──
+  const incActK = (prop.incActual || 0) / 1000;
+  const incBudK = (prop.incBudget || 0) / 1000;
+  const expActK = (prop.expActual || 0) / 1000;
+  const expBudK = (prop.expBudget || 0) / 1000;
+
+  slide.addChart(pptx.charts.BAR, [
+    { name: 'Actual', labels: ['Income', 'Expense'], values: [incActK, expActK] },
+    { name: 'Budget', labels: ['Income', 'Expense'], values: [incBudK, expBudK] },
+  ], {
+    x: 0.5, y: 2.5, w: 6.5, h: 3.5,
+    showTitle: true, title: 'Income & Expense — YTD Actual vs Budget ($K)', titleFontSize: 11, titleColor: TEXT_DARK,
+    chartColors: [CHART_ACT, CHART_BUD],
+    showValue: true, dataLabelFontSize: 9, dataLabelColor: TEXT_DARK,
+    dataLabelFormatCode: '"$"#,##0"K"',
+    valAxisNumFmt: '"$"#,##0"K"',
+    catAxisLabelFontSize: 10, valAxisLabelFontSize: 9,
+    showLegend: true, legendPos: 'b', legendFontSize: 9,
+  });
+
+  // ── "Why" narrative ──
+  const why = generatePropertyWhy(prop);
+  slide.addText('Why', {
+    x: 7.5, y: 2.5, w: 5, h: 0.35, fontSize: 14, fontFace: 'Arial', bold: true, color: TEXT_DARK,
+  });
+  slide.addText(why, {
+    x: 7.5, y: 2.9, w: 5.3, h: 3.1, fontSize: 10, fontFace: 'Arial', color: TEXT_DARK,
+    lineSpacingMultiple: 1.35, valign: 'top', bullet: { type: 'bullet' },
+  });
+
+  // Footer
+  slide.addText('Sunrise Capital Investors  ·  Confidential — Executive Committee', {
+    x: 0.5, y: 6.9, w: 9, h: 0.4, fontSize: 8, color: TEXT_MUTED, fontFace: 'Arial',
+  });
+  slide.addText('Budget vs Actual  ·  April 2026 & YTD', {
+    x: 9.5, y: 6.9, w: 3, h: 0.4, fontSize: 8, color: TEXT_MUTED, fontFace: 'Arial', align: 'right',
+  });
+  slide.addText(String(pageNum), {
+    x: 12.5, y: 6.9, w: 0.5, h: 0.4, fontSize: 8, color: TEXT_MUTED, fontFace: 'Arial', align: 'right',
+  });
+}
+
+function generatePropertyWhy(p) {
+  // First check if we have highlights from the Highlights sheet
+  const key = p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const hlEntries = DATA.highlights[key] || [];
+  const aprilHL = hlEntries.find(h => h.section === 'april');
+  const ytdHL = hlEntries.find(h => h.section === 'ytd');
+
+  const incPct = p.incVarPct || 0;
+  const expPct = p.expVarPct || 0;
+  const noiPct = p.noiVarPct || 0;
+  const noiVar = p.noiVarDollar || 0;
+
+  // Determine driver
+  const incDelta = Math.abs(p.incVarDollar || 0);
+  const expDelta = Math.abs(p.expVarDollar || 0);
+  const driver = incDelta >= expDelta ? 'income' : 'expense';
+  const beat = noiVar >= 0;
+
+  let lines = [];
+
+  if (driver === 'income') {
+    if (beat) {
+      lines.push(`Income-led beat. The gain is driven mainly by revenue, which ran ${fmtPct(incPct)} above budget.`);
+    } else {
+      lines.push(`Income-led miss. The shortfall is driven mainly by revenue, which ran ${fmtPct(Math.abs(incPct)).replace('+','')} below budget.`);
+    }
+  } else {
+    if (beat) {
+      lines.push(`Expense-led beat. The gain is driven mainly by operating expense, which ran ${fmtPct(Math.abs(expPct)).replace('+','')} under budget.`);
+    } else {
+      lines.push(`Expense-led miss. The shortfall is driven mainly by operating expense, which ran ${fmtPct(expPct).replace('-','+')} over budget.`);
+    }
+  }
+
+  // Income detail
+  lines.push(`Income finished ${fmtPct(Math.abs(incPct)).replace('+','')} versus budget, at ${fmtDollar(p.incActual)} against ${fmtDollar(p.incBudget)} planned.`);
+
+  // Expense detail
+  const expFav = expPct <= 0;
+  lines.push(`Operating expense ran ${fmtPct(Math.abs(expPct)).replace('+','')} versus budget — ${expFav ? 'under budget, which is favorable' : 'over budget, which is unfavorable'}.`);
+
+  // Net result
+  const noiMargin = p.incActual ? (p.noiActual / p.incActual * 100).toFixed(0) : '—';
+  lines.push(`Net result: an NOI ${beat ? 'beat' : 'miss'} of ${fmtDollar(Math.abs(noiVar))} (${fmtPct(Math.abs(noiPct)).replace('+','')}), at a ${noiMargin}% NOI margin.`);
+
+  // April highlight from workbook if available
+  if (aprilHL) {
+    lines.push(`April: ${aprilHL.text}`);
+  }
+
+  return lines.join('\n');
+}
+
+</script>
+</body>
+</html>
