@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Review Builder v0.4.2</title>
+<title>Portfolio Review Builder v0.4.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
@@ -277,7 +277,7 @@ body {
 
 <div class="header">
   <h1>Portfolio Review Builder</h1>
-  <span class="vpill">v0.4.2</span>
+  <span class="vpill">v0.4.3</span>
 </div>
 
 <!-- ── Phase 1: Upload ── -->
@@ -1623,12 +1623,37 @@ function generateWebReport() {
     return /parking|garage|luhrs|charlotte|bourse|pelican/i.test(name) ? 'GARAGE / OTHER' : 'MHP';
   }
 
-  // Build spotlight card HTML
+  // Build spotlight card HTML with inline SVG chart
   function spotlightCard(prop, idx) {
     const beat = (prop.noiVarDollar||0) >= 0;
     const status = noiStatus(prop);
     const why = generatePropertyWhy(prop).split('\n').map(l => '<li>' + l + '</li>').join('');
-    const chartId = 'chart_' + idx;
+
+    // SVG bar chart data
+    const incA = (prop.incActual||0)/1000;
+    const incB = (prop.incBudget||0)/1000;
+    const expA = (prop.expActual||0)/1000;
+    const expB = (prop.expBudget||0)/1000;
+    const maxVal = Math.max(incA, incB, expA, expB, 1);
+    const scale = 160 / maxVal; // chart area height = 160px
+
+    function bar(x, val, color) {
+      const h = Math.max(val * scale, 1);
+      const y = 180 - h;
+      return '<rect x="' + x + '" y="' + y + '" width="36" height="' + h + '" fill="' + color + '" rx="2"/>' +
+             '<text x="' + (x+18) + '" y="' + (y-4) + '" text-anchor="middle" font-size="10" fill="#1F2733" font-family="Inter,sans-serif">$' + Math.round(val) + 'K</text>';
+    }
+
+    const svgChart = '<svg viewBox="0 0 260 230" width="100%" height="220" xmlns="http://www.w3.org/2000/svg">' +
+      '<text x="130" y="14" text-anchor="middle" font-size="11" font-weight="600" fill="#1F2733" font-family="Inter,sans-serif">Income &amp; Expense — YTD ($K)</text>' +
+      '<line x1="30" y1="180" x2="240" y2="180" stroke="#D0D8E4" stroke-width="1"/>' +
+      bar(45, incA, '#3E5C8A') + bar(85, incB, '#A8B8D0') +
+      bar(155, expA, '#3E5C8A') + bar(195, expB, '#A8B8D0') +
+      '<text x="65" y="196" text-anchor="middle" font-size="10" fill="#5A6A7A" font-family="Inter,sans-serif">Income</text>' +
+      '<text x="175" y="196" text-anchor="middle" font-size="10" fill="#5A6A7A" font-family="Inter,sans-serif">Expense</text>' +
+      '<rect x="70" y="210" width="12" height="8" fill="#3E5C8A" rx="1"/><text x="86" y="218" font-size="9" fill="#5A6A7A" font-family="Inter,sans-serif">Actual</text>' +
+      '<rect x="130" y="210" width="12" height="8" fill="#A8B8D0" rx="1"/><text x="146" y="218" font-size="9" fill="#5A6A7A" font-family="Inter,sans-serif">Budget</text>' +
+      '</svg>';
 
     return `
     <div class="spotlight-slide">
@@ -1660,7 +1685,7 @@ function generateWebReport() {
 
       <div class="spotlight-body">
         <div class="spotlight-chart">
-          <canvas id="${chartId}" height="220"></canvas>
+          ${svgChart}
         </div>
         <div class="spotlight-why">
           <h4>Why</h4>
@@ -1670,44 +1695,12 @@ function generateWebReport() {
     </div>`;
   }
 
-  // Collect chart init JS for each spotlight
-  let chartInits = '';
-  let chartIdx = 0;
-
-  function addSpotlightCharts(names) {
+  function addSpotlightCards(names) {
     let html = '';
     names.forEach(name => {
       const prop = d.properties.find(x => x.name === name);
       if (!prop) return;
-      const id = 'chart_' + chartIdx;
-      html += spotlightCard(prop, chartIdx);
-      const incA = ((prop.incActual||0)/1000).toFixed(0);
-      const incB = ((prop.incBudget||0)/1000).toFixed(0);
-      const expA = ((prop.expActual||0)/1000).toFixed(0);
-      const expB = ((prop.expBudget||0)/1000).toFixed(0);
-      chartInits += `
-        new Chart(document.getElementById('${id}'), {
-          type: 'bar',
-          data: {
-            labels: ['Income', 'Expense'],
-            datasets: [
-              { label: 'Actual', data: [${incA}, ${expA}], backgroundColor: '#3E5C8A' },
-              { label: 'Budget', data: [${incB}, ${expB}], backgroundColor: '#A8B8D0' }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-              title: { display: true, text: 'Income & Expense — YTD ($K)', font: { size: 12, weight: '600' }, color: '#1F2733' },
-              legend: { position: 'bottom', labels: { font: { size: 11 }, usePointStyle: true, padding: 12 } }
-            },
-            scales: {
-              y: { ticks: { callback: v => '$' + v + 'K', font: { size: 10 } }, grid: { color: '#EEF1F6' } },
-              x: { ticks: { font: { size: 11 } }, grid: { display: false } }
-            }
-          }
-        });`;
-      chartIdx++;
+      html += spotlightCard(prop, 0);
     });
     return html;
   }
@@ -1743,8 +1736,8 @@ function generateWebReport() {
   });
 
   // Build the spotlight sections (with chart JS collection)
-  const winnersHTML = addSpotlightCharts(SPOTLIGHTS.winners);
-  const losersHTML = addSpotlightCharts(SPOTLIGHTS.losers);
+  const winnersHTML = addSpotlightCards(SPOTLIGHTS.winners);
+  const losersHTML = addSpotlightCards(SPOTLIGHTS.losers);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -2003,12 +1996,6 @@ function generateWebReport() {
   Published ${now} · Source: Budget to Actual model (live-linked). Figures are unaudited management estimates.
 </div>
 
-<script>
-function initCharts() {
-  ${chartInits}
-}
-<\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" onload="initCharts()"><\/script>
 </body>
 </html>`;
 }
