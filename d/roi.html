@@ -280,6 +280,8 @@ let META_ADSET_SPEND = {};  // adSetId → {spend, name}
 let META_AD_SPEND = {};     // adId → {spend, name, adsetId}
 let LI_SPEND = {};     // campaignName → {spend}
 let LI_SPEND_BY_ID = {}; // campaignId → {name, spend}
+let LI_DAILY_BY_NAME = {};  // campaignName → [{date, spend}]
+let LI_DAILY_BY_ID = {};    // campaignId → [{date, spend}]
 let LI_CAMPAIGN_NAMES = {}; // campaignId → name
 let GOOGLE_SPEND = {}; // campaignName → {spend}
 let GOOGLE_SPEND_BY_ID = {}; // campaignId → {name, spend}
@@ -471,7 +473,7 @@ async function fetchLinkedInCampaigns(){
 
 async function fetchLinkedInSpend(fromMs, toMs){
   const campaigns = await fetchLinkedInCampaigns();
-  if(!campaigns.length) return {byName:{}, byId:{}};
+  if(!campaigns.length) return {byName:{}, byId:{}, dailyByName:{}, dailyById:{}};
   const fromIso = new Date(fromMs).toISOString().slice(0,10);
   const toIso = new Date(toMs).toISOString().slice(0,10);
   const ids = campaigns.map(c => c.id);
@@ -481,6 +483,8 @@ async function fetchLinkedInSpend(fromMs, toMs){
   // Batch in groups of 20 campaigns
   const byName = {};
   const byId = {};
+  const dailyByName = {};  // v19.10: name → [{date, spend}]
+  const dailyById = {};    // v19.10: id → [{date, spend}]
   for(let i = 0; i < ids.length; i += 20){
     const batch = ids.slice(i, i+20);
     const encodeUrn = (urn) => urn.replace(/:/g, '%3A');
@@ -494,7 +498,7 @@ async function fetchLinkedInSpend(fromMs, toMs){
       + `&dateRange=${dateRange}`
       + `&campaigns=List(${encodedCampaigns})`
       + `&accounts=List(${encodedAccount})`
-      + `&fields=pivotValues,costInLocalCurrency`;
+      + `&fields=pivotValues,costInLocalCurrency,dateRange`;
 
     const url = `${LI_PROXY_URL}${path}`;
     let r;
@@ -512,15 +516,29 @@ async function fetchLinkedInSpend(fromMs, toMs){
       const pv = (row.pivotValues || [])[0] || '';
       const cId = pv.replace('urn:li:sponsoredCampaign:', '');
       const name = idMap[cId] || cId;
+      // Extract date from dateRange if available
+      let ds = '';
+      if(row.dateRange?.start){
+        const s = row.dateRange.start;
+        ds = `${s.year}-${String(s.month).padStart(2,'0')}-${String(s.day).padStart(2,'0')}`;
+      }
       if(!byName[name]) byName[name] = {spend:0};
       byName[name].spend += spend;
+      if(ds){
+        if(!dailyByName[name]) dailyByName[name] = [];
+        dailyByName[name].push({date: ds, spend});
+      }
       if(cId){
         if(!byId[cId]) byId[cId] = {name, spend:0};
         byId[cId].spend += spend;
+        if(ds){
+          if(!dailyById[cId]) dailyById[cId] = [];
+          dailyById[cId].push({date: ds, spend});
+        }
       }
     }
   }
-  return {byName, byId};
+  return {byName, byId, dailyByName, dailyById};
 }
 
 // ── Google Ads spend fetch ───────────────────────────────────────────────────
@@ -925,6 +943,8 @@ async function load(){
       const liResult = await fetchLinkedInSpend(spendFrom, spendTo);
       LI_SPEND = liResult.byName;
       LI_SPEND_BY_ID = liResult.byId;
+      LI_DAILY_BY_NAME = liResult.dailyByName || {};
+      LI_DAILY_BY_ID = liResult.dailyById || {};
     }
     catch(e){ console.warn('LinkedIn spend failed:', e.message); LI_SPEND = {}; LI_SPEND_BY_ID = {}; }
 
@@ -1115,7 +1135,10 @@ function renderTable(){
     if(s > 0) metaByLower[name.toLowerCase()] = {spend: s};
   }
   const liByLower = {};
-  for(const [name, data] of Object.entries(LI_SPEND)) liByLower[name.toLowerCase()] = data;
+  for(const [name, arr] of Object.entries(LI_DAILY_BY_NAME)){
+    const s = sumDailySpend(arr, cohortFromIso, cohortToIso);
+    if(s > 0) liByLower[name.toLowerCase()] = {spend: s};
+  }
   const googleByLower = {};
   for(const [name, arr] of Object.entries(GOOGLE_DAILY_BY_NAME)){
     const s = sumDailySpend(arr, cohortFromIso, cohortToIso);
