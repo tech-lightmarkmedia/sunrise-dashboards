@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Review Builder v0.3</title>
+<title>Portfolio Review Builder v0.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
@@ -277,7 +277,7 @@ body {
 
 <div class="header">
   <h1>Portfolio Review Builder</h1>
-  <span class="vpill">v0.3</span>
+  <span class="vpill">v0.4</span>
 </div>
 
 <!-- ── Phase 1: Upload ── -->
@@ -1602,97 +1602,149 @@ function generateWebReport() {
   const p = d.portfolio;
   const now = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
 
-  // Gather narrative text from textareas
   const narrWorking = document.getElementById('narr-working').value;
   const narrAttention = document.getElementById('narr-attention').value;
   const narrActions = document.getElementById('narr-actions').value;
   const narrRisks = document.getElementById('narr-risks').value;
 
-  // Property status helper
-  function pStatus(prop) {
-    if (prop.excluded) return '<span style="color:#888;">Excluded</span>';
-    if (prop.unbudgeted) return '<span style="color:#C47F17;">Unbudgeted</span>';
+  function vc(v) { return (v||0) >= 0 ? '#2E7D5B' : '#B23A48'; }
+  function vcInv(v) { return (v||0) <= 0 ? '#2E7D5B' : '#B23A48'; }
+
+  function pStatusHTML(prop) {
+    if (prop.excluded) return '<span class="status-badge" style="background:#F3F3F3;color:#888;">Excluded</span>';
+    if (prop.unbudgeted) return '<span class="status-badge" style="background:#FFF8E1;color:#C47F17;">Unbudgeted</span>';
     const v = prop.noiVarDollar || 0;
-    if (v > 0) return '<span style="color:#2E7D5B;">Ahead</span>';
-    if (v < 0) return '<span style="color:#B23A48;">Behind</span>';
-    return '<span style="color:#888;">On Budget</span>';
+    if (v > 0) return '<span class="status-badge" style="background:#E8F5E9;color:#2E7D5B;">Ahead</span>';
+    if (v < 0) return '<span class="status-badge" style="background:#FDECEA;color:#B23A48;">Behind</span>';
+    return '<span class="status-badge" style="background:#F3F3F3;color:#888;">On Budget</span>';
   }
 
-  function vc(v) { return (v||0) >= 0 ? '#2E7D5B' : '#B23A48'; }
-  function vcInv(v) { return (v||0) <= 0 ? '#2E7D5B' : '#B23A48'; } // inverted for expense
+  function propType(name) {
+    return /parking|garage|luhrs|charlotte|bourse|pelican/i.test(name) ? 'GARAGE / OTHER' : 'MHP';
+  }
 
-  // Build spotlight sections
-  function spotlightSection(title, color, names) {
-    if (!names.length) return '';
-    let html = `<h2 style="color:${color};margin:32px 0 16px;">${title}</h2>`;
+  // Build spotlight card HTML
+  function spotlightCard(prop, idx) {
+    const beat = (prop.noiVarDollar||0) >= 0;
+    const status = noiStatus(prop);
+    const why = generatePropertyWhy(prop).split('\n').map(l => '<li>' + l + '</li>').join('');
+    const chartId = 'chart_' + idx;
+
+    return `
+    <div class="spotlight-slide">
+      <div class="slide-eyebrow">${prop.fund.toUpperCase()} · ${propType(prop.name)} · ${status.toUpperCase()}</div>
+      <h3 class="slide-title">${prop.name} <span style="font-weight:400;font-size:14px;color:#5A6A7A;">— Property Spotlight</span></h3>
+
+      <div class="kpi-strip">
+        <div class="kpi-tile">
+          <div class="kpi-label">YTD NOI</div>
+          <div class="kpi-value" style="color:${vc(prop.noiVarDollar)}">${fmtDollar(prop.noiActual)}</div>
+          <div class="kpi-sub">${beat?'beat':'missed'} budget by ${fmtDollar(Math.abs(prop.noiVarDollar))}</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Income vs Budget</div>
+          <div class="kpi-value" style="color:${vc(prop.incVarPct)}">${fmtPct(prop.incVarPct)}</div>
+          <div class="kpi-sub">${fmtDollar(prop.incActual)} actual</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">Expense vs Budget</div>
+          <div class="kpi-value" style="color:${vcInv(prop.expVarPct)}">${fmtPct(prop.expVarPct)}</div>
+          <div class="kpi-sub">${(prop.expVarPct||0)<=0?'under':'over'} budget</div>
+        </div>
+        <div class="kpi-tile">
+          <div class="kpi-label">DSCR</div>
+          <div class="kpi-value" style="color:${prop.dscr!=null?(prop.dscr>=1.25?'#2E7D5B':'#B23A48'):'#888'}">${fmtDSCR(prop.dscr)}</div>
+          <div class="kpi-sub">${prop.dscr!=null?(prop.dscr>=1.25?'strong coverage':'below 1.25x — watch'):'no debt service'}</div>
+        </div>
+      </div>
+
+      <div class="spotlight-body">
+        <div class="spotlight-chart">
+          <canvas id="${chartId}" height="220"></canvas>
+        </div>
+        <div class="spotlight-why">
+          <h4>Why</h4>
+          <ul>${why}</ul>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Collect chart init JS for each spotlight
+  let chartInits = '';
+  let chartIdx = 0;
+
+  function addSpotlightCharts(names) {
+    let html = '';
     names.forEach(name => {
       const prop = d.properties.find(x => x.name === name);
       if (!prop) return;
-      const beat = (prop.noiVarDollar||0) >= 0;
-      const why = generatePropertyWhy(prop).split('\n').map(l => `<li>${l}</li>`).join('');
-      html += `
-        <div style="background:#fff;border:1px solid #D0D8E4;border-radius:8px;padding:20px;margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0;font-size:18px;">${prop.name}</h3>
-            <span style="font-size:12px;color:#5A6A7A;">${prop.fund} · ${noiStatus(prop)}</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
-            <div style="background:#F3F6FB;padding:12px;border-radius:6px;">
-              <div style="font-size:10px;color:#5A6A7A;text-transform:uppercase;">YTD NOI</div>
-              <div style="font-size:20px;font-weight:700;color:${vc(prop.noiVarDollar)}">${fmtDollar(prop.noiActual)}</div>
-              <div style="font-size:11px;color:#5A6A7A;">${beat?'beat':'missed'} by ${fmtDollar(Math.abs(prop.noiVarDollar))}</div>
-            </div>
-            <div style="background:#F3F6FB;padding:12px;border-radius:6px;">
-              <div style="font-size:10px;color:#5A6A7A;text-transform:uppercase;">Income vs Budget</div>
-              <div style="font-size:20px;font-weight:700;color:${vc(prop.incVarPct)}">${fmtPct(prop.incVarPct)}</div>
-              <div style="font-size:11px;color:#5A6A7A;">${fmtDollar(prop.incActual)} actual</div>
-            </div>
-            <div style="background:#F3F6FB;padding:12px;border-radius:6px;">
-              <div style="font-size:10px;color:#5A6A7A;text-transform:uppercase;">Expense vs Budget</div>
-              <div style="font-size:20px;font-weight:700;color:${vcInv(prop.expVarPct)}">${fmtPct(prop.expVarPct)}</div>
-              <div style="font-size:11px;color:#5A6A7A;">${(prop.expVarPct||0)<=0?'under':'over'} budget</div>
-            </div>
-            <div style="background:#F3F6FB;padding:12px;border-radius:6px;">
-              <div style="font-size:10px;color:#5A6A7A;text-transform:uppercase;">DSCR</div>
-              <div style="font-size:20px;font-weight:700;color:${prop.dscr!=null?(prop.dscr>=1.25?'#2E7D5B':'#B23A48'):'#888'}">${fmtDSCR(prop.dscr)}</div>
-              <div style="font-size:11px;color:#5A6A7A;">${prop.dscr!=null?(prop.dscr>=1.25?'strong':'watch'):'n/a'}</div>
-            </div>
-          </div>
-          <ul style="font-size:13px;line-height:1.6;color:#1F2733;padding-left:20px;">${why}</ul>
-        </div>`;
+      const id = 'chart_' + chartIdx;
+      html += spotlightCard(prop, chartIdx);
+      const incA = ((prop.incActual||0)/1000).toFixed(0);
+      const incB = ((prop.incBudget||0)/1000).toFixed(0);
+      const expA = ((prop.expActual||0)/1000).toFixed(0);
+      const expB = ((prop.expBudget||0)/1000).toFixed(0);
+      chartInits += `
+        new Chart(document.getElementById('${id}'), {
+          type: 'bar',
+          data: {
+            labels: ['Income', 'Expense'],
+            datasets: [
+              { label: 'Actual', data: [${incA}, ${expA}], backgroundColor: '#3E5C8A' },
+              { label: 'Budget', data: [${incB}, ${expB}], backgroundColor: '#A8B8D0' }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              title: { display: true, text: 'Income & Expense — YTD ($K)', font: { size: 12, weight: '600' }, color: '#1F2733' },
+              legend: { position: 'bottom', labels: { font: { size: 11 }, usePointStyle: true, padding: 12 } }
+            },
+            scales: {
+              y: { ticks: { callback: v => '$' + v + 'K', font: { size: 10 } }, grid: { color: '#EEF1F6' } },
+              x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+            }
+          }
+        });`;
+      chartIdx++;
     });
     return html;
   }
 
-  // Build full property table
-  let propRows = '';
-  d.properties.forEach(prop => {
-    propRows += `<tr>
-      <td style="font-weight:500;">${prop.name}</td>
-      <td>${prop.fund}</td>
-      <td style="text-align:right;">${fmtDollar(prop.incActual)}</td>
-      <td style="text-align:right;">${fmtDollar(prop.noiActual)}</td>
-      <td style="text-align:right;color:${vc(prop.noiVarDollar)}">${fmtDollar(prop.noiVarDollar)}</td>
-      <td style="text-align:right;color:${vc(prop.noiVarPct)}">${fmtPct(prop.noiVarPct)}</td>
-      <td style="text-align:right;">${fmtDSCR(prop.dscr)}</td>
-      <td>${pStatus(prop)}</td>
-    </tr>`;
-  });
-
-  // Fund table
+  // Fund performance table
   let fundRows = '';
   d.funds.forEach(f => {
     const margin = f.noiActual && f.incActual ? (f.noiActual/f.incActual*100).toFixed(1)+'%' : '—';
     fundRows += `<tr>
       <td style="font-weight:600;">${f.name}</td>
-      <td style="text-align:right;">${f.propCount || '—'}</td>
-      <td style="text-align:right;">${fmtDollar(f.incActual)}</td>
-      <td style="text-align:right;color:${vc(f.incVarPct)}">${fmtPct(f.incVarPct)}</td>
-      <td style="text-align:right;">${fmtDollar(f.noiActual)}</td>
-      <td style="text-align:right;color:${vc(f.noiVarPct)}">${fmtPct(f.noiVarPct)}</td>
-      <td style="text-align:right;">${margin}</td>
+      <td class="num">${f.propCount||'—'}</td>
+      <td class="num">${fmtDollar(f.incActual)}</td>
+      <td class="num" style="color:${vc(f.incVarPct)}">${fmtPct(f.incVarPct)}</td>
+      <td class="num">${fmtDollar(f.noiActual)}</td>
+      <td class="num" style="color:${vc(f.noiVarPct)}">${fmtPct(f.noiVarPct)}</td>
+      <td class="num">${margin}</td>
     </tr>`;
   });
+
+  // All properties table
+  let propRows = '';
+  d.properties.forEach(prop => {
+    propRows += `<tr>
+      <td style="font-weight:500;">${prop.name}</td>
+      <td>${prop.fund}</td>
+      <td class="num">${fmtDollar(prop.incActual)}</td>
+      <td class="num">${fmtDollar(prop.noiActual)}</td>
+      <td class="num" style="color:${vc(prop.noiVarDollar)}">${fmtDollar(prop.noiVarDollar)}</td>
+      <td class="num" style="color:${vc(prop.noiVarPct)}">${fmtPct(prop.noiVarPct)}</td>
+      <td class="num">${fmtDSCR(prop.dscr)}</td>
+      <td>${pStatusHTML(prop)}</td>
+    </tr>`;
+  });
+
+  // Build the spotlight sections (with chart JS collection)
+  const winnersHTML = addSpotlightCharts(SPOTLIGHTS.winners);
+  const losersHTML = addSpotlightCharts(SPOTLIGHTS.losers);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1700,46 +1752,140 @@ function generateWebReport() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio Performance Review — April 2026 YTD</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"><\/script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F3F6FB; color: #1F2733; }
-  .header { background: #14213D; color: #fff; padding: 24px 32px; }
-  .header h1 { font-size: 22px; font-weight: 600; }
-  .header .sub { font-size: 13px; color: #8899AA; margin-top: 4px; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
-  .section { background: #fff; border: 1px solid #D0D8E4; border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
-  .section-head { background: #14213D; color: #fff; padding: 14px 20px; font-size: 14px; font-weight: 600; }
-  .section-body { padding: 20px; }
-  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
-  .kpi-card { background: #F3F6FB; border: 1px solid #D0D8E4; border-radius: 8px; padding: 16px; }
-  .kpi-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #5A6A7A; }
-  .kpi-card .value { font-size: 24px; font-weight: 700; margin: 4px 0; }
-  .kpi-card .sub { font-size: 12px; color: #5A6A7A; }
+  :root {
+    --navy: #14213D;
+    --navy-light: #1F2733;
+    --card-bg: #D9E0EA;
+    --light-bg: #F3F6FB;
+    --green: #2E7D5B;
+    --red: #B23A48;
+    --text: #1F2733;
+    --muted: #5A6A7A;
+    --border: #D0D8E4;
+    --chart-actual: #3E5C8A;
+    --chart-budget: #A8B8D0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--light-bg); color: var(--text); }
+
+  /* ── Header ── */
+  .page-header {
+    background: var(--navy); color: #fff; padding: 32px 40px;
+  }
+  .page-header .eyebrow { font-size: 11px; letter-spacing: 3px; color: #8899AA; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .page-header .sub { font-size: 14px; color: #AABBCC; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+
+  /* ── Section wrappers ── */
+  .section { background: #fff; border: 1px solid var(--border); border-radius: 8px; margin: 24px 0; overflow: hidden; }
+  .section-head {
+    background: var(--navy); padding: 12px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .section-head .title { font-size: 13px; font-weight: 600; color: #fff; }
+  .section-head .eyebrow { font-size: 10px; letter-spacing: 2px; color: #8899AA; text-transform: uppercase; }
+  .section-body { padding: 24px; }
+
+  /* ── KPI cards (top row) ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 4px; }
+  .kpi-card {
+    background: var(--light-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px;
+  }
+  .kpi-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+  .kpi-card .value { font-size: 28px; font-weight: 700; }
+  .kpi-card .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Navy divider slides ── */
+  .divider-slide {
+    background: var(--navy); border-radius: 8px; padding: 48px 40px; margin: 32px 0;
+    text-align: left;
+  }
+  .divider-slide h2 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .divider-slide p { font-size: 14px; color: #8899AA; }
+
+  /* ── Narrative blocks ── */
+  .narrative-section { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .narrative-col h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .narrative-col p { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+
+  /* ── Spotlight property cards ── */
+  .spotlight-slide {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .slide-eyebrow {
+    background: var(--navy); padding: 10px 20px;
+    font-size: 10px; letter-spacing: 2px; color: #8899AA; text-transform: uppercase;
+  }
+  .slide-title { padding: 16px 20px 0; font-size: 20px; font-weight: 700; color: var(--text); }
+
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 20px; }
+  .kpi-tile {
+    background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+  }
+  .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+  .kpi-value { font-size: 22px; font-weight: 700; margin: 2px 0; }
+  .kpi-sub { font-size: 11px; color: var(--muted); }
+
+  .spotlight-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 0 20px 24px; }
+  .spotlight-chart { min-height: 220px; }
+  .spotlight-why h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .spotlight-why ul { font-size: 12px; line-height: 1.65; color: var(--text); padding-left: 18px; }
+  .spotlight-why li { margin-bottom: 6px; }
+
+  /* ── Tables ── */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #D0D8E4; font-size: 11px; text-transform: uppercase; color: #5A6A7A; }
-  td { padding: 8px 10px; border-bottom: 1px solid #EEF1F6; }
-  .narrative { font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
-  .narrative h3 { font-size: 14px; margin: 16px 0 8px; }
-  .narrative h3:first-child { margin-top: 0; }
-  .footer { text-align: center; padding: 24px; font-size: 11px; color: #5A6A7A; }
+  th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  td { padding: 9px 12px; border-bottom: 1px solid #EEF1F6; }
+  tr:hover td { background: var(--light-bg); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .status-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+
+  /* ── Forward outlook ── */
+  .outlook-content { font-size: 13px; line-height: 1.75; white-space: pre-wrap; }
+  .outlook-content h3 { font-size: 15px; font-weight: 700; margin: 20px 0 10px; color: var(--text); }
+  .outlook-content h3:first-child { margin-top: 0; }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center; padding: 32px 40px; font-size: 11px; color: var(--muted);
+    border-top: 1px solid var(--border); margin-top: 32px; background: #fff;
+  }
+
+  @media print {
+    .spotlight-slide, .section, .divider-slide { break-inside: avoid; }
+    body { background: #fff; }
+  }
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>Sunrise Capital Investors — Portfolio Performance Review</h1>
-  <div class="sub">Budget vs Actual  ·  April 2026 and Year-to-Date (January–April)  ·  Published ${now}</div>
+
+<!-- ═══════ HEADER ═══════ -->
+<div class="page-header">
+  <div class="eyebrow">Sunrise Capital Investors</div>
+  <h1>Portfolio Performance Review</h1>
+  <div class="sub">Budget vs Actual — April 2026 and Year-to-Date (January–April) · Published ${now}</div>
 </div>
+
 <div class="container">
 
-  <!-- Portfolio KPIs -->
+  <!-- ═══════ PORTFOLIO KPIs ═══════ -->
   <div class="section">
-    <div class="section-head">Portfolio Summary — YTD 2026</div>
+    <div class="section-head">
+      <span class="eyebrow">Portfolio · YTD January–April 2026</span>
+      <span class="title">The Story in Brief</span>
+    </div>
     <div class="section-body">
       <div class="kpi-row">
         <div class="kpi-card">
           <div class="label">YTD NOI</div>
           <div class="value" style="color:${vc(p.noi?.varDollar)}">${fmtDollar(p.noi?.actual)}</div>
-          <div class="sub">${fmtPct(p.noi?.varPct)} vs budget</div>
+          <div class="sub">${fmtPct(p.noi?.varPct)} vs ${fmtDollar(p.noi?.budget)} budget</div>
         </div>
         <div class="kpi-card">
           <div class="label">YTD Income</div>
@@ -1747,73 +1893,104 @@ function generateWebReport() {
           <div class="sub">${fmtPct(p.income?.varPct)} vs budget</div>
         </div>
         <div class="kpi-card">
-          <div class="label">YTD Expense</div>
+          <div class="label">YTD Op. Expense</div>
           <div class="value" style="color:${vcInv(p.expense?.varDollar)}">${fmtDollar(p.expense?.actual)}</div>
-          <div class="sub">${fmtPct(p.expense?.varPct)} vs budget</div>
+          <div class="sub">${fmtPct(p.expense?.varPct)} — under budget</div>
         </div>
         <div class="kpi-card">
           <div class="label">Cash Runway</div>
           <div class="value">~${d.cashRunway.runwayYears?.toFixed(1)||'?'} yrs</div>
-          <div class="sub">${Math.round(d.cashRunway.runwayWeeks||0)} weeks</div>
+          <div class="sub">${Math.round(d.cashRunway.runwayWeeks||0)} weeks · $${(d.cashRunway.startingCash/1e6).toFixed(0)}M starting</div>
+        </div>
+      </div>
+
+      <div class="narrative-section" style="margin-top:24px;">
+        <div class="narrative-col">
+          <h3 style="color:var(--green);">What is working</h3>
+          <p>${narrWorking}</p>
+        </div>
+        <div class="narrative-col">
+          <h3 style="color:var(--red);">What needs attention</h3>
+          <p>${narrAttention}</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Executive Summary Narratives -->
+  <!-- ═══════ FUND PERFORMANCE ═══════ -->
   <div class="section">
-    <div class="section-head">Executive Summary</div>
-    <div class="section-body narrative">
-      <h3 style="color:#2E7D5B;">What is working</h3>
-      ${narrWorking}
-
-      <h3 style="color:#B23A48;">What needs attention</h3>
-      ${narrAttention}
+    <div class="section-head">
+      <span class="eyebrow">By Fund · YTD January–April</span>
+      <span class="title">Fund-Level Performance</span>
     </div>
-  </div>
-
-  <!-- Fund Performance -->
-  <div class="section">
-    <div class="section-head">Fund Performance</div>
     <div class="section-body">
       <table>
         <thead><tr>
-          <th>Fund</th><th style="text-align:right;">Properties</th>
-          <th style="text-align:right;">YTD Income</th><th style="text-align:right;">Inc vs Bud</th>
-          <th style="text-align:right;">YTD NOI</th><th style="text-align:right;">NOI vs Bud</th>
-          <th style="text-align:right;">NOI Margin</th>
+          <th>Fund</th><th class="num">Properties</th>
+          <th class="num">YTD Income</th><th class="num">Inc vs Bud</th>
+          <th class="num">YTD NOI</th><th class="num">NOI vs Bud</th>
+          <th class="num">NOI Margin</th>
         </tr></thead>
         <tbody>${fundRows}</tbody>
       </table>
     </div>
   </div>
 
-  <!-- Spotlights -->
-  ${spotlightSection('Where We Are Winning', '#2E7D5B', SPOTLIGHTS.winners)}
-  ${spotlightSection('Where We Are Falling Short', '#B23A48', SPOTLIGHTS.losers)}
+  <!-- ═══════ WINNERS ═══════ -->
+  ${SPOTLIGHTS.winners.length ? `
+  <div class="divider-slide">
+    <h2>Where We Are Winning</h2>
+    <p>Top performing properties and the reason each is ahead of plan</p>
+  </div>
+  ${winnersHTML}
+  ` : ''}
 
-  <!-- Forward Outlook -->
+  <!-- ═══════ LOSERS ═══════ -->
+  ${SPOTLIGHTS.losers.length ? `
+  <div class="divider-slide">
+    <h2>Where We Are Falling Short</h2>
+    <p>Underperforming properties and the reason each is behind plan</p>
+  </div>
+  ${losersHTML}
+  ` : ''}
+
+  <!-- ═══════ FORWARD OUTLOOK ═══════ -->
   <div class="section">
-    <div class="section-head">Forward Outlook</div>
-    <div class="section-body narrative">
-      <h3>Recommended Actions</h3>
-      ${narrActions}
-
-      <h3>Key Risks</h3>
-      ${narrRisks}
+    <div class="section-head">
+      <span class="eyebrow">Forward Outlook · Committee Actions</span>
+      <span class="title">Recommended Actions & Key Risks</span>
+    </div>
+    <div class="section-body">
+      <div class="narrative-section">
+        <div class="narrative-col">
+          <div class="outlook-content">
+            <h3>Recommended Actions</h3>
+            ${narrActions}
+          </div>
+        </div>
+        <div class="narrative-col">
+          <div class="outlook-content">
+            <h3>Key Risks</h3>
+            ${narrRisks}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- All Properties -->
+  <!-- ═══════ ALL PROPERTIES ═══════ -->
   <div class="section">
-    <div class="section-head">All Properties — by NOI Variance</div>
+    <div class="section-head">
+      <span class="eyebrow">Property Detail · ${d.properties.length} Properties</span>
+      <span class="title">All Properties — by NOI Variance</span>
+    </div>
     <div class="section-body">
       <table>
         <thead><tr>
           <th>Property</th><th>Fund</th>
-          <th style="text-align:right;">YTD Income</th><th style="text-align:right;">YTD NOI</th>
-          <th style="text-align:right;">NOI Var $</th><th style="text-align:right;">NOI Var %</th>
-          <th style="text-align:right;">DSCR</th><th>Status</th>
+          <th class="num">YTD Income</th><th class="num">YTD NOI</th>
+          <th class="num">NOI Var $</th><th class="num">NOI Var %</th>
+          <th class="num">DSCR</th><th>Status</th>
         </tr></thead>
         <tbody>${propRows}</tbody>
       </table>
@@ -1821,10 +1998,17 @@ function generateWebReport() {
   </div>
 
 </div>
-<div class="footer">
-  Sunrise Capital Investors  ·  Confidential — Executive Committee  ·  Budget vs Actual April 2026 & YTD<br>
-  Published ${now}  ·  Source: Budget to Actual model (live-linked). Figures are unaudited management estimates.
+
+<div class="page-footer">
+  Sunrise Capital Investors · Confidential — Executive Committee · Budget vs Actual April 2026 & YTD<br>
+  Published ${now} · Source: Budget to Actual model (live-linked). Figures are unaudited management estimates.
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  ${chartInits}
+});
+<\/script>
 </body>
 </html>`;
 }
