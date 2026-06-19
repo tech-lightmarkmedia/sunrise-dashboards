@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v2.8)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v2.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -63,6 +63,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .impact-tag{display:inline-block;font-size:9px;font-weight:700;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle}
 .slider-wrap{display:flex;flex-direction:column;gap:4px;padding-top:2px}
 .slider-wrap input[type="range"]{width:100%;accent-color:var(--accent);height:6px}
+.slider-hint{font-size:10px;color:var(--text3);font-style:italic;line-height:1.3}
 .slider-val{padding-top:2px}
 .slider-val input[type="number"]{font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;color:var(--accent);text-align:right;width:90px;border:1px solid transparent;border-radius:4px;background:transparent;padding:2px 4px;-moz-appearance:textfield}
 .slider-val input[type="number"]::-webkit-outer-spin-button,
@@ -120,7 +121,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v2.8</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v2.9</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -192,6 +193,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCPAIL" min="30" max="500" step="1" value="131" oninput="syncFromSlider('CPAIL')">
+      <div class="slider-hint">A higher CPAIL will produce less investment capital or require a higher spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valCPAIL" value="131" min="30" max="500" step="1" oninput="syncFromInput('CPAIL')">
@@ -209,6 +211,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderLeadDisco" min="1" max="30" step="0.1" value="7.6" oninput="syncFromSlider('LeadDisco')">
+      <div class="slider-hint">A higher booking rate will produce more investment capital or lessen the necessary spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valLeadDisco" value="7.6" min="1" max="30" step="0.1" oninput="syncFromInput('LeadDisco')">
@@ -225,6 +228,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderDiscoHeld" min="50" max="100" step="0.5" value="86.8" oninput="syncFromSlider('DiscoHeld')">
+      <div class="slider-hint">A higher hold rate will produce more investment capital or lessen the necessary spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valDiscoHeld" value="86.8" min="50" max="100" step="0.5" oninput="syncFromInput('DiscoHeld')">
@@ -241,6 +245,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCloseRate" min="5" max="50" step="0.5" value="21.0" oninput="syncFromSlider('CloseRate')">
+      <div class="slider-hint">A higher close rate will produce more investment capital or lessen the necessary spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valCloseRate" value="21.0" min="5" max="50" step="0.5" oninput="syncFromInput('CloseRate')">
@@ -257,6 +262,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderAvgCheck" min="50000" max="500000" step="5000" value="150415" oninput="syncFromSlider('AvgCheck')">
+      <div class="slider-hint">A higher average first check will produce more investment capital or lessen the necessary spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valAvgCheck" value="150415" min="50000" max="500000" step="5000" oninput="syncFromInput('AvgCheck')">
@@ -273,6 +279,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderRepeatRatio" min="0" max="5" step="0.05" value="1.37" oninput="syncFromSlider('RepeatRatio')">
+      <div class="slider-hint">A higher repeat ratio will produce more total capital or lessen the necessary spend</div>
     </div>
     <div class="slider-val">
       <input type="number" id="valRepeatRatio" value="1.37" min="0" max="5" step="0.05" oninput="syncFromInput('RepeatRatio')">
