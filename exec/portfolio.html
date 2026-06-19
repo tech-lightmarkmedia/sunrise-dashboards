@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Review Builder v0.4.3</title>
+<title>Portfolio Review Builder v0.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
@@ -277,7 +277,7 @@ body {
 
 <div class="header">
   <h1>Portfolio Review Builder</h1>
-  <span class="vpill">v0.4.3</span>
+  <span class="vpill">v0.5</span>
 </div>
 
 <!-- ── Phase 1: Upload ── -->
@@ -719,6 +719,115 @@ function parseWorkbook(wb) {
   SPOTLIGHTS.losers = eligible.filter(p => (p.noiVarDollar || 0) < 0)
     .sort((a, b) => (a.noiVarDollar || 0) - (b.noiVarDollar || 0))
     .slice(0, 3).map(p => p.name);
+
+  // ── Parse individual property sheet tabs for detail drill-down ──
+  // Each property tab has: Row 0=title, 1=fund, 2=period, 4=headers
+  // Columns: 4 per actual month (Actual, Budget, $Var, %Var)
+  //   Jan=cols 1-4, Feb=cols 5-8, Mar=cols 9-12, Apr=cols 13-16
+  //   Future months single-col budget: May=17, Jun=18, Jul=19, Aug=20, Sep=21, Oct=22, Nov=23, Dec=24
+  //   YTD: Actual=25, Budget=26, $Var=27, %Var=28, Annual=29
+  out.propertyDetails = {};
+
+  const MONTH_COLS = [
+    { label: 'Jan', actual: 1, budget: 2, varD: 3, varP: 4 },
+    { label: 'Feb', actual: 5, budget: 6, varD: 7, varP: 8 },
+    { label: 'Mar', actual: 9, budget: 10, varD: 11, varP: 12 },
+    { label: 'Apr', actual: 13, budget: 14, varD: 15, varP: 16 },
+  ];
+  const YTD_COLS = { actual: 25, budget: 26, varD: 27, varP: 28 };
+  const ANNUAL_COL = 29;
+
+  out.properties.forEach(prop => {
+    // Find the sheet tab for this property
+    const sheetName = wb.SheetNames.find(sn => {
+      const snLower = sn.toLowerCase().trim();
+      const pLower = prop.name.toLowerCase().trim();
+      const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return norm(sn) === norm(prop.name) || norm(sn).includes(norm(prop.name)) || norm(prop.name).includes(norm(sn));
+    });
+    if (!sheetName) return;
+
+    const ws = wb.Sheets[sheetName];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+    if (rows.length < 6) return;
+
+    const detail = {
+      title: String(rows[0]?.[0] || prop.name).trim(),
+      fund: String(rows[1]?.[0] || '').trim(),
+      period: String(rows[2]?.[0] || '').trim(),
+      rows: [],
+    };
+
+    // Parse rows 5+ into structured line items
+    for (let r = 5; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      const rawLabel = String(row[0] || '').trim();
+      if (!rawLabel) continue;
+
+      // Stop at BELOW THE LINE or NOTES
+      if (/^BELOW THE LINE|^NOTES$/i.test(rawLabel)) break;
+      // Skip NET INCOME SUMMARY re-statements
+      if (/^NET INCOME SUMMARY$/i.test(rawLabel)) break;
+
+      // Clean up label: strip account codes for display
+      let label = rawLabel;
+      let accountCode = '';
+      const acMatch = rawLabel.match(/^(\d{4}-\d{4})\s+(.*)/);
+      if (acMatch) {
+        accountCode = acMatch[1];
+        label = acMatch[2];
+      }
+      // Strip trailing " - LL" or " - MH" suffixes
+      label = label.replace(/\s*-\s*(LL|MH)\s*$/i, '');
+
+      // Determine row type
+      const isSection = /^REVENUE$|^INCOME$|^EXPENSE$|^OPERATING EXPENSES$|^OWNER DIRECT|^NON-OPERATING|^CAPITAL EXPENDITURES$/i.test(rawLabel) ||
+                        (/^Non-Operating/i.test(rawLabel) && row[1] == null);
+      const isTotal = /^Total\s|^TOTAL$/i.test(rawLabel) || /^TOTAL\s/i.test(rawLabel);
+      const isSummary = /^Operating Income$|^PARKING NOI$|^NOI$|^NET INCOME$|^Net Operating Income$/i.test(rawLabel);
+      const isSubHeader = accountCode && rawLabel.includes('*') && row[1] == null;
+
+      let type = 'data';
+      if (isSection) type = 'section';
+      else if (isSummary) type = 'summary';
+      else if (isTotal) type = 'total';
+      else if (isSubHeader) type = 'subheader';
+      else if (row[1] == null && row[5] == null && row[9] == null && row[13] == null) type = 'subheader';
+
+      // Extract monthly data
+      const months = MONTH_COLS.map(m => ({
+        actual: n(row[m.actual]),
+        budget: n(row[m.budget]),
+        varD: n(row[m.varD]),
+        varP: n(row[m.varP]),
+      }));
+
+      const ytd = {
+        actual: n(row[YTD_COLS.actual]),
+        budget: n(row[YTD_COLS.budget]),
+        varD: n(row[YTD_COLS.varD]),
+        varP: n(row[YTD_COLS.varP]),
+      };
+
+      const annual = n(row[ANNUAL_COL]);
+
+      // Compute indent level from account code hierarchy
+      let indent = 0;
+      if (accountCode) {
+        if (label.startsWith('Total *')) indent = 1;
+        else if (label.startsWith('*')) indent = 1;
+        else indent = 2;
+      }
+      // Clean display label
+      label = label.replace(/^\*/, '').replace(/^Total \*/, 'Total ').trim();
+
+      detail.rows.push({ label, type, indent, months, ytd, annual, accountCode });
+    }
+
+    out.propertyDetails[prop.name] = detail;
+  });
 
   return out;
 }
@@ -1720,11 +1829,12 @@ function generateWebReport() {
     </tr>`;
   });
 
-  // All properties table
+  // All properties table — names are clickable links to detail sections
   let propRows = '';
   d.properties.forEach(prop => {
+    const anchor = prop.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     propRows += `<tr>
-      <td style="font-weight:500;">${prop.name}</td>
+      <td style="font-weight:500;"><a href="#detail-${anchor}" style="color:var(--navy);text-decoration:none;border-bottom:1px dotted var(--border);">${prop.name}</a></td>
       <td>${prop.fund}</td>
       <td class="num">${fmtDollar(prop.incActual)}</td>
       <td class="num">${fmtDollar(prop.noiActual)}</td>
@@ -1733,6 +1843,167 @@ function generateWebReport() {
       <td class="num">${fmtDSCR(prop.dscr)}</td>
       <td>${pStatusHTML(prop)}</td>
     </tr>`;
+  });
+
+  // ── Property detail P&L sections ──
+  function fmtCell(v) {
+    if (v == null) return '';
+    if (Math.abs(v) >= 1e6) return (v < 0 ? '-' : '') + '$' + (Math.abs(v)/1e6).toFixed(2) + 'M';
+    if (Math.abs(v) >= 1000) return (v < 0 ? '-' : '') + '$' + Math.round(Math.abs(v)).toLocaleString();
+    if (Math.abs(v) < 0.01 && v !== 0) return '—';
+    return (v < 0 ? '-' : '') + '$' + Math.abs(v).toFixed(0);
+  }
+  function fmtVarPct(v) {
+    if (v == null) return '';
+    return (v * 100).toFixed(1) + '%';
+  }
+  function cellColor(v) {
+    if (v == null || v === 0) return '';
+    return v > 0 ? 'color:#2E7D5B;' : 'color:#B23A48;';
+  }
+
+  let propertyDetailHTML = '';
+  const fundOrder = ['Fund III', 'Fund IV', 'Fund V'];
+
+  fundOrder.forEach(fund => {
+    const fundProps = d.properties.filter(p => p.fund === fund)
+      .sort((a, b) => (b.noiVarDollar||0) - (a.noiVarDollar||0));
+    if (!fundProps.length) return;
+
+    propertyDetailHTML += `
+    <div class="divider-slide" style="padding:32px 40px;">
+      <h2 style="font-size:22px;">${fund} — Property Detail</h2>
+      <p>${fundProps.length} properties · Click any property above to jump here</p>
+    </div>`;
+
+    fundProps.forEach(prop => {
+      const detail = d.propertyDetails[prop.name];
+      const anchor = prop.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const beat = (prop.noiVarDollar||0) >= 0;
+
+      if (!detail || !detail.rows.length) {
+        propertyDetailHTML += `
+        <div class="section" id="detail-${anchor}">
+          <div class="section-head">
+            <span class="eyebrow">${prop.fund.toUpperCase()}</span>
+            <span class="title">${prop.name}</span>
+          </div>
+          <div class="section-body" style="text-align:center;color:var(--muted);padding:40px;">
+            No detail sheet found for this property.
+          </div>
+        </div>`;
+        return;
+      }
+
+      // Build the P&L table rows
+      let plRows = '';
+      detail.rows.forEach(r => {
+        const style = [];
+        let labelStyle = '';
+        let rowClass = '';
+
+        if (r.type === 'section') {
+          style.push('background:#14213D;color:#fff;');
+          labelStyle = 'font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;';
+          plRows += '<tr style="' + style.join('') + '"><td colspan="13" style="padding:8px 12px;' + labelStyle + '">' + r.label + '</td></tr>';
+          return;
+        }
+        if (r.type === 'subheader') {
+          const pad = 12 + r.indent * 16;
+          plRows += '<tr style="background:#F3F6FB;"><td colspan="13" style="padding:6px 12px 6px ' + pad + 'px;font-weight:600;font-size:11px;color:#5A6A7A;">' + r.label + '</td></tr>';
+          return;
+        }
+
+        const isBold = r.type === 'total' || r.type === 'summary';
+        const bgColor = r.type === 'summary' ? 'background:#EDF1F8;' : r.type === 'total' ? 'background:#F8F9FB;' : '';
+        const fw = isBold ? 'font-weight:600;' : '';
+        const pad = 12 + r.indent * 16;
+
+        // Latest month = Apr (index 3)
+        const apr = r.months[3] || {};
+        const ytd = r.ytd || {};
+
+        // Variance color: for expenses, negative variance (under budget) is good
+        const isExpense = r.label.match(/expense|cost|fee|tax|insurance|salary|repair|util|maint|payroll|snow|landscape|travel|market|deprec|amort|mortgage|phone/i);
+        const expInvert = isExpense ? -1 : 1;
+
+        plRows += '<tr style="' + bgColor + '">' +
+          '<td style="padding:6px 12px 6px ' + pad + 'px;' + fw + '">' + r.label + '</td>' +
+          // Apr Actual
+          '<td class="num" style="' + fw + '">' + fmtCell(apr.actual) + '</td>' +
+          // Apr Budget
+          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(apr.budget) + '</td>' +
+          // Apr $ Var
+          '<td class="num" style="' + fw + cellColor((apr.varD||0) * expInvert) + '">' + fmtCell(apr.varD) + '</td>' +
+          // Apr % Var
+          '<td class="num" style="' + fw + cellColor((apr.varP||0) * expInvert) + '">' + fmtVarPct(apr.varP) + '</td>' +
+          // Spacer
+          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
+          // YTD Actual
+          '<td class="num" style="' + fw + '">' + fmtCell(ytd.actual) + '</td>' +
+          // YTD Budget
+          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(ytd.budget) + '</td>' +
+          // YTD $ Var
+          '<td class="num" style="' + fw + cellColor((ytd.varD||0) * expInvert) + '">' + fmtCell(ytd.varD) + '</td>' +
+          // YTD % Var
+          '<td class="num" style="' + fw + cellColor((ytd.varP||0) * expInvert) + '">' + fmtVarPct(ytd.varP) + '</td>' +
+          // Spacer
+          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
+          // Annual Budget
+          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(r.annual) + '</td>' +
+          '</tr>';
+      });
+
+      propertyDetailHTML += `
+      <div class="section" id="detail-${anchor}">
+        <div class="section-head">
+          <span class="eyebrow">${prop.fund.toUpperCase()} · ${noiStatus(prop).toUpperCase()}</span>
+          <span class="title">${prop.name}</span>
+        </div>
+        <div class="section-body" style="padding:16px;">
+          <div class="kpi-strip" style="margin-bottom:16px;">
+            <div class="kpi-tile">
+              <div class="kpi-label">YTD NOI</div>
+              <div class="kpi-value" style="font-size:18px;color:${vc(prop.noiVarDollar)}">${fmtDollar(prop.noiActual)}</div>
+              <div class="kpi-sub">${beat?'beat':'missed'} by ${fmtDollar(Math.abs(prop.noiVarDollar))}</div>
+            </div>
+            <div class="kpi-tile">
+              <div class="kpi-label">Income vs Budget</div>
+              <div class="kpi-value" style="font-size:18px;color:${vc(prop.incVarPct)}">${fmtPct(prop.incVarPct)}</div>
+            </div>
+            <div class="kpi-tile">
+              <div class="kpi-label">Expense vs Budget</div>
+              <div class="kpi-value" style="font-size:18px;color:${vcInv(prop.expVarPct)}">${fmtPct(prop.expVarPct)}</div>
+            </div>
+            <div class="kpi-tile">
+              <div class="kpi-label">DSCR</div>
+              <div class="kpi-value" style="font-size:18px;color:${prop.dscr!=null?(prop.dscr>=1.25?'#2E7D5B':'#B23A48'):'#888'}">${fmtDSCR(prop.dscr)}</div>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="font-size:12px;min-width:900px;">
+              <thead>
+                <tr style="background:#14213D;">
+                  <th style="color:#fff;text-align:left;padding:8px 12px;min-width:200px;">Line Item</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">Apr Actual</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">Apr Budget</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>
+                  <th style="width:2px;background:#14213D;padding:0;"></th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Actual</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Budget</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>
+                  <th style="width:2px;background:#14213D;padding:0;"></th>
+                  <th style="color:#AABBCC;text-align:right;padding:8px 6px;">Annual</th>
+                </tr>
+              </thead>
+              <tbody>${plRows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    });
   });
 
   // Build the spotlight sections (with chart JS collection)
@@ -1988,6 +2259,13 @@ function generateWebReport() {
       </table>
     </div>
   </div>
+
+  <!-- ═══════ PROPERTY DETAIL DRILL-DOWNS ═══════ -->
+  <div class="divider-slide">
+    <h2>Property-by-Property Detail</h2>
+    <p>Full P&L for every property — April actual vs budget and year-to-date. Click any property name above to jump here.</p>
+  </div>
+  ${propertyDetailHTML}
 
 </div>
 
