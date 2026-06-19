@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v2.4)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v2.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -119,7 +119,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v2.4</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v2.5</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -548,14 +548,14 @@ function recalc() {
   document.getElementById('ltvMetrics').innerHTML =
     `<div class="ltv-card present">
       <div class="ltv-label">Present: Cost of New Capital</div>
-      <div class="ltv-value">${fmt(costPerInvestor)}</div>
-      <div class="ltv-sub">${costPctNew2.toFixed(1)}% of ${fmt(avgCheck)} first check</div>
+      <div class="ltv-value">${costPctNew2.toFixed(1)}%</div>
+      <div class="ltv-sub">${fmt(costPerInvestor)} to acquire → ${fmt(avgCheck)} first check</div>
     </div>
     <div class="ltv-arrow">→</div>
     <div class="ltv-card future">
       <div class="ltv-label">Future: Cost of Lifetime Capital</div>
-      <div class="ltv-value">${fmt(costPerInvestor)}</div>
-      <div class="ltv-sub">${costPctLifetime.toFixed(1)}% of ${fmt(lifetimePerInvestor)} lifetime capital</div>
+      <div class="ltv-value">${costPctLifetime.toFixed(1)}%</div>
+      <div class="ltv-sub">${fmt(costPerInvestor)} to acquire → ${fmt(lifetimePerInvestor)} lifetime capital (${ltvMult.toFixed(2)}×)</div>
     </div>`;
 
   document.getElementById('ltvBaseline').innerHTML =
