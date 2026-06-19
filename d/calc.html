@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunrise Capital — Predictive Capital Raising (v1.3)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#c44a1e;--accent-bg:#fdf3ee;
+  --green:#059669;--red:#c44a1e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--text);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:14px}
+header h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;flex:1}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
+
+/* Loading */
+.loading{text-align:center;padding:80px 0;color:var(--text3)}
+.loading .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Baseline note */
+.baseline-banner{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.6}
+.baseline-banner strong{color:var(--text)}
+
+/* Mode toggle */
+.mode-bar{display:flex;gap:8px;margin-bottom:20px;align-items:center}
+.mode-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.mode-btn:hover{border-color:var(--text3);background:var(--surface2)}
+.mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.reset-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;margin-left:auto;transition:all .15s}
+.reset-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.guide-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.guide-btn:hover{border-color:var(--text3);background:var(--surface2)}
+
+/* Input section */
+.input-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.input-section h2{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px;color:var(--text)}
+.input-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.input-row label{font-size:12px;font-weight:600;color:var(--text2);min-width:160px;text-transform:uppercase;letter-spacing:.3px}
+.input-row input[type="number"]{font-family:'DM Sans',sans-serif;font-size:14px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;width:160px;background:var(--surface)}
+.input-row input[type="number"]:focus{outline:none;border-color:var(--accent)}
+.input-row .unit{font-size:11px;color:var(--text3)}
+
+/* Slider rows */
+.slider-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.slider-section h2{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px;color:var(--text)}
+.slider-row{display:grid;grid-template-columns:220px 1fr 90px;align-items:start;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0ede7}
+.slider-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.slider-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.slider-label .baseline-tag{font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;display:block;margin-top:2px}
+.slider-desc{font-size:11px;color:var(--text3);line-height:1.45;margin-top:4px;text-transform:none;letter-spacing:0;font-weight:400}
+.slider-wrap{display:flex;flex-direction:column;gap:4px;padding-top:2px}
+.slider-wrap input[type="range"]{width:100%;accent-color:var(--accent);height:6px}
+.slider-val{padding-top:2px}
+.slider-val input[type="number"]{font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;color:var(--accent);text-align:right;width:90px;border:1px solid transparent;border-radius:4px;background:transparent;padding:2px 4px;-moz-appearance:textfield}
+.slider-val input[type="number"]::-webkit-outer-spin-button,
+.slider-val input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.slider-val input[type="number"]:focus{outline:none;border-color:var(--accent);background:var(--accent-bg)}
+.slider-val .val-unit{font-size:10px;color:var(--text3);text-align:right;display:block}
+
+/* Results */
+.results{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.results h2{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px;color:var(--text)}
+.funnel-chain{display:flex;flex-direction:column}
+.funnel-step{display:grid;grid-template-columns:200px 1fr 120px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0ede7}
+.funnel-step:last-child{border-bottom:none}
+.step-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.step-bar-wrap{position:relative;height:28px;background:#f0ede7;border-radius:6px;overflow:hidden}
+.step-bar{height:100%;border-radius:6px;transition:width .3s ease}
+.step-value{font-size:16px;font-weight:700;text-align:right}
+
+/* Summary cards */
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.summary-card{background:var(--surface2);border-radius:10px;padding:14px 16px;text-align:center}
+.summary-card .card-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.summary-card .card-value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+.summary-card .card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.summary-card.highlight{background:var(--accent-bg);border:1px solid var(--accent)}
+.summary-card.highlight .card-value{color:var(--accent)}
+
+/* Guide drawer */
+#guide{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:28px;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;z-index:210;box-shadow:-4px 0 20px rgba(0,0,0,.06)}
+#guide.on{transform:translateX(0)}
+#guide h2{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:14px}
+#guide h3{font-family:'DM Serif Display',serif;font-size:15px;margin-top:18px;margin-bottom:6px}
+#guide p{font-size:12px;line-height:1.55;color:var(--text);margin-bottom:8px}
+#guide .close-btn{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+#guide .close-btn:hover{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Predictive Capital Raising <span class="vpill">v1.3</span></h1>
+</header>
+
+<main>
+
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <div id="loadMsg">Loading data…</div>
+</div>
+
+<div id="content" style="display:none">
+
+<div class="baseline-banner" id="baselineBanner">
+  Loading baseline data…
+</div>
+
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setMode('forward')" id="btnForward">Spend → Capital</button>
+  <button class="mode-btn" onclick="setMode('reverse')" id="btnReverse">Capital Target → Spend</button>
+  <button class="reset-btn" onclick="resetDefaults()">Reset to Defaults</button>
+  <button class="guide-btn" onclick="toggleGuide()">Guide</button>
+</div>
+
+<!-- Forward mode input -->
+<div class="input-section" id="forwardInput">
+  <h2>Monthly Ad Spend</h2>
+  <div class="input-row">
+    <label>Monthly spend</label>
+    <span class="unit">$</span>
+    <input type="number" id="inputSpend" value="140000" min="0" step="5000" oninput="recalc()">
+    <span class="unit">/ month</span>
+  </div>
+  <div class="input-row">
+    <label>Months</label>
+    <input type="number" id="inputMonths" value="12" min="1" max="60" step="1" oninput="recalc()">
+  </div>
+</div>
+
+<!-- Reverse mode input -->
+<div class="input-section" id="reverseInput" style="display:none">
+  <h2>Capital Raise Target</h2>
+  <div class="input-row">
+    <label>New Capital Target</label>
+    <span class="unit">$</span>
+    <input type="number" id="inputTargetNew" value="30000000" min="0" step="1000000" oninput="recalc()">
+  </div>
+  <div class="input-row">
+    <label>Time Frame</label>
+    <input type="number" id="inputTargetMonths" value="12" min="1" max="60" step="1" oninput="recalc()">
+    <span class="unit">months</span>
+  </div>
+</div>
+
+<!-- Conversion rate sliders -->
+<div class="slider-section">
+  <h2>Funnel Conversion Rates</h2>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      CPAIL
+      <span class="baseline-tag" id="tagCPAIL">Baseline: —</span>
+      <div class="slider-desc">Cost per accredited investor lead. Total ad spend ÷ accredited contacts created in the period. Lower = more efficient lead gen.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderCPAIL" min="30" max="500" step="1" value="131" oninput="syncFromSlider('CPAIL')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valCPAIL" value="131" min="30" max="500" step="1" oninput="syncFromInput('CPAIL')">
+      <span class="val-unit">$/AI lead</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      AI Lead → Discovery
+      <span class="baseline-tag" id="tagLeadDisco">Baseline: —</span>
+      <div class="slider-desc">% of accredited leads that book a discovery call. Driven by setter outreach volume and connection quality.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderLeadDisco" min="1" max="30" step="0.1" value="7.6" oninput="syncFromSlider('LeadDisco')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valLeadDisco" value="7.6" min="1" max="30" step="0.1" oninput="syncFromInput('LeadDisco')">
+      <span class="val-unit">%</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      Discovery → Held
+      <span class="baseline-tag" id="tagDiscoHeld">Baseline: —</span>
+      <div class="slider-desc">% of booked discoveries that actually happen. No-shows, reschedules, and cancellations reduce this. Higher = better confirmation/reminder process.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderDiscoHeld" min="50" max="100" step="0.5" value="86.8" oninput="syncFromSlider('DiscoHeld')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valDiscoHeld" value="86.8" min="50" max="100" step="0.5" oninput="syncFromInput('DiscoHeld')">
+      <span class="val-unit">%</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      Held → New Funded
+      <span class="baseline-tag" id="tagCloseRate">Baseline: —</span>
+      <div class="slider-desc">% of held discoveries that result in a first-time investment. The close rate — driven by closer skill, investor readiness, and fund attractiveness.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderCloseRate" min="5" max="50" step="0.5" value="21.0" oninput="syncFromSlider('CloseRate')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valCloseRate" value="21.0" min="5" max="50" step="0.5" oninput="syncFromInput('CloseRate')">
+      <span class="val-unit">%</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      Avg First Check
+      <span class="baseline-tag" id="tagAvgCheck">Baseline: —</span>
+      <div class="slider-desc">Average dollar amount of a new investor's first investment. Larger checks = more capital per investor acquired.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderAvgCheck" min="50000" max="500000" step="5000" value="150415" oninput="syncFromSlider('AvgCheck')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valAvgCheck" value="150415" min="50000" max="500000" step="5000" oninput="syncFromInput('AvgCheck')">
+      <span class="val-unit">$</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
+      Repeat Capital Ratio
+      <span class="baseline-tag" id="tagRepeatRatio">Baseline: —</span>
+      <div class="slider-desc">Repeat capital as a multiple of new capital. Existing investors reinvesting without going through the lead funnel. Higher = stronger investor retention.</div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderRepeatRatio" min="0" max="5" step="0.05" value="1.37" oninput="syncFromSlider('RepeatRatio')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valRepeatRatio" value="1.37" min="0" max="5" step="0.05" oninput="syncFromInput('RepeatRatio')">
+      <span class="val-unit">×</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Results -->
+<div class="results">
+  <h2 id="resultsTitle">Projected Funnel</h2>
+  <div class="funnel-chain" id="funnelChain"></div>
+  <div class="summary-row" id="summaryCards"></div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<!-- Guide drawer -->
+<div id="guide">
+  <button class="close-btn" onclick="toggleGuide()">✕</button>
+  <h2>How This Works</h2>
+
+  <h3>The Formula</h3>
+  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. Every dollar of ad spend generates accredited investor leads (AI Leads). A percentage of those book discovery calls. A percentage of those hold. A percentage of those fund. The result is new capital raised — plus repeat capital from existing investors reinvesting outside the lead funnel.</p>
+
+  <h3>Forward Mode (Spend → Capital)</h3>
+  <p>Enter a monthly ad spend and time horizon. The calculator projects how many AI leads, discoveries, and new investors that spend produces at the current conversion rates, and the resulting new and repeat capital.</p>
+
+  <h3>Reverse Mode (Capital Target → Spend)</h3>
+  <p>Enter a new capital target and time horizon. The calculator works backward through the funnel to determine the required ad spend, AI lead volume, and discovery volume needed to hit the target at the current conversion rates.</p>
+
+  <h3>CPAIL (Cost Per AI Lead)</h3>
+  <p>Total ad spend divided by the number of accredited investor contacts created in the period. This is the blended cost across all platforms (Meta, Google, LinkedIn) spread across all accredited leads — paid and organic — because the ad spend fuels the entire lead machine, not just directly-attributed contacts. Lower CPAIL means more efficient lead generation.</p>
+
+  <h3>AI Lead → Discovery %</h3>
+  <p>The percentage of accredited leads that end up booking a discovery call. This is primarily driven by setter outreach — dials, connections, and booking skill. Improving this rate means either generating more dials per lead, improving the connection rate, or converting more connections into booked discoveries.</p>
+
+  <h3>Discovery → Held %</h3>
+  <p>The percentage of booked discoveries that actually happen. Reduces when investors no-show, cancel, or reschedule. Improving this rate means better confirmation sequences, reminder cadences, and pre-call engagement. Meetings where the outcome isn't explicitly a failure (no-show, rescheduled, canceled, disqualified) count as held — this is generous to account for sparse dispositioning.</p>
+
+  <h3>Held → New Funded %</h3>
+  <p>The close rate — percentage of held discoveries that result in a first-time investment. This is the closer conversion rate. Note: a 90-day maturity window is applied to the baseline calculation so recent discoveries that haven't had time to fund don't drag down the rate. The baseline only counts months old enough for their pipeline to have matured.</p>
+
+  <h3>Avg First Check</h3>
+  <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target.</p>
+
+  <h3>Repeat Capital Ratio</h3>
+  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. Higher = stronger investor retention and reinvestment.</p>
+
+  <h3>Baseline Window</h3>
+  <p>Default slider values are computed from live data on each page load. The window is the trailing 12 months ending 90 days ago — this ensures every discovery in the window has had a full 90-day maturity period to fund, so the close rate isn't dragged down by pipeline lag. As new data flows through the nightly cache rebuild, the baselines update automatically.</p>
+</div>
+
+<script>
+const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+
+// ── Defaults (overwritten by live data on load) ──
+let DEFAULTS = {
+  cpail: 131,
+  aiLeadDisco: 7.6,
+  discoHeld: 86.8,
+  closeRate: 21.0,
+  avgCheck: 150415,
+  repeatRatio: 1.37,
+};
+
+let mode = 'forward';
+let baselineWindow = 'Apr 2025 – Mar 2026';
+
+// ── Slider ↔ Input sync ──
+function syncFromSlider(key) {
+  const slider = document.getElementById('slider' + key);
+  const input = document.getElementById('val' + key);
+  input.value = slider.value;
+  recalc();
+}
+
+function syncFromInput(key) {
+  const slider = document.getElementById('slider' + key);
+  const input = document.getElementById('val' + key);
+  const v = parseFloat(input.value);
+  if (!isNaN(v)) {
+    slider.value = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), v));
+  }
+  recalc();
+}
+
+function setSlider(key, val) {
+  document.getElementById('slider' + key).value = val;
+  document.getElementById('val' + key).value = val;
+}
+
+function resetDefaults() {
+  setSlider('CPAIL', DEFAULTS.cpail);
+  setSlider('LeadDisco', DEFAULTS.aiLeadDisco);
+  setSlider('DiscoHeld', DEFAULTS.discoHeld);
+  setSlider('CloseRate', DEFAULTS.closeRate);
+  setSlider('AvgCheck', DEFAULTS.avgCheck);
+  setSlider('RepeatRatio', DEFAULTS.repeatRatio);
+  recalc();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnForward').className = 'mode-btn' + (m === 'forward' ? ' active' : '');
+  document.getElementById('btnReverse').className = 'mode-btn' + (m === 'reverse' ? ' active' : '');
+  document.getElementById('forwardInput').style.display = m === 'forward' ? '' : 'none';
+  document.getElementById('reverseInput').style.display = m === 'reverse' ? '' : 'none';
+  document.getElementById('resultsTitle').textContent = m === 'forward' ? 'Projected Funnel' : 'Required Funnel';
+  recalc();
+}
+
+function toggleGuide() {
+  document.getElementById('guide').classList.toggle('on');
+}
+
+function fmt(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + Math.round(n / 1e3).toLocaleString() + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function fmtInt(n) {
+  return Math.round(n).toLocaleString();
+}
+
+function recalc() {
+  const cpail = parseFloat(document.getElementById('sliderCPAIL').value);
+  const aiLeadDisco = parseFloat(document.getElementById('sliderLeadDisco').value) / 100;
+  const discoHeld = parseFloat(document.getElementById('sliderDiscoHeld').value) / 100;
+  const closeRate = parseFloat(document.getElementById('sliderCloseRate').value) / 100;
+  const avgCheck = parseFloat(document.getElementById('sliderAvgCheck').value);
+  const repeatRatio = parseFloat(document.getElementById('sliderRepeatRatio').value);
+
+  let totalSpend, months, aiLeads, discosBooked, discosHeldN, newInvestors, newCapital, repeatCapital, totalCapital;
+
+  if (mode === 'forward') {
+    const monthlySpend = parseFloat(document.getElementById('inputSpend').value) || 0;
+    months = parseInt(document.getElementById('inputMonths').value) || 12;
+    totalSpend = monthlySpend * months;
+    aiLeads = totalSpend / cpail;
+    discosBooked = aiLeads * aiLeadDisco;
+    discosHeldN = discosBooked * discoHeld;
+    newInvestors = discosHeldN * closeRate;
+    newCapital = newInvestors * avgCheck;
+    repeatCapital = newCapital * repeatRatio;
+    totalCapital = newCapital + repeatCapital;
+  } else {
+    const targetNew = parseFloat(document.getElementById('inputTargetNew').value) || 0;
+    months = parseInt(document.getElementById('inputTargetMonths').value) || 12;
+    newCapital = targetNew;
+    newInvestors = newCapital / avgCheck;
+    discosHeldN = newInvestors / closeRate;
+    discosBooked = discosHeldN / discoHeld;
+    aiLeads = discosBooked / aiLeadDisco;
+    totalSpend = aiLeads * cpail;
+    repeatCapital = newCapital * repeatRatio;
+    totalCapital = newCapital + repeatCapital;
+  }
+
+  // Funnel bars
+  const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
+  const steps = [
+    { label: 'AI Leads', value: aiLeads, color: '#94a3b8' },
+    { label: 'Discoveries Booked', value: discosBooked, color: '#60a5fa' },
+    { label: 'Discoveries Held', value: discosHeldN, color: '#3b82f6' },
+    { label: 'New Investors', value: newInvestors, color: '#c44a1e' },
+  ];
+  let funnelHtml = '';
+  for (const s of steps) {
+    const pct = Math.max(2, (s.value / maxVal) * 100);
+    funnelHtml += `<div class="funnel-step">
+      <div class="step-label">${s.label}</div>
+      <div class="step-bar-wrap"><div class="step-bar" style="width:${pct}%;background:${s.color}"></div></div>
+      <div class="step-value">${fmtInt(s.value)}</div>
+    </div>`;
+  }
+  document.getElementById('funnelChain').innerHTML = funnelHtml;
+
+  // Summary cards
+  const costPerInvestor = newInvestors > 0 ? totalSpend / newInvestors : 0;
+  const returnOnTotal = totalSpend > 0 ? totalCapital / totalSpend : 0;
+  const costOfCapital = totalCapital > 0 ? (totalSpend / totalCapital * 100) : 0;
+
+  let c = '';
+  if (mode === 'forward') {
+    c += card('Total Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo');
+    c += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo', true);
+    c += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
+    c += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
+    c += card('Cost / New Investor', fmt(costPerInvestor), '');
+    c += card('Return on Total', returnOnTotal.toFixed(1) + '×', costOfCapital.toFixed(1) + '% of capital');
+  } else {
+    c += card('Required Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo', true);
+    c += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo');
+    c += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
+    c += card('Required AI Leads', fmtInt(aiLeads), fmtInt(aiLeads / months) + '/mo', true);
+    c += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo');
+    c += card('Cost / New Investor', fmt(costPerInvestor), returnOnTotal.toFixed(1) + '× return');
+  }
+  document.getElementById('summaryCards').innerHTML = c;
+}
+
+function card(label, value, sub, highlight) {
+  return `<div class="summary-card${highlight ? ' highlight' : ''}">
+    <div class="card-label">${label}</div>
+    <div class="card-value">${value}</div>
+    ${sub ? `<div class="card-sub">${sub}</div>` : ''}
+  </div>`;
+}
+
+// ── Data loading & baseline computation ──
+async function load() {
+  const msg = document.getElementById('loadMsg');
+  try {
+    msg.textContent = 'Loading contacts, investments, meetings…';
+    const fetchCache = async (key) => {
+      const r = await fetch(`${WORKER}/${key}`);
+      const j = await r.json();
+      return j.results || j;
+    };
+
+    const [contacts, investments, meetings] = await Promise.all([
+      fetchCache('cached-contacts'),
+      fetchCache('cached-investments'),
+      fetchCache('cached-meetings'),
+    ]);
+
+    // Meta spend (R2, fast)
+    msg.textContent = 'Loading spend data…';
+    let metaDaily = [];
+    try {
+      const r = await fetch(`${WORKER}/cached-daily-spend`);
+      const j = await r.json();
+      metaDaily = j.rows || (Array.isArray(j) ? j : []);
+    } catch(e) {}
+
+    // Compute baseline window: trailing 12 months ending 90 days ago
+    const now = new Date();
+    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+    const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0, 23, 59, 59, 999); // last day of month before
+    const startMonth = new Date(endMonth.getFullYear(), endMonth.getMonth() - 11, 1);
+
+    const moLabel = (d) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    baselineWindow = moLabel(startMonth) + ' – ' + moLabel(endMonth);
+
+    // Normalize
+    const cs = contacts.map(c => {
+      const p = c.properties || {};
+      return {
+        ts: p.createdate ? new Date(p.createdate).getTime() : null,
+        acc: p.are_you_accredited_ === 'Yes',
+        email: (p.email || '').trim().toLowerCase(),
+      };
+    });
+
+    const invs = investments.map(r => {
+      const p = r.properties || {};
+      return {
+        email: (p.email_address || '').trim().toLowerCase(),
+        amt: parseFloat(p.investment_amount) || 0,
+        fts: p.funds_received ? new Date(p.funds_received).getTime() : null,
+      };
+    });
+
+    // Investor first-ever map (across all time, not just window)
+    const investorFirst = {};
+    for (const i of invs) {
+      if (!i.email || !i.fts) continue;
+      if (!investorFirst[i.email] || i.fts < investorFirst[i.email]) investorFirst[i.email] = i.fts;
+    }
+
+    // Meeting classification
+    const fails = new Set(['NO_SHOW', 'RESCHEDULED', 'CANCELED', 'DISQUALIFIED']);
+    const nowMs = Date.now();
+    function classify(p) {
+      const at = (p.hs_activity_type || '').toLowerCase();
+      if (at.includes('discovery')) return 'discovery';
+      if (at) return 'other';
+      const ti = (p.hs_meeting_title || '').toLowerCase();
+      if (ti.includes('discovery call') || ti.includes('discovery')) return 'discovery';
+      return 'other';
+    }
+    const ms = meetings.map(r => {
+      const p = r.properties || {};
+      return {
+        type: classify(p),
+        sTs: p.hs_timestamp ? new Date(p.hs_timestamp).getTime() : null,
+        out: (p.hs_meeting_outcome || '').trim().toUpperCase(),
+      };
+    }).filter(m => m.type === 'discovery');
+
+    // Aggregate over baseline window
+    const fromMs = startMonth.getTime();
+    const toMs = endMonth.getTime();
+    const fromIso = startMonth.toISOString().slice(0, 10);
+    const toIso = endMonth.toISOString().slice(0, 10);
+
+    const windowContacts = cs.filter(c => c.ts >= fromMs && c.ts <= toMs);
+    const aiLeads = windowContacts.filter(c => c.acc).length;
+
+    const windowMeetings = ms.filter(m => m.sTs >= fromMs && m.sTs <= toMs);
+    const discosBooked = windowMeetings.length;
+    const discosHeld = windowMeetings.filter(m => m.sTs < nowMs && !fails.has(m.out)).length;
+
+    const windowInvs = invs.filter(v => v.fts >= fromMs && v.fts <= toMs);
+    let newI = 0, newC = 0, rptC = 0;
+    for (const v of windowInvs) {
+      if (!v.fts) continue;
+      if (v.email && investorFirst[v.email] === v.fts) { newI++; newC += v.amt; }
+      else { rptC += v.amt; }
+    }
+
+    let spend = 0;
+    for (const d of metaDaily) {
+      if (d.date >= fromIso && d.date <= toIso) spend += d.spend;
+    }
+
+    // Compute rates
+    const cpail = aiLeads > 0 ? Math.round(spend / aiLeads) : 131;
+    const aiLeadDiscoRate = aiLeads > 0 ? Math.round((discosBooked / aiLeads) * 1000) / 10 : 7.6;
+    const discoHeldRate = discosBooked > 0 ? Math.round((discosHeld / discosBooked) * 1000) / 10 : 86.8;
+    const closeRateVal = discosHeld > 0 ? Math.round((newI / discosHeld) * 1000) / 10 : 21.0;
+    const avgCheckVal = newI > 0 ? Math.round(newC / newI) : 150415;
+    const repeatRatioVal = newC > 0 ? Math.round((rptC / newC) * 100) / 100 : 1.37;
+
+    DEFAULTS = {
+      cpail: Math.max(30, cpail),
+      aiLeadDisco: Math.max(1, aiLeadDiscoRate),
+      discoHeld: Math.max(50, discoHeldRate),
+      closeRate: Math.max(5, closeRateVal),
+      avgCheck: Math.max(50000, avgCheckVal),
+      repeatRatio: Math.max(0, repeatRatioVal),
+    };
+
+    // Update baseline tags
+    document.getElementById('tagCPAIL').textContent = 'Baseline: $' + DEFAULTS.cpail;
+    document.getElementById('tagLeadDisco').textContent = 'Baseline: ' + DEFAULTS.aiLeadDisco + '%';
+    document.getElementById('tagDiscoHeld').textContent = 'Baseline: ' + DEFAULTS.discoHeld + '%';
+    document.getElementById('tagCloseRate').textContent = 'Baseline: ' + DEFAULTS.closeRate + '%';
+    document.getElementById('tagAvgCheck').textContent = 'Baseline: $' + DEFAULTS.avgCheck.toLocaleString();
+    document.getElementById('tagRepeatRatio').textContent = 'Baseline: ' + DEFAULTS.repeatRatio.toFixed(2) + '×';
+
+    // Update banner
+    const spendNote = spend > 0 ? 'Meta spend: ' + fmt(spend) : 'Spend data unavailable — using fallback defaults for CPAIL';
+    document.getElementById('baselineBanner').innerHTML =
+      '<strong>Baseline window: ' + baselineWindow + '</strong> (trailing 12 months, 90-day maturity buffer). ' +
+      'Default slider values are computed from live cached data on each page load. ' +
+      aiLeads.toLocaleString() + ' AI leads · ' +
+      discosBooked.toLocaleString() + ' discoveries booked · ' +
+      discosHeld.toLocaleString() + ' held · ' +
+      newI.toLocaleString() + ' new investors · ' +
+      fmt(newC) + ' new capital · ' +
+      fmt(rptC) + ' repeat capital. ' +
+      spendNote + '.';
+
+    // Set defaults and show
+    resetDefaults();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = '';
+
+    // Async: fetch Google + LinkedIn spend in background and update CPAIL if meaningful
+    fetchAdditionalSpend(fromIso, toIso, spend, aiLeads);
+
+  } catch(err) {
+    msg.textContent = 'Error: ' + err.message;
+    console.error(err);
+  }
+}
+
+async function fetchAdditionalSpend(fromIso, toIso, metaSpend, aiLeads) {
+  let additionalSpend = 0;
+  // Google Ads
+  try {
+    const query = `SELECT campaign.id, campaign.name, segments.date, metrics.cost_micros FROM campaign WHERE segments.date BETWEEN '${fromIso}' AND '${toIso}' AND campaign.status != 'REMOVED' AND metrics.cost_micros > 0`;
+    const r = await fetch(`${WORKER}/google-ads-api`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+    if (r.ok) {
+      const d = await r.json();
+      for (const row of (d.results || [])) {
+        additionalSpend += parseInt(row.metrics?.costMicros || 0) / 1000000;
+      }
+    }
+  } catch(e) {}
+
+  // LinkedIn
+  try {
+    const LI = '510241073';
+    const campR = await fetch(`${WORKER}/linkedin-api/rest/adAccounts/${LI}/adCampaigns?q=search&search=(status:(values:List(ACTIVE,COMPLETED,PAUSED,ARCHIVED,REMOVED)))&start=0&count=1000`);
+    if (campR.ok) {
+      const campD = await campR.json();
+      const camps = (campD.elements || []).map(c => ({ id: String(c.id) }));
+      const encUrn = u => u.replace(/:/g, '%3A');
+      const [fy, fm, fd] = fromIso.split('-').map(Number);
+      const [ty, tm, td] = toIso.split('-').map(Number);
+      for (let i = 0; i < camps.length; i += 20) {
+        const batch = camps.slice(i, i + 20);
+        const ec = batch.map(c => encUrn(`urn:li:sponsoredCampaign:${c.id}`)).join(',');
+        const ea = encUrn(`urn:li:sponsoredAccount:${LI}`);
+        const path = `/linkedin-api/rest/adAnalytics?q=analytics&pivot=CAMPAIGN&timeGranularity=DAILY&dateRange=(start:(year:${fy},month:${fm},day:${fd}),end:(year:${ty},month:${tm},day:${td}))&campaigns=List(${ec})&accounts=List(${ea})&fields=costInLocalCurrency`;
+        const r = await fetch(`${WORKER}${path}`);
+        if (r.ok) {
+          const d = await r.json();
+          for (const row of (d.elements || [])) {
+            additionalSpend += parseFloat(row.costInLocalCurrency) || 0;
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  if (additionalSpend > 1000) {
+    const totalSpend = metaSpend + additionalSpend;
+    const newCpail = Math.max(30, Math.round(totalSpend / aiLeads));
+    if (newCpail !== DEFAULTS.cpail) {
+      DEFAULTS.cpail = newCpail;
+      document.getElementById('tagCPAIL').textContent = 'Baseline: $' + newCpail + ' (all platforms)';
+      // Only update slider if user hasn't touched it
+      if (parseFloat(document.getElementById('sliderCPAIL').value) === Math.round(metaSpend / aiLeads)) {
+        setSlider('CPAIL', newCpail);
+        recalc();
+      }
+    }
+  }
+}
+
+load();
+</script>
+</body>
+</html>
