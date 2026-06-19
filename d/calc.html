@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.3)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v1.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -55,6 +55,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .slider-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
 .slider-label .baseline-tag{font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;display:block;margin-top:2px}
 .slider-desc{font-size:11px;color:var(--text3);line-height:1.45;margin-top:4px;text-transform:none;letter-spacing:0;font-weight:400}
+.slider-count{font-size:11px;color:var(--green);font-weight:600;margin-top:4px;text-transform:none;letter-spacing:0;line-height:1.4}
 .slider-wrap{display:flex;flex-direction:column;gap:4px;padding-top:2px}
 .slider-wrap input[type="range"]{width:100%;accent-color:var(--accent);height:6px}
 .slider-val{padding-top:2px}
@@ -97,7 +98,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.3</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v1.4</span></h1>
 </header>
 
 <main>
@@ -159,6 +160,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       CPAIL
       <span class="baseline-tag" id="tagCPAIL">Baseline: —</span>
       <div class="slider-desc">Cost per accredited investor lead. Total ad spend ÷ accredited contacts created in the period. Lower = more efficient lead gen.</div>
+      <div class="slider-count" id="countCPAIL"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCPAIL" min="30" max="500" step="1" value="131" oninput="syncFromSlider('CPAIL')">
@@ -174,6 +176,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       AI Lead → Discovery
       <span class="baseline-tag" id="tagLeadDisco">Baseline: —</span>
       <div class="slider-desc">% of accredited leads that book a discovery call. Driven by setter outreach volume and connection quality.</div>
+      <div class="slider-count" id="countLeadDisco"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderLeadDisco" min="1" max="30" step="0.1" value="7.6" oninput="syncFromSlider('LeadDisco')">
@@ -189,6 +192,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       Discovery → Held
       <span class="baseline-tag" id="tagDiscoHeld">Baseline: —</span>
       <div class="slider-desc">% of booked discoveries that actually happen. No-shows, reschedules, and cancellations reduce this. Higher = better confirmation/reminder process.</div>
+      <div class="slider-count" id="countDiscoHeld"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderDiscoHeld" min="50" max="100" step="0.5" value="86.8" oninput="syncFromSlider('DiscoHeld')">
@@ -204,6 +208,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       Held → New Funded
       <span class="baseline-tag" id="tagCloseRate">Baseline: —</span>
       <div class="slider-desc">% of held discoveries that result in a first-time investment. The close rate — driven by closer skill, investor readiness, and fund attractiveness.</div>
+      <div class="slider-count" id="countCloseRate"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCloseRate" min="5" max="50" step="0.5" value="21.0" oninput="syncFromSlider('CloseRate')">
@@ -219,6 +224,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       Avg First Check
       <span class="baseline-tag" id="tagAvgCheck">Baseline: —</span>
       <div class="slider-desc">Average dollar amount of a new investor's first investment. Larger checks = more capital per investor acquired.</div>
+      <div class="slider-count" id="countAvgCheck"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderAvgCheck" min="50000" max="500000" step="5000" value="150415" oninput="syncFromSlider('AvgCheck')">
@@ -234,6 +240,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       Repeat Capital Ratio
       <span class="baseline-tag" id="tagRepeatRatio">Baseline: —</span>
       <div class="slider-desc">Repeat capital as a multiple of new capital. Existing investors reinvesting without going through the lead funnel. Higher = stronger investor retention.</div>
+      <div class="slider-count" id="countRepeatRatio"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderRepeatRatio" min="0" max="5" step="0.05" value="1.37" oninput="syncFromSlider('RepeatRatio')">
@@ -398,6 +405,21 @@ function recalc() {
     repeatCapital = newCapital * repeatRatio;
     totalCapital = newCapital + repeatCapital;
   }
+
+  // Inline counts under each slider
+  const mo = months || 12;
+  document.getElementById('countCPAIL').innerHTML =
+    `→ ${fmtInt(aiLeads)} AI leads · ${fmtInt(aiLeads/mo)}/mo`;
+  document.getElementById('countLeadDisco').innerHTML =
+    `→ ${fmtInt(discosBooked)} discoveries booked · ${fmtInt(discosBooked/mo)}/mo`;
+  document.getElementById('countDiscoHeld').innerHTML =
+    `→ ${fmtInt(discosHeldN)} discoveries held · ${fmtInt(discosHeldN/mo)}/mo`;
+  document.getElementById('countCloseRate').innerHTML =
+    `→ ${fmtInt(newInvestors)} new investors · ${fmtInt(newInvestors/mo)}/mo`;
+  document.getElementById('countAvgCheck').innerHTML =
+    `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo`;
+  document.getElementById('countRepeatRatio').innerHTML =
+    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised`;
 
   // Funnel bars
   const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
