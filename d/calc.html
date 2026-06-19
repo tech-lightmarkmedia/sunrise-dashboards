@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v2.5)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v2.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -81,30 +81,31 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .step-bar{height:100%;border-radius:6px;transition:width .3s ease}
 .step-value{font-size:16px;font-weight:700;text-align:right}
 
-/* Summary cards */
-.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
-.summary-card{background:var(--surface2);border-radius:10px;padding:14px 16px;text-align:center}
+/* Sticky summary bar */
+.sticky-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:sticky;bottom:0;z-index:100;background:var(--bg);padding:12px 28px 16px;margin:0 -28px;border-top:2px solid var(--border);box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center}
 .summary-card .card-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.summary-card .card-value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+.summary-card .card-value{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
 .summary-card .card-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.summary-card.highlight{background:var(--accent-bg);border:1px solid var(--accent)}
+.summary-card.highlight{background:var(--accent-bg);border-color:var(--accent)}
 .summary-card.highlight .card-value{color:var(--accent)}
 
+/* Cost & LTV section */
+.cost-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:14px;align-items:center}
+.cost-card{background:var(--surface2);border-radius:10px;padding:14px 16px;text-align:center}
+.cost-card .card-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.cost-card .card-value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+.cost-card .card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.cost-card.present{border-left:3px solid var(--accent)}
+.cost-card.present .card-value{color:var(--accent)}
+.cost-card.future{border-left:3px solid var(--green)}
+.cost-card.future .card-value{color:var(--green)}
+.cost-arrow{font-size:20px;color:var(--text3);text-align:center}
+
 /* LTV section */
-.ltv-section{margin-top:-1px}
-.ltv-section h2{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:6px}
-.ltv-intro{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5}
-.ltv-metrics{display:grid;grid-template-columns:1fr auto 1fr;gap:14px}
-.ltv-card{background:var(--surface2);border-radius:10px;padding:16px;text-align:center}
-.ltv-card .ltv-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-.ltv-card .ltv-value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
-.ltv-card .ltv-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.ltv-card.present{border-left:3px solid var(--accent)}
-.ltv-card.present .ltv-value{color:var(--accent)}
-.ltv-card.future{border-left:3px solid var(--green)}
-.ltv-card.future .ltv-value{color:var(--green)}
-.ltv-arrow{display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3)}
-.ltv-baseline{font-size:11px;color:var(--text3);margin-top:12px;line-height:1.5}
+.ltv-section{margin-top:0}
+.ltv-section h2{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px}
+.ltv-baseline{font-size:11px;color:var(--text3);margin-top:14px;line-height:1.5}
 
 /* Guide drawer */
 #guide{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:28px;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;z-index:210;box-shadow:-4px 0 20px rgba(0,0,0,.06)}
@@ -119,7 +120,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v2.5</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v2.7</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -285,17 +286,20 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <div class="results">
   <h2 id="resultsTitle">Projected Funnel</h2>
   <div class="funnel-chain" id="funnelChain"></div>
-  <div class="summary-row" id="summaryCards"></div>
 </div>
 
-<!-- Investor LTV Perspective -->
+<!-- Cost Perspective + LTV -->
 <div class="results ltv-section">
-  <h2>Investor Lifetime Value</h2>
-  <p class="ltv-intro">The funnel above shows the present cost of acquiring new investors. But investors reinvest over time — the true cost of acquisition decreases as their lifetime capital grows.</p>
-  <div class="ltv-metrics" id="ltvMetrics">
-    <!-- filled by JS -->
+  <h2>Cost &amp; Lifetime Value</h2>
+  <div class="cost-row" id="costCards">
+    <!-- filled by JS: Cost/Investor, Return on Total, LTV present, LTV future -->
   </div>
   <div class="ltv-baseline" id="ltvBaseline"></div>
+</div>
+
+<!-- Sticky summary bar -->
+<div class="sticky-summary" id="summaryCards">
+  <!-- filled by JS: 4 cards -->
 </div>
 
 </div><!-- /content -->
@@ -340,9 +344,14 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h3>Repeat Capital Ratio</h3>
   <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital and total capital raised. No cost percentage is shown here because repeat capital has no direct acquisition cost — the meaningful cost metric is on the Avg First Check slider (cost of new capital), since that's the capital the ad spend actually produces.</p>
 
-  <h3>Investor Lifetime Value (below the funnel)</h3>
-  <p>Below the funnel results, the Investor Lifetime Value section shows the present-to-future cost story. The LTV multiple is computed from all-time investment data — for each investor (grouped by email), total lifetime capital ÷ first investment. This is not a slider because it doesn't change the funnel math — it's a lens on what the funnel's output is actually worth over time.</p>
-  <p>The "Present" card shows the cost to acquire each new investor as a percentage of their first check — this is what you're paying today. The "Future" card shows that same acquisition cost as a percentage of their lifetime capital — this is what you'll have paid once they've finished reinvesting. The acquisition cost doesn't change; the denominator grows as the investor reinvests. As the investor base matures and the LTV multiple increases, the future cost percentage drops automatically.</p>
+  <h3>Output Bar (sticky at bottom)</h3>
+  <p>The four key output numbers — Total Spend, New Capital, Repeat Capital, Total Capital — stick to the bottom of the screen. As you adjust any slider, these update in real time without needing to scroll. In reverse mode, Total Spend becomes "Required Spend." These are the raw outputs of the funnel formula.</p>
+
+  <h3>Cost &amp; Lifetime Value (above the output bar)</h3>
+  <p>This section shows cost perspective on the funnel output. Three cards side by side:</p>
+  <p><strong>Cost / New Investor</strong> (present cost, accent border): the acquisition cost per new investor, shown as both a dollar amount and a percentage of their first check. This is the present cost — what you're paying today against what they invest today.</p>
+  <p><strong>Cost / Lifetime Capital</strong> (future cost, green border): that same acquisition cost as a percentage of the investor's lifetime capital. The dollar cost doesn't change; the denominator grows as the investor reinvests over time. The LTV multiple is computed from all-time investment data — for each investor (grouped by email), total lifetime capital ÷ first investment. As the investor base matures, the LTV multiple increases and this percentage drops automatically.</p>
+  <p><strong>Return on Total Capital:</strong> total capital raised divided by total spend. This includes repeat capital, which has no direct acquisition cost — it exists because the machine built the investor base over time. This is the overall efficiency of the capital-raising operation.</p>
 
   <h3>Baseline Window &amp; Live Data</h3>
   <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window is the trailing 12 months ending 90 days ago. The 90-day buffer ensures every discovery in the window has had a full maturity period to fund, so the close rate reflects true conversion, not pipeline lag. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically. The banner at the top of the page shows the exact window, raw counts, and spend source used for the current baseline.</p>
@@ -521,48 +530,51 @@ function recalc() {
   const returnOnTotal = totalSpend > 0 ? totalCapital / totalSpend : 0;
   const costOfCapital = totalCapital > 0 ? (totalSpend / totalCapital * 100) : 0;
 
-  let c = '';
+  // Sticky summary bar — 4 key output numbers
+  let s = '';
   if (mode === 'forward') {
-    c += card('Total Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo');
-    c += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo', true);
-    c += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
-    c += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
-    c += card('Cost / New Investor', fmt(costPerInvestor), '');
-    c += card('Return on Total', returnOnTotal.toFixed(1) + '×', costOfCapital.toFixed(1) + '% of capital');
+    s += card('Total Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo');
+    s += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo', true);
+    s += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
+    s += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
   } else {
-    c += card('Required Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo', true);
-    c += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo');
-    c += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
-    c += card('Required AI Leads', fmtInt(aiLeads), fmtInt(aiLeads / months) + '/mo', true);
-    c += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo');
-    c += card('Cost / New Investor', fmt(costPerInvestor), returnOnTotal.toFixed(1) + '× return');
+    s += card('Required Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo', true);
+    s += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo');
+    s += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
+    s += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
   }
-  document.getElementById('summaryCards').innerHTML = c;
+  document.getElementById('summaryCards').innerHTML = s;
 
-  // LTV perspective section — reads from live baseline, not a slider
+  // Cost & LTV perspective section
   const ltvMult = DEFAULTS.ltv || 1.95;
   const lifetimePerInvestor = avgCheck * ltvMult;
   const costPctNew2 = newCapital > 0 ? (totalSpend / newCapital * 100) : 0;
   const costPctLifetime = (lifetimePerInvestor * newInvestors) > 0 ? (totalSpend / (lifetimePerInvestor * newInvestors) * 100) : 0;
 
-  document.getElementById('ltvMetrics').innerHTML =
-    `<div class="ltv-card present">
-      <div class="ltv-label">Present: Cost of New Capital</div>
-      <div class="ltv-value">${costPctNew2.toFixed(1)}%</div>
-      <div class="ltv-sub">${fmt(costPerInvestor)} to acquire → ${fmt(avgCheck)} first check</div>
+  document.getElementById('costCards').innerHTML =
+    `<div class="cost-card present">
+      <div class="card-label">Cost / New Investor</div>
+      <div class="card-value">${fmt(costPerInvestor)}</div>
+      <div class="card-sub">${costPctNew2.toFixed(1)}% of ${fmt(avgCheck)} first check</div>
     </div>
-    <div class="ltv-arrow">→</div>
-    <div class="ltv-card future">
-      <div class="ltv-label">Future: Cost of Lifetime Capital</div>
-      <div class="ltv-value">${costPctLifetime.toFixed(1)}%</div>
-      <div class="ltv-sub">${fmt(costPerInvestor)} to acquire → ${fmt(lifetimePerInvestor)} lifetime capital (${ltvMult.toFixed(2)}×)</div>
+    <div class="cost-arrow">→</div>
+    <div class="cost-card future">
+      <div class="card-label">Cost / Lifetime Capital</div>
+      <div class="card-value">${costPctLifetime.toFixed(1)}%</div>
+      <div class="card-sub">${fmt(costPerInvestor)} on ${fmt(lifetimePerInvestor)} lifetime (${ltvMult.toFixed(2)}×)</div>
+    </div>
+    <div class="cost-arrow">·</div>
+    <div class="cost-card">
+      <div class="card-label">Return on Total Capital</div>
+      <div class="card-value">${returnOnTotal.toFixed(1)}×</div>
+      <div class="card-sub">${costOfCapital.toFixed(1)}% of capital</div>
     </div>`;
 
   document.getElementById('ltvBaseline').innerHTML =
-    `Investor LTV: ${ltvMult.toFixed(2)}× (computed from all-time investment data). ` +
-    `Over time, the ${fmt(costPerInvestor)} cost to acquire each investor reduces from ` +
-    `${costPctNew2.toFixed(1)}% of their first check to ${costPctLifetime.toFixed(1)}% of their lifetime capital ` +
-    `as they reinvest.`;
+    `Investor LTV: ${ltvMult.toFixed(2)}× (all-time). ` +
+    `Over time, the ${fmt(costPerInvestor)} acquisition cost reduces from ` +
+    `${costPctNew2.toFixed(1)}% of the first check to ${costPctLifetime.toFixed(1)}% of lifetime capital ` +
+    `as investors reinvest.`;
 }
 
 function card(label, value, sub, highlight) {
