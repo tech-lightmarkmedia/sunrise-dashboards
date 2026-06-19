@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.5)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v1.6)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -98,7 +98,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.5</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v1.6</span></h1>
 </header>
 
 <main>
@@ -274,34 +274,42 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h2>How This Works</h2>
 
   <h3>The Formula</h3>
-  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. Every dollar of ad spend generates accredited investor leads (AI Leads). A percentage of those book discovery calls. A percentage of those hold. A percentage of those fund. The result is new capital raised — plus repeat capital from existing investors reinvesting outside the lead funnel.</p>
+  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, existing investors reinvest at a ratio to new capital — without going through the lead funnel.</p>
+  <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Drag any slider and watch the numbers cascade through every stage below it.</p>
 
   <h3>Forward Mode (Spend → Capital)</h3>
-  <p>Enter a monthly ad spend and time horizon. The calculator projects how many AI leads, discoveries, and new investors that spend produces at the current conversion rates, and the resulting new and repeat capital.</p>
+  <p>Enter a monthly ad spend and time horizon. The calculator pushes that spend forward through the funnel at the current conversion rates to project AI leads generated, discoveries booked and held, new investors funded, and total capital raised (new + repeat).</p>
 
   <h3>Reverse Mode (Capital Target → Spend)</h3>
-  <p>Enter a new capital target and time horizon. The calculator works backward through the funnel to determine the required ad spend, AI lead volume, and discovery volume needed to hit the target at the current conversion rates.</p>
+  <p>Enter a capital target and time horizon. The calculator works backward through the funnel to determine the required ad spend, AI lead volume, and discovery volume needed to hit the target at the current conversion rates. Use the <strong>New Capital / Total Capital</strong> toggle to choose whether your target is just new investor capital or total capital including repeat. When targeting total capital, the calculator backs out the new capital portion using the repeat capital ratio before running the chain backward.</p>
+
+  <h3>Slider Controls</h3>
+  <p>Each conversion rate can be adjusted by dragging the slider or by clicking the value on the right and typing a number directly. The <strong>Reset to Defaults</strong> button reverts all sliders to the live-computed baseline values.</p>
+
+  <h3>Inline Metrics (green text)</h3>
+  <p>Below each slider, green text shows the computed output of that stage given the current inputs. For cost-bearing stages (Discovery, Held, New Funded), it also shows the <strong>cost per unit</strong> — total ad spend divided by the count at that stage. For capital stages (Avg First Check, Repeat Capital Ratio), it shows <strong>cost as a percentage of capital</strong> — how much of the raised capital went to ad spend. These metrics update live as any slider moves, making it immediately visible where improvement at one stage reduces cost at every downstream stage.</p>
 
   <h3>CPAIL (Cost Per AI Lead)</h3>
-  <p>Total ad spend divided by the number of accredited investor contacts created in the period. This is the blended cost across all platforms (Meta, Google, LinkedIn) spread across all accredited leads — paid and organic — because the ad spend fuels the entire lead machine, not just directly-attributed contacts. Lower CPAIL means more efficient lead generation.</p>
+  <p>Total ad spend divided by the number of accredited investor contacts created in the period. This is the blended cost across all platforms (Meta, Google, LinkedIn) spread across all accredited leads — paid and organic — because the ad spend fuels the entire lead machine, not just directly-attributed contacts. Lower CPAIL means more efficient lead generation. The inline metric shows the total AI lead count and monthly run rate.</p>
 
   <h3>AI Lead → Discovery %</h3>
-  <p>The percentage of accredited leads that end up booking a discovery call. This is primarily driven by setter outreach — dials, connections, and booking skill. Improving this rate means either generating more dials per lead, improving the connection rate, or converting more connections into booked discoveries.</p>
+  <p>The percentage of accredited leads that end up booking a discovery call. This is primarily driven by setter outreach — dials, connections, and booking skill. Improving this rate means either generating more dials per lead, improving the connection rate, or converting more connections into booked discoveries. The inline metric shows discoveries booked, the monthly rate, and the cost per discovery.</p>
 
   <h3>Discovery → Held %</h3>
-  <p>The percentage of booked discoveries that actually happen. Reduces when investors no-show, cancel, or reschedule. Improving this rate means better confirmation sequences, reminder cadences, and pre-call engagement. Meetings where the outcome isn't explicitly a failure (no-show, rescheduled, canceled, disqualified) count as held — this is generous to account for sparse dispositioning.</p>
+  <p>The percentage of booked discoveries that actually happen. Reduces when investors no-show, cancel, or reschedule. Improving this rate means better confirmation sequences, reminder cadences, and pre-call engagement. Meetings where the outcome isn't explicitly a failure (no-show, rescheduled, canceled, disqualified) count as held — this is generous to account for sparse dispositioning. The inline metric shows held discoveries, the monthly rate, and the cost per held discovery.</p>
 
   <h3>Held → New Funded %</h3>
-  <p>The close rate — percentage of held discoveries that result in a first-time investment. This is the closer conversion rate. Note: a 90-day maturity window is applied to the baseline calculation so recent discoveries that haven't had time to fund don't drag down the rate. The baseline only counts months old enough for their pipeline to have matured.</p>
+  <p>The close rate — percentage of held discoveries that result in a first-time investment. This is the closer conversion rate. A 90-day maturity window is applied to the baseline calculation so recent discoveries that haven't had time to fund don't drag down the rate. The inline metric shows new investors, the monthly rate, and the cost to acquire each new investor.</p>
 
   <h3>Avg First Check</h3>
-  <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target.</p>
+  <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised.</p>
 
   <h3>Repeat Capital Ratio</h3>
-  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. Higher = stronger investor retention and reinvestment.</p>
+  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital, total capital raised, and ad spend as a percentage of total capital.</p>
 
-  <h3>Baseline Window</h3>
-  <p>Default slider values are computed from live data on each page load. The window is the trailing 12 months ending 90 days ago — this ensures every discovery in the window has had a full 90-day maturity period to fund, so the close rate isn't dragged down by pipeline lag. As new data flows through the nightly cache rebuild, the baselines update automatically.</p>
+  <h3>Baseline Window &amp; Live Data</h3>
+  <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window is the trailing 12 months ending 90 days ago. The 90-day buffer ensures every discovery in the window has had a full maturity period to fund, so the close rate reflects true conversion, not pipeline lag. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically. The banner at the top of the page shows the exact window, raw counts, and spend source used for the current baseline.</p>
+  <p>Meta spend loads from the R2 archive (fast, no API calls). Google Ads and LinkedIn spend are fetched asynchronously after the page renders — the CPAIL baseline updates silently when they arrive. If additional platform spend is less than $1,000 for the period, it's treated as negligible and CPAIL stays Meta-only.</p>
 </div>
 
 <script>
@@ -429,20 +437,26 @@ function recalc() {
     totalSpend = aiLeads * cpail;
   }
 
-  // Inline counts under each slider
+  // Inline counts under each slider — with cost cascade
   const mo = months || 12;
+  const costPerDisco = discosBooked > 0 ? totalSpend / discosBooked : 0;
+  const costPerHeld = discosHeldN > 0 ? totalSpend / discosHeldN : 0;
+  const costPerInv = newInvestors > 0 ? totalSpend / newInvestors : 0;
+  const costPctNew = newCapital > 0 ? (totalSpend / newCapital * 100) : 0;
+  const costPctTotal = totalCapital > 0 ? (totalSpend / totalCapital * 100) : 0;
+
   document.getElementById('countCPAIL').innerHTML =
     `→ ${fmtInt(aiLeads)} AI leads · ${fmtInt(aiLeads/mo)}/mo`;
   document.getElementById('countLeadDisco').innerHTML =
-    `→ ${fmtInt(discosBooked)} discoveries booked · ${fmtInt(discosBooked/mo)}/mo`;
+    `→ ${fmtInt(discosBooked)} discoveries booked · ${fmtInt(discosBooked/mo)}/mo · ${fmt(costPerDisco)}/discovery`;
   document.getElementById('countDiscoHeld').innerHTML =
-    `→ ${fmtInt(discosHeldN)} discoveries held · ${fmtInt(discosHeldN/mo)}/mo`;
+    `→ ${fmtInt(discosHeldN)} held · ${fmtInt(discosHeldN/mo)}/mo · ${fmt(costPerHeld)}/held`;
   document.getElementById('countCloseRate').innerHTML =
-    `→ ${fmtInt(newInvestors)} new investors · ${fmtInt(newInvestors/mo)}/mo`;
+    `→ ${fmtInt(newInvestors)} new investors · ${fmtInt(newInvestors/mo)}/mo · ${fmt(costPerInv)}/investor`;
   document.getElementById('countAvgCheck').innerHTML =
-    `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo`;
+    `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo · ${costPctNew.toFixed(1)}% cost of new capital`;
   document.getElementById('countRepeatRatio').innerHTML =
-    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised`;
+    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised · ${costPctTotal.toFixed(1)}% cost of total capital`;
 
   // Funnel bars
   const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
