@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v2.7)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v2.8)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -120,7 +120,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v2.7</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v2.8</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -553,15 +553,15 @@ function recalc() {
 
   document.getElementById('costCards').innerHTML =
     `<div class="cost-card present">
-      <div class="card-label">Cost / New Investor</div>
-      <div class="card-value">${fmt(costPerInvestor)}</div>
-      <div class="card-sub">${costPctNew2.toFixed(1)}% of ${fmt(avgCheck)} first check</div>
+      <div class="card-label">Present: Cost of New Capital</div>
+      <div class="card-value">${costPctNew2.toFixed(1)}%</div>
+      <div class="card-sub">${fmt(costPerInvestor)} to acquire → ${fmt(avgCheck)} first check</div>
     </div>
     <div class="cost-arrow">→</div>
     <div class="cost-card future">
-      <div class="card-label">Cost / Lifetime Capital</div>
+      <div class="card-label">Future: Cost of Lifetime Capital</div>
       <div class="card-value">${costPctLifetime.toFixed(1)}%</div>
-      <div class="card-sub">${fmt(costPerInvestor)} on ${fmt(lifetimePerInvestor)} lifetime (${ltvMult.toFixed(2)}×)</div>
+      <div class="card-sub">${fmt(costPerInvestor)} to acquire → ${fmt(lifetimePerInvestor)} lifetime (${ltvMult.toFixed(2)}×)</div>
     </div>
     <div class="cost-arrow">·</div>
     <div class="cost-card">
