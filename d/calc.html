@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.7)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v1.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -98,7 +98,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.7</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v1.9</span></h1>
 </header>
 
 <main>
@@ -242,6 +242,22 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 
   <div class="slider-row">
     <div class="slider-label">
+      Investor LTV Multiple
+      <span class="baseline-tag" id="tagLTV">Baseline: —</span>
+      <div class="slider-desc">How many times the first check an investor ends up investing over their lifetime. Over time, the cost of acquiring each investor decreases as they reinvest — the present cost (against their first check) reduces to the future cost (against their lifetime capital).</div>
+      <div class="slider-count" id="countLTV"></div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="sliderLTV" min="1" max="5" step="0.05" value="1.95" oninput="syncFromSlider('LTV')">
+    </div>
+    <div class="slider-val">
+      <input type="number" id="valLTV" value="1.95" min="1" max="5" step="0.05" oninput="syncFromInput('LTV')">
+      <span class="val-unit">×</span>
+    </div>
+  </div>
+
+  <div class="slider-row">
+    <div class="slider-label">
       Repeat Capital Ratio
       <span class="baseline-tag" id="tagRepeatRatio">Baseline: —</span>
       <div class="slider-desc">Repeat capital as a multiple of new capital. Existing investors reinvesting without going through the lead funnel. Higher = stronger investor retention.</div>
@@ -302,7 +318,11 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <p>The close rate — percentage of held discoveries that result in a first-time investment. This is the closer conversion rate. A 90-day maturity window is applied to the baseline calculation so recent discoveries that haven't had time to fund don't drag down the rate. The inline metric shows new investors, the monthly rate, and the cost to acquire each new investor.</p>
 
   <h3>Avg First Check</h3>
-  <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised.</p>
+  <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised — this is the present cost of acquiring that capital.</p>
+
+  <h3>Investor LTV Multiple</h3>
+  <p>How many times their first check an investor ends up investing over their lifetime. Computed from all-time investment data: for each investor (grouped by email), total lifetime capital ÷ first investment amount. A multiple of 1.95× means an investor who writes a $150K first check will invest $293K total over time.</p>
+  <p>The inline metric tells the story of acquisition cost over time: "Over time, cost of acquiring this investor reduces from $X (Y%) to $X on $Z lifetime capital (W%)." The first number is the present cost — what you paid against what they invested today. The second is the future cost — that same spend against everything they'll invest over their lifetime. As the investor base matures and more repeat investments flow in, this baseline increases automatically and the future cost percentage drops.</p>
 
   <h3>Repeat Capital Ratio</h3>
   <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital and total capital raised. No cost percentage is shown here because repeat capital has no direct acquisition cost — the meaningful cost metric is on the Avg First Check slider (cost of new capital), since that's the capital the ad spend actually produces.</p>
@@ -322,6 +342,7 @@ let DEFAULTS = {
   discoHeld: 86.8,
   closeRate: 21.0,
   avgCheck: 150415,
+  ltv: 1.95,
   repeatRatio: 1.37,
 };
 
@@ -358,6 +379,7 @@ function resetDefaults() {
   setSlider('DiscoHeld', DEFAULTS.discoHeld);
   setSlider('CloseRate', DEFAULTS.closeRate);
   setSlider('AvgCheck', DEFAULTS.avgCheck);
+  setSlider('LTV', DEFAULTS.ltv);
   setSlider('RepeatRatio', DEFAULTS.repeatRatio);
   recalc();
 }
@@ -400,6 +422,7 @@ function recalc() {
   const discoHeld = parseFloat(document.getElementById('sliderDiscoHeld').value) / 100;
   const closeRate = parseFloat(document.getElementById('sliderCloseRate').value) / 100;
   const avgCheck = parseFloat(document.getElementById('sliderAvgCheck').value);
+  const ltvMultiple = parseFloat(document.getElementById('sliderLTV').value);
   const repeatRatio = parseFloat(document.getElementById('sliderRepeatRatio').value);
 
   let totalSpend, months, aiLeads, discosBooked, discosHeldN, newInvestors, newCapital, repeatCapital, totalCapital;
@@ -455,6 +478,14 @@ function recalc() {
     `→ ${fmtInt(newInvestors)} new investors · ${fmtInt(newInvestors/mo)}/mo · ${fmt(costPerInv)}/investor`;
   document.getElementById('countAvgCheck').innerHTML =
     `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo · ${costPctNew.toFixed(1)}% cost of new capital`;
+
+  // LTV: lifetime capital per investor and cost as % of lifetime capital
+  const lifetimePerInvestor = avgCheck * ltvMultiple;
+  const lifetimeCapital = newInvestors * lifetimePerInvestor;
+  const costPctLifetime = lifetimeCapital > 0 ? (totalSpend / lifetimeCapital * 100) : 0;
+  document.getElementById('countLTV').innerHTML =
+    `→ Over time, cost of acquiring this investor reduces from ${fmt(costPerInv)} (${costPctNew.toFixed(1)}%) to ${fmt(costPerInv)} on ${fmt(lifetimePerInvestor)} lifetime capital (${costPctLifetime.toFixed(1)}%)`;
+
   document.getElementById('countRepeatRatio').innerHTML =
     `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised`;
 
@@ -624,12 +655,34 @@ async function load() {
     const avgCheckVal = newI > 0 ? Math.round(newC / newI) : 150415;
     const repeatRatioVal = newC > 0 ? Math.round((rptC / newC) * 100) / 100 : 1.37;
 
+    // LTV: group all-time investments by email, sum total capital per investor,
+    // compare to their first investment to get the lifetime multiple.
+    const investorTotals = {};  // email → { first: amount, total: amount }
+    for (const i of invs) {
+      if (!i.email || !i.fts || !i.amt) continue;
+      if (!investorTotals[i.email]) {
+        investorTotals[i.email] = { first: 0, total: 0, firstTs: Infinity };
+      }
+      investorTotals[i.email].total += i.amt;
+      if (i.fts < investorTotals[i.email].firstTs) {
+        investorTotals[i.email].firstTs = i.fts;
+        investorTotals[i.email].first = i.amt;
+      }
+    }
+    let sumFirst = 0, sumTotal = 0;
+    for (const email in investorTotals) {
+      sumFirst += investorTotals[email].first;
+      sumTotal += investorTotals[email].total;
+    }
+    const ltvVal = sumFirst > 0 ? Math.round((sumTotal / sumFirst) * 100) / 100 : 1.95;
+
     DEFAULTS = {
       cpail: Math.max(30, cpail),
       aiLeadDisco: Math.max(1, aiLeadDiscoRate),
       discoHeld: Math.max(50, discoHeldRate),
       closeRate: Math.max(5, closeRateVal),
       avgCheck: Math.max(50000, avgCheckVal),
+      ltv: Math.max(1, ltvVal),
       repeatRatio: Math.max(0, repeatRatioVal),
     };
 
@@ -639,6 +692,7 @@ async function load() {
     document.getElementById('tagDiscoHeld').textContent = 'Baseline: ' + DEFAULTS.discoHeld + '%';
     document.getElementById('tagCloseRate').textContent = 'Baseline: ' + DEFAULTS.closeRate + '%';
     document.getElementById('tagAvgCheck').textContent = 'Baseline: $' + DEFAULTS.avgCheck.toLocaleString();
+    document.getElementById('tagLTV').textContent = 'Baseline: ' + DEFAULTS.ltv.toFixed(2) + '× (all-time)';
     document.getElementById('tagRepeatRatio').textContent = 'Baseline: ' + DEFAULTS.repeatRatio.toFixed(2) + '×';
 
     // Update banner
