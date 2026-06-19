@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.6)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v1.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -98,7 +98,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.6</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v1.7</span></h1>
 </header>
 
 <main>
@@ -305,7 +305,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised.</p>
 
   <h3>Repeat Capital Ratio</h3>
-  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital, total capital raised, and ad spend as a percentage of total capital.</p>
+  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital and total capital raised. No cost percentage is shown here because repeat capital has no direct acquisition cost — the meaningful cost metric is on the Avg First Check slider (cost of new capital), since that's the capital the ad spend actually produces.</p>
 
   <h3>Baseline Window &amp; Live Data</h3>
   <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window is the trailing 12 months ending 90 days ago. The 90-day buffer ensures every discovery in the window has had a full maturity period to fund, so the close rate reflects true conversion, not pipeline lag. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically. The banner at the top of the page shows the exact window, raw counts, and spend source used for the current baseline.</p>
@@ -456,7 +456,7 @@ function recalc() {
   document.getElementById('countAvgCheck').innerHTML =
     `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo · ${costPctNew.toFixed(1)}% cost of new capital`;
   document.getElementById('countRepeatRatio').innerHTML =
-    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised · ${costPctTotal.toFixed(1)}% cost of total capital`;
+    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised`;
 
   // Funnel bars
   const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
