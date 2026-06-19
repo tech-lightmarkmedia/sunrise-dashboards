@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.9)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v2.0)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -56,6 +56,8 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .slider-label .baseline-tag{font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;display:block;margin-top:2px}
 .slider-desc{font-size:11px;color:var(--text3);line-height:1.45;margin-top:4px;text-transform:none;letter-spacing:0;font-weight:400}
 .slider-count{font-size:11px;color:var(--green);font-weight:600;margin-top:4px;text-transform:none;letter-spacing:0;line-height:1.4}
+.slider-row.featured{background:var(--accent-bg);margin:-12px -24px;padding:16px 24px 16px;border:1px solid var(--accent);border-radius:8px;margin-bottom:16px}
+.impact-tag{display:inline-block;font-size:9px;font-weight:700;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle}
 .slider-wrap{display:flex;flex-direction:column;gap:4px;padding-top:2px}
 .slider-wrap input[type="range"]{width:100%;accent-color:var(--accent);height:6px}
 .slider-val{padding-top:2px}
@@ -98,7 +100,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.9</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v2.0</span></h1>
 </header>
 
 <main>
@@ -176,11 +178,12 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
   </div>
 
-  <div class="slider-row">
+  <div class="slider-row featured">
     <div class="slider-label">
       AI Lead → Discovery
       <span class="baseline-tag" id="tagLeadDisco">Baseline: —</span>
-      <div class="slider-desc">% of accredited leads that book a discovery call. Driven by setter outreach volume and connection quality.</div>
+      <span class="impact-tag">★ Highest-impact lever</span>
+      <div class="slider-desc">% of accredited leads that book a discovery call. Driven by setter outreach — dials, connections, and booking skill. Currently 93% of AI leads never reach a discovery. Every percentage point improvement here multiplies straight through to investors and capital.</div>
       <div class="slider-count" id="countLeadDisco"></div>
     </div>
     <div class="slider-wrap">
