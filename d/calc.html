@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v1.4)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v1.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -98,7 +98,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v1.4</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v1.5</span></h1>
 </header>
 
 <main>
@@ -139,10 +139,15 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <!-- Reverse mode input -->
 <div class="input-section" id="reverseInput" style="display:none">
   <h2>Capital Raise Target</h2>
+  <div class="input-row" style="margin-bottom:16px">
+    <label>Target Type</label>
+    <button class="mode-btn active" id="btnTargetNew" onclick="setTargetType('new')">New Capital</button>
+    <button class="mode-btn" id="btnTargetTotal" onclick="setTargetType('total')">Total Capital</button>
+  </div>
   <div class="input-row">
-    <label>New Capital Target</label>
+    <label id="targetLabel">New Capital Target</label>
     <span class="unit">$</span>
-    <input type="number" id="inputTargetNew" value="30000000" min="0" step="1000000" oninput="recalc()">
+    <input type="number" id="inputTarget" value="30000000" min="0" step="1000000" oninput="recalc()">
   </div>
   <div class="input-row">
     <label>Time Frame</label>
@@ -313,6 +318,7 @@ let DEFAULTS = {
 };
 
 let mode = 'forward';
+let targetType = 'new'; // 'new' or 'total'
 let baselineWindow = 'Apr 2025 – Mar 2026';
 
 // ── Slider ↔ Input sync ──
@@ -358,6 +364,14 @@ function setMode(m) {
   recalc();
 }
 
+function setTargetType(t) {
+  targetType = t;
+  document.getElementById('btnTargetNew').className = 'mode-btn' + (t === 'new' ? ' active' : '');
+  document.getElementById('btnTargetTotal').className = 'mode-btn' + (t === 'total' ? ' active' : '');
+  document.getElementById('targetLabel').textContent = t === 'new' ? 'New Capital Target' : 'Total Capital Target';
+  recalc();
+}
+
 function toggleGuide() {
   document.getElementById('guide').classList.toggle('on');
 }
@@ -394,16 +408,25 @@ function recalc() {
     repeatCapital = newCapital * repeatRatio;
     totalCapital = newCapital + repeatCapital;
   } else {
-    const targetNew = parseFloat(document.getElementById('inputTargetNew').value) || 0;
+    const targetVal = parseFloat(document.getElementById('inputTarget').value) || 0;
     months = parseInt(document.getElementById('inputTargetMonths').value) || 12;
-    newCapital = targetNew;
+
+    if (targetType === 'total') {
+      // Total capital = new + repeat = new × (1 + repeatRatio)
+      totalCapital = targetVal;
+      newCapital = totalCapital / (1 + repeatRatio);
+      repeatCapital = totalCapital - newCapital;
+    } else {
+      newCapital = targetVal;
+      repeatCapital = newCapital * repeatRatio;
+      totalCapital = newCapital + repeatCapital;
+    }
+
     newInvestors = newCapital / avgCheck;
     discosHeldN = newInvestors / closeRate;
     discosBooked = discosHeldN / discoHeld;
     aiLeads = discosBooked / aiLeadDisco;
     totalSpend = aiLeads * cpail;
-    repeatCapital = newCapital * repeatRatio;
-    totalCapital = newCapital + repeatCapital;
   }
 
   // Inline counts under each slider
