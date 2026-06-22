@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>SCI — Weekly Ad Report (v1.3)</title>
+<title>SCI — Weekly Ad Report (v1.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -406,6 +406,7 @@ tfoot td.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="fg">
     <label>Week</label>
     <select id="wk"></select>
+    <input type="date" id="wk-custom-start" style="display:none;margin-left:6px">
   </div>
   <button id="btn" onclick="load()">Refresh</button>
   <span id="st" class="sl">Ready</span>
@@ -1064,12 +1065,23 @@ function resolveRange(key){
 // local date as YYYY-MM-DD) and returns that Mon 00:00:00.000 → following
 // Sun 23:59:59.999, computed in local time to avoid any UTC drift.
 function resolveWeek(){
-  const v = document.getElementById('wk').value;       // "YYYY-MM-DD" (Monday)
+  const sel = document.getElementById('wk');
+  let v = sel.value;                                   // "YYYY-MM-DD" (Monday) or "custom7"
+  let custom = false;
+  if(v === 'custom7'){
+    custom = true;
+    const cs = document.getElementById('wk-custom-start').value;  // chosen start "YYYY-MM-DD"
+    if(cs){ v = cs; }
+    else { // no date picked yet — fall back to most recent completed week's Monday
+      const mon = addDays(startOfWeek(new Date()), -7);
+      v = `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+    }
+  }
   const [y,m,d] = v.split('-').map(Number);
-  const from = new Date(y, m-1, d, 0,0,0,0);            // Monday 00:00 local
-  const to   = new Date(y, m-1, d+6, 23,59,59,999);     // Sunday 23:59:59.999
+  const from = new Date(y, m-1, d, 0,0,0,0);            // start 00:00 local
+  const to   = new Date(y, m-1, d+6, 23,59,59,999);     // start +6 days, 23:59:59.999
   const opt  = { month:'short', day:'numeric' };
-  const label = `${from.toLocaleDateString('en-US',opt)} – ${to.toLocaleDateString('en-US',opt)}, ${to.getFullYear()}`;
+  const label = `${custom ? 'Custom: ' : ''}${from.toLocaleDateString('en-US',opt)} – ${to.toLocaleDateString('en-US',opt)}, ${to.getFullYear()}`;
   return {from, to, label};
 }
 
@@ -1093,6 +1105,7 @@ function buildWeekPicker(){
     const txt = `${wkMon.toLocaleDateString('en-US',o)} – ${wkSun.toLocaleDateString('en-US',o)}, ${wkSun.getFullYear()}`;
     opts.push(`<option value="${val}">${txt}</option>`);
   }
+  opts.push('<option value="custom7">Custom 7 days…</option>');
   sel.innerHTML = opts.join('');
   sel.value = opts.length ? sel.options[0].value : '';   // newest completed week
 }
@@ -6437,6 +6450,22 @@ document.getElementById('r').addEventListener('change', e=>{
   document.getElementById('cd').classList.toggle('on', isCustom);
   if(!isCustom){
     load();
+  }
+});
+
+// Weekly picker: reveal the custom start-date input only for "Custom 7 days…".
+// Selecting a value doesn't auto-load (matches the existing week-select UX) —
+// the user sets the start date and clicks Refresh.
+document.getElementById('wk').addEventListener('change', e=>{
+  const inp = document.getElementById('wk-custom-start');
+  if(e.target.value === 'custom7'){
+    if(!inp.value){ // prefill with most recent completed week's Monday
+      const mon = addDays(startOfWeek(new Date()), -7);
+      inp.value = `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+    }
+    inp.style.display = '';
+  } else {
+    inp.style.display = 'none';
   }
 });
 
