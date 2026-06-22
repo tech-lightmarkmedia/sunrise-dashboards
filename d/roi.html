@@ -287,6 +287,8 @@ let GOOGLE_SPEND = {}; // campaignName → {spend}
 let GOOGLE_SPEND_BY_ID = {}; // campaignId → {name, spend}
 let GOOGLE_DAILY_BY_ID = {};  // campaignId → [{date, spend}]
 let GOOGLE_DAILY_BY_NAME = {}; // campaignName → [{date, spend}]
+let GOOGLE_NAME_TO_ID = {};   // v19.12: lowercased campaign name → campaign ID
+let GOOGLE_FALLBACK_ID = null; // v19.12: campaign ID of top-spend Google campaign
 let GOOGLE_ADGROUP_SPEND = {}; // adGroupId → {name, spend, campaignId, campaignName}
 let GOOGLE_AD_SPEND = {}; // adId → {name, spend, adGroupId}
 let GOOGLE_ADGROUP_NAMES = {}; // adGroupId → name
@@ -955,6 +957,20 @@ async function load(){
       GOOGLE_SPEND_BY_ID = gResult.byId;
       GOOGLE_DAILY_BY_ID = gResult.dailyById || {};
       GOOGLE_DAILY_BY_NAME = gResult.dailyByName || {};
+      // v19.12: build name→id lookup + fallback for PAID_SEARCH contacts
+      // whose dd2 carries a renamed campaign's old name.
+      GOOGLE_NAME_TO_ID = {};
+      for(const [id, gd] of Object.entries(GOOGLE_SPEND_BY_ID)){
+        const nk = (gd.name || '').toLowerCase().trim();
+        if(nk) GOOGLE_NAME_TO_ID[nk] = id;
+      }
+      GOOGLE_FALLBACK_ID = null;
+      {
+        let maxSpend = 0;
+        for(const [id, gd] of Object.entries(GOOGLE_SPEND_BY_ID)){
+          if((gd.spend || 0) > maxSpend){ maxSpend = gd.spend; GOOGLE_FALLBACK_ID = id; }
+        }
+      }
       // Also fetch ad group level
       GOOGLE_ADGROUP_SPEND = await fetchGoogleAdsAdGroupSpend(spendFrom, spendTo);
     }
@@ -1075,8 +1091,19 @@ function renderTable(){
         if(matchedId){
           groupKey = matchedId;
           groupLabel = META_SPEND_BY_ID[matchedId].name || dd2Val;
+        // v19.12: check if dd2 matches a known Google campaign name
+        } else if(GOOGLE_NAME_TO_ID[dd2Val.toLowerCase()]){
+          const gid = GOOGLE_NAME_TO_ID[dd2Val.toLowerCase()];
+          groupKey = gid;
+          groupLabel = GOOGLE_SPEND_BY_ID[gid].name || dd2Val;
+        // v19.12: PAID_SEARCH contacts whose dd2 doesn't match any platform's
+        // campaigns — fall back to top-spend Google campaign (handles renamed
+        // campaigns and search-term dd2 values).
+        } else if((c.src || '').toUpperCase() === 'PAID_SEARCH' && GOOGLE_FALLBACK_ID){
+          groupKey = GOOGLE_FALLBACK_ID;
+          groupLabel = GOOGLE_SPEND_BY_ID[GOOGLE_FALLBACK_ID].name || GOOGLE_FALLBACK_ID;
         } else {
-          // No Meta match — group by lowercased DD2 to avoid case-split duplication
+          // No Meta or Google match — group by lowercased DD2 to avoid case-split duplication
           groupKey = dd2Val.toLowerCase();
           groupLabel = dd2Val;
         }
@@ -1116,7 +1143,10 @@ function renderTable(){
       else {
         const dd2Val = effectiveDD2(c);
         const matchedId = metaNameToId[dd2Val.toLowerCase()];
-        key = matchedId || dd2Val.toLowerCase();
+        if(matchedId) key = matchedId;
+        else if(GOOGLE_NAME_TO_ID[dd2Val.toLowerCase()]) key = GOOGLE_NAME_TO_ID[dd2Val.toLowerCase()];
+        else if((c.src || '').toUpperCase() === 'PAID_SEARCH' && GOOGLE_FALLBACK_ID) key = GOOGLE_FALLBACK_ID;
+        else key = dd2Val.toLowerCase();
       }
       if(!roiMap[key]) continue;
       if(m.type === 'intro') roiMap[key].intros++;
