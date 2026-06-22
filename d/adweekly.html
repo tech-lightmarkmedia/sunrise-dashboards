@@ -3259,15 +3259,30 @@ function aggregate(){
       }
     }
 
-    const hasAny = hasMeta || hasLi || hasGoogle;
-    row.spend       = (hasAny && spend > 0)   ? spend       : null;
-    row.impressions = hasAny                  ? impressions : null;
-    row.clicks      = hasAny                  ? clicks      : null;
-    row.metaLeads   = hasAny                  ? metaLeads   : null;
+    // v1.6: Direct key-based Google spend lookup. Contacts routed to a gads:
+    // row via resolveAttributionFromContactForOts (PAID_SEARCH fallback) have no
+    // hsaCam and no googleCampaignName in EVENT_ATTRIB_BY_CONTACT, so the ID-based
+    // and name-based joins above miss them. Look up spend by the row key directly.
+    if(!hasGoogle && row.key && row.key.startsWith('gads:')){
+      const gadsKey = row.key.replace('gads:','');
+      const gd = GOOGLE_DATA_BY_NAME[gadsKey];
+      if(gd){
+        hasGoogle = true;
+        spend       += gd.spend       || 0;
+        impressions += gd.impressions || 0;
+        clicks      += gd.clicks      || 0;
+      } else {
+        const gdById = GOOGLE_DATA_BY_ID[gadsKey];
+        if(gdById){
+          hasGoogle = true;
+          spend       += gdById.spend       || 0;
+          impressions += gdById.impressions || 0;
+          clicks      += gdById.clicks      || 0;
+        }
+      }
+    }
 
-    row.totalNew   = row.aiLeads + row.naiLeads;
-    row.aiRate     = row.totalNew > 0 ? (row.aiLeads / row.totalNew) : 0;
-    row.totalLeads = row.totalNew + row.returning;
+    const hasAny = hasMeta || hasLi || hasGoogle;
     row.totalAi    = row.aiLeads  + row.returningAi;
     row.totalAiPct = row.totalLeads > 0 ? (row.totalAi / row.totalLeads) : null;
 
