@@ -918,6 +918,7 @@ let GOOGLE_DATA_BY_ID = {};
 // Built after GOOGLE_DATA_BY_ID is populated. Keys are lowercased campaign
 // names for case-insensitive matching against contact DD2.
 let GOOGLE_DATA_BY_NAME = {};
+let GOOGLE_FALLBACK_NAME = null; // v1.6: top-spend Google campaign for dd2-mismatch fallback
 
 // Engagement event types we count toward the "returning" definition AND
 // from which we derive event attribution.
@@ -2583,26 +2584,43 @@ function resolveAttributionFromEvents(contactId){
     };
   }
 
-  // v10.9.1: Paid Google campaign resolved by DD2 name match against the
-  // Google Ads campaign list. Google Ads contacts typically arrive via gclid
-  // auto-tagging which does NOT set hsa_cam — they have ots = OTHER_CAMPAIGNS
-  // (from UTM medium = 'ppc') and platform = 'Google', with the campaign name
-  // in DD2 (from hs_analytics_source_data_2). Without this path they bucket
-  // under a generic "OTHER_CAMPAIGNS — Google" row with no spend join.
-  //
-  // Same pattern as LinkedIn name-match: bucket by a prefixed normalized key
-  // ("gads:" + lowercased name) to avoid namespace collisions, label with
-  // the canonical mixed-case name from the Google Ads API.
-  if(e.platform === 'Google' && e.googleCampaignName){
-    const gd = GOOGLE_DATA_BY_NAME[e.googleCampaignName];
-    const label = (gd && gd.name) ? gd.name : (e.dd2 || e.googleCampaignName);
+  // v10.9.1 (revised v1.6): Paid Google campaign resolved. Three tiers:
+  // (1) hsa_cam → GOOGLE_DATA_BY_ID (reliable ID-based join).
+  // (2) googleCampaignName (dd2) → GOOGLE_DATA_BY_NAME (name match).
+  // (3) Fallback to top-spend Google campaign (for renamed campaigns or
+  //     search-term dd2 values that don't match any API campaign name).
+  if(e.platform === 'Google' && e.hsaCam && GOOGLE_DATA_BY_ID[e.hsaCam]){
+    const gd = GOOGLE_DATA_BY_ID[e.hsaCam];
     return {
-      key: `gads:${e.googleCampaignName}`,
-      label,
-      level: 'dd2',
+      key: `gads:${e.hsaCam}`,
+      label: gd.name || e.hsaCam,
+      level: 'hsa_cam',
       ots: e.ots,
       platform: e.platform,
     };
+  }
+  if(e.platform === 'Google' && e.googleCampaignName){
+    const gd = GOOGLE_DATA_BY_NAME[e.googleCampaignName];
+    if(gd){
+      return {
+        key: `gads:${e.googleCampaignName}`,
+        label: gd.name || e.googleCampaignName,
+        level: 'dd2',
+        ots: e.ots,
+        platform: e.platform,
+      };
+    }
+    // dd2 doesn't match any current API campaign name — fall back to top-spend
+    if(GOOGLE_FALLBACK_NAME){
+      const fgd = GOOGLE_DATA_BY_NAME[GOOGLE_FALLBACK_NAME];
+      return {
+        key: `gads:${GOOGLE_FALLBACK_NAME}`,
+        label: (fgd && fgd.name) ? fgd.name : GOOGLE_FALLBACK_NAME,
+        level: 'dd2-fallback',
+        ots: e.ots,
+        platform: e.platform,
+      };
+    }
   }
 
   // Non-paid OR paid without hsa_cam: (OTS, Platform) row.
@@ -2700,6 +2718,39 @@ function resolveAttributionFromContactForOts(c){
         level: 'dd2',
         ots,
         platform: 'LinkedIn',
+      };
+    }
+  }
+
+  // v1.6: Google campaign resolution for property-fallback contacts.
+  // Google gclid contacts often lack e_submitted_form events, so they have
+  // no EVENT_ATTRIB_BY_CONTACT entry and the enrichment pass never sees them.
+  // They arrive here with ots = PAID_SEARCH and dd2 = the campaign name
+  // HubSpot stamped at conversion time (which may be a renamed campaign's
+  // old name, or a search query). Mirrors the LinkedIn v10.8.4.7 pattern.
+  if(ots === 'PAID_SEARCH' && GOOGLE_DATA_BY_NAME && Object.keys(GOOGLE_DATA_BY_NAME).length > 0){
+    const dd2 = (c.dd2 || '').toLowerCase().trim();
+    if(dd2){
+      const gd = GOOGLE_DATA_BY_NAME[dd2];
+      if(gd){
+        return {
+          key: `gads:${dd2}`,
+          label: gd.name || dd2,
+          level: 'dd2',
+          ots,
+          platform: 'Google',
+        };
+      }
+    }
+    // dd2 missing or doesn't match any current campaign name — use fallback.
+    if(GOOGLE_FALLBACK_NAME){
+      const fgd = GOOGLE_DATA_BY_NAME[GOOGLE_FALLBACK_NAME];
+      return {
+        key: `gads:${GOOGLE_FALLBACK_NAME}`,
+        label: (fgd && fgd.name) ? fgd.name : GOOGLE_FALLBACK_NAME,
+        level: 'dd2-fallback',
+        ots,
+        platform: 'Google',
       };
     }
   }
@@ -6482,6 +6533,18 @@ async function load(){
     for(const [id, gd] of Object.entries(GOOGLE_DATA_BY_ID)){
       const nk = (gd.name || '').toLowerCase().trim();
       if(nk) GOOGLE_DATA_BY_NAME[nk] = {...gd, id};
+    }
+    // v1.6: Find the Google campaign with the most spend (fallback for dd2 mismatch —
+    // renamed campaigns, search-term dd2 values, etc.)
+    GOOGLE_FALLBACK_NAME = null;
+    {
+      let maxSpend = 0;
+      for(const [nk, gd] of Object.entries(GOOGLE_DATA_BY_NAME)){
+        if((gd.spend || 0) > maxSpend){ maxSpend = gd.spend; GOOGLE_FALLBACK_NAME = nk; }
+      }
+      if(GOOGLE_FALLBACK_NAME && maxSpend > 0){
+        console.log(`[v1.6] Google fallback campaign: "${GOOGLE_FALLBACK_NAME}" ($${maxSpend.toFixed(2)})`);
+      }
     }
 
     {
