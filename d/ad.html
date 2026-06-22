@@ -2654,6 +2654,43 @@ function resolveAttributionFromContactForOts(c){
     }
   }
 
+  // v10.9.13: Google campaign resolution for property-fallback contacts.
+  // Google gclid contacts often lack e_submitted_form events, so they have
+  // no EVENT_ATTRIB_BY_CONTACT entry and the enrichment pass never sees them.
+  // They arrive here with ots = PAID_SEARCH and dd2 = the campaign name
+  // HubSpot stamped at conversion time (which may be a renamed campaign's
+  // old name, or a search query). Mirrors the LinkedIn v10.8.4.7 pattern.
+  //
+  // Three tiers: (1) dd2 matches a current API campaign name → use it.
+  // (2) dd2 doesn't match → fall back to the top-spend Google campaign.
+  // (3) No Google campaigns loaded → fall through to generic OTS row.
+  if(ots === 'PAID_SEARCH' && GOOGLE_DATA_BY_NAME && Object.keys(GOOGLE_DATA_BY_NAME).length > 0){
+    const dd2 = (c.dd2 || '').toLowerCase().trim();
+    if(dd2){
+      const gd = GOOGLE_DATA_BY_NAME[dd2];
+      if(gd){
+        return {
+          key: `gads:${dd2}`,
+          label: gd.name || dd2,
+          level: 'dd2',
+          ots,
+          platform: 'Google',
+        };
+      }
+    }
+    // dd2 missing or doesn't match any current campaign name — use fallback.
+    if(GOOGLE_FALLBACK_NAME){
+      const fgd = GOOGLE_DATA_BY_NAME[GOOGLE_FALLBACK_NAME];
+      return {
+        key: `gads:${GOOGLE_FALLBACK_NAME}`,
+        label: (fgd && fgd.name) ? fgd.name : GOOGLE_FALLBACK_NAME,
+        level: 'dd2-fallback',
+        ots,
+        platform: 'Google',
+      };
+    }
+  }
+
   const platformLabel = platform || '(no platform)';
   const k = `${ots} — ${platformLabel}`;
   return {
