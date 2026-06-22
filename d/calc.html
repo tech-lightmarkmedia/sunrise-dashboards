@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v2.9)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.0)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -121,7 +121,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v2.9</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.0</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -270,20 +270,18 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
   </div>
 
-  <div class="slider-row">
+  <div class="slider-row" style="grid-template-columns:1fr;border-bottom:none">
     <div class="slider-label">
-      Repeat Capital Ratio
-      <span class="baseline-tag" id="tagRepeatRatio">Baseline: —</span>
-      <div class="slider-desc">Repeat capital as a multiple of new capital. Existing investors reinvesting without going through the lead funnel. Higher = stronger investor retention.</div>
+      Repeat Capital <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--text3)">(computed from term + base)</span>
+      <div class="slider-desc">Repeat capital comes from two sources: (1) the existing investor base reinvesting at their historical run-rate, and (2) new investors acquired during this projection who begin reinvesting on a lagged schedule. Shorter projections capture less of the new-investor repeat because the reinvestment curve hasn't played out yet. The base run-rate is derived from the trailing baseline window and can be overridden below.</div>
       <div class="slider-count" id="countRepeatRatio"></div>
+      <div id="repeatFlag" style="font-size:11px;color:var(--accent);font-weight:600;margin-top:6px;display:none"></div>
     </div>
-    <div class="slider-wrap">
-      <input type="range" id="sliderRepeatRatio" min="0" max="5" step="0.05" value="1.37" oninput="syncFromSlider('RepeatRatio')">
-      <div class="slider-hint">A higher repeat ratio will produce more total capital or lessen the necessary spend</div>
-    </div>
-    <div class="slider-val">
-      <input type="number" id="valRepeatRatio" value="1.37" min="0" max="5" step="0.05" oninput="syncFromInput('RepeatRatio')">
-      <span class="val-unit">×</span>
+    <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+      <label style="font-size:11px;font-weight:600;color:var(--text2);min-width:180px">Base repeat run-rate ($/mo)</label>
+      <span style="font-size:11px;color:var(--text3)">$</span>
+      <input type="number" id="inputBaseRepeat" value="0" min="0" step="10000" oninput="recalc()" style="font-family:'DM Sans',sans-serif;font-size:14px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;width:160px;background:var(--surface)">
+      <span class="baseline-tag" id="tagBaseRepeat" style="font-size:10px;color:var(--text3);font-weight:400">Baseline: —</span>
     </div>
   </div>
 
@@ -318,14 +316,14 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h2>How This Works</h2>
 
   <h3>The Formula</h3>
-  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, existing investors reinvest at a ratio to new capital — without going through the lead funnel.</p>
+  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, repeat capital flows from two sources: the existing investor base reinvesting at their historical run-rate, and new investors acquired during the projection who begin reinvesting on a lagged schedule calibrated from real data.</p>
   <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Drag any slider and watch the numbers cascade through every stage below it.</p>
 
   <h3>Forward Mode (Spend → Capital)</h3>
   <p>Enter a monthly ad spend and time horizon. The calculator pushes that spend forward through the funnel at the current conversion rates to project AI leads generated, discoveries booked and held, new investors funded, and total capital raised (new + repeat).</p>
 
   <h3>Reverse Mode (Capital Target → Spend)</h3>
-  <p>Enter a capital target and time horizon. The calculator works backward through the funnel to determine the required ad spend, AI lead volume, and discovery volume needed to hit the target at the current conversion rates. Use the <strong>New Capital / Total Capital</strong> toggle to choose whether your target is just new investor capital or total capital including repeat. When targeting total capital, the calculator backs out the new capital portion using the repeat capital ratio before running the chain backward.</p>
+  <p>Enter a capital target and time horizon. The calculator works backward through the funnel to determine the required ad spend, AI lead volume, and discovery volume needed to hit the target at the current conversion rates. Use the <strong>New Capital / Total Capital</strong> toggle to choose whether your target is just new investor capital or total capital including repeat. When targeting total capital, the calculator subtracts the base repeat (existing investors, independent of spend) and then divides the remainder by (1 + the effective kernel ratio for the term) to determine the new capital needed.</p>
 
   <h3>Slider Controls</h3>
   <p>Each conversion rate can be adjusted by dragging the slider or by clicking the value on the right and typing a number directly. The <strong>Reset to Defaults</strong> button reverts all sliders to the live-computed baseline values.</p>
@@ -348,8 +346,12 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h3>Avg First Check</h3>
   <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised — this is the present cost of acquiring that capital.</p>
 
-  <h3>Repeat Capital Ratio</h3>
-  <p>Repeat (returning investor) capital expressed as a multiple of new capital over the same period. A ratio of 1.37× means for every $1 of new capital raised, $1.37 comes from repeat investors. This capital doesn't flow through the lead funnel — it's driven by investor relations, fund performance, and the concierge team. The inline metric shows repeat capital and total capital raised. No cost percentage is shown here because repeat capital has no direct acquisition cost — the meaningful cost metric is on the Avg First Check slider (cost of new capital), since that's the capital the ad spend actually produces.</p>
+  <h3>Repeat Capital</h3>
+  <p>Repeat capital is modeled as two separate flows, not a single ratio:</p>
+  <p><strong>Base repeat (existing investor base):</strong> investors acquired before the projection window who continue reinvesting at their historical run-rate. This is derived from the trailing baseline window — total repeat capital in the window ÷ 12 months — and can be overridden. This flow is independent of ad spend and new investor acquisition.</p>
+  <p><strong>New-investor repeat (reinvestment kernel):</strong> investors acquired during the projection who begin reinvesting on a lagged schedule. This is computed using an empirical reinvestment curve calibrated from the full SCI investment history (917 investors, 357 repeat, 38.9% reinvestment rate). The average lag to reinvestment is ~25 months, and the lifetime reinvestment yield is $0.94 per $1 of first investment — but that $0.94 arrives over ~5 years, not instantly. The model accounts for staggered entry: investors acquired in month 1 of a 12-month projection have 11 months to reinvest, while investors acquired in month 12 have none.</p>
+  <p>This means shorter projections naturally show less repeat capital from new investors. A 12-month projection captures roughly 16% of the lifetime reinvestment from new investors; a 24-month projection captures ~30%. The dominant source of repeat capital in any practical projection horizon is the existing base, not new acquisitions — which correctly reflects that repeat capital is a return on prior investment in the investor base, not a contemporaneous byproduct of current spend.</p>
+  <p>When the projection horizon captures less than ~80% of the reinvestment curve, a flag appears noting that additional repeat capital would arrive beyond the window. This is informational, not an error — it's the nature of lagged reinvestment.</p>
 
   <h3>Output Bar (sticky at bottom)</h3>
   <p>The four key output numbers — Total Spend, New Capital, Repeat Capital, Total Capital — stick to the bottom of the screen. As you adjust any slider, these update in real time without needing to scroll. In reverse mode, Total Spend becomes "Required Spend." These are the raw outputs of the funnel formula.</p>
@@ -358,7 +360,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <p>This section shows cost perspective on the funnel output. Three cards side by side:</p>
   <p><strong>Cost / New Investor</strong> (present cost, accent border): the acquisition cost per new investor, shown as both a dollar amount and a percentage of their first check. This is the present cost — what you're paying today against what they invest today.</p>
   <p><strong>Cost / Lifetime Capital</strong> (future cost, green border): that same acquisition cost as a percentage of the investor's lifetime capital. The dollar cost doesn't change; the denominator grows as the investor reinvests over time. The LTV multiple is computed from all-time investment data — for each investor (grouped by email), total lifetime capital ÷ first investment. As the investor base matures, the LTV multiple increases and this percentage drops automatically.</p>
-  <p><strong>Return on Total Capital:</strong> total capital raised divided by total spend. This includes repeat capital, which has no direct acquisition cost — it exists because the machine built the investor base over time. This is the overall efficiency of the capital-raising operation.</p>
+  <p><strong>Return on Total Capital:</strong> total capital raised divided by total spend. This includes repeat capital, which has no direct acquisition cost — it exists because the machine built the investor base over time, and new investors begin reinvesting on a lagged schedule. This is the overall efficiency of the capital-raising operation.</p>
 
   <h3>Baseline Window &amp; Live Data</h3>
   <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window is the trailing 12 months ending 90 days ago. The 90-day buffer ensures every discovery in the window has had a full maturity period to fund, so the close rate reflects true conversion, not pipeline lag. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically. The banner at the top of the page shows the exact window, raw counts, and spend source used for the current baseline.</p>
@@ -370,6 +372,35 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <script>
 const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
 
+// ── Reinvestment kernel (empirical, calibrated from full investment history) ──
+// r(k) = fraction of first-investment dollars that reinvest at month k after anchor.
+// Truncated at 60 months. Total area ≈ 0.83 (60-mo) vs 0.94 (lifetime).
+// Calibration: 917 investors, 357 repeat (38.9%), mean lag 25.3 months.
+const REINVEST_KERNEL = [
+  0.0450, 0.0373, 0.0335, 0.0348, 0.0351, 0.0186, 0.0247, 0.0260,
+  0.0152, 0.0239, 0.0227, 0.0264, 0.0264, 0.0433, 0.0096, 0.0172,
+  0.0139, 0.0287, 0.0073, 0.0289, 0.0386, 0.0049, 0.0009, 0.0069,
+  0.0320, 0.0111, 0.0150, 0.0087, 0.0148, 0.0052, 0.0094, 0.0124,
+  0.0065, 0.0112, 0.0057, 0.0030, 0.0109, 0.0173, 0.0131, 0.0015,
+  0.0052, 0.0064, 0.0063, 0.0060, 0.0022, 0.0043, 0.0009, 0.0047,
+  0.0007, 0.0088, 0.0044, 0.0048, 0.0059, 0.0002, 0.0032, 0.0035,
+  0.0036, 0.0036, 0.0034, 0.0017, 0.0033
+];
+const KERNEL_LIFETIME = 0.94; // total area from full calibration (108 months)
+
+// Precompute: for a flat monthly new-capital series of N months,
+// total repeat = monthlyNewCapital * KERNEL_FACTOR[N].
+// KERNEL_FACTOR[N] = sum over m=1..N-1 of (N-m)*r(m)
+// This accounts for staggered entry: month 0 investors get N-1 months to reinvest, last month gets 0.
+const KERNEL_FACTOR = [0]; // index 0 = 0 months
+for (let N = 1; N <= 60; N++) {
+  let total = 0;
+  for (let m = 1; m < N; m++) {
+    total += (N - m) * (m < REINVEST_KERNEL.length ? REINVEST_KERNEL[m] : 0);
+  }
+  KERNEL_FACTOR.push(total);
+}
+
 // ── Defaults (overwritten by live data on load) ──
 let DEFAULTS = {
   cpail: 131,
@@ -378,7 +409,7 @@ let DEFAULTS = {
   closeRate: 21.0,
   avgCheck: 150415,
   ltv: 1.95,
-  repeatRatio: 1.37,
+  baseRepeatMonthly: 0,
 };
 
 let mode = 'forward';
@@ -414,7 +445,7 @@ function resetDefaults() {
   setSlider('DiscoHeld', DEFAULTS.discoHeld);
   setSlider('CloseRate', DEFAULTS.closeRate);
   setSlider('AvgCheck', DEFAULTS.avgCheck);
-  setSlider('RepeatRatio', DEFAULTS.repeatRatio);
+  document.getElementById('inputBaseRepeat').value = Math.round(DEFAULTS.baseRepeatMonthly);
   recalc();
 }
 
@@ -456,9 +487,10 @@ function recalc() {
   const discoHeld = parseFloat(document.getElementById('sliderDiscoHeld').value) / 100;
   const closeRate = parseFloat(document.getElementById('sliderCloseRate').value) / 100;
   const avgCheck = parseFloat(document.getElementById('sliderAvgCheck').value);
-  const repeatRatio = parseFloat(document.getElementById('sliderRepeatRatio').value);
+  const baseRepeatMo = parseFloat(document.getElementById('inputBaseRepeat').value) || 0;
 
-  let totalSpend, months, aiLeads, discosBooked, discosHeldN, newInvestors, newCapital, repeatCapital, totalCapital;
+  let totalSpend, months, aiLeads, discosBooked, discosHeldN, newInvestors, newCapital;
+  let repeatBase, repeatNew, repeatCapital, totalCapital;
 
   if (mode === 'forward') {
     const monthlySpend = parseFloat(document.getElementById('inputSpend').value) || 0;
@@ -469,20 +501,39 @@ function recalc() {
     discosHeldN = discosBooked * discoHeld;
     newInvestors = discosHeldN * closeRate;
     newCapital = newInvestors * avgCheck;
-    repeatCapital = newCapital * repeatRatio;
+
+    // Repeat from existing base (flat run-rate × months)
+    repeatBase = baseRepeatMo * months;
+    // Repeat from new investors (kernel convolution, staggered entry)
+    const moClamp = Math.min(months, KERNEL_FACTOR.length - 1);
+    const monthlyNewCapital = months > 0 ? newCapital / months : 0;
+    repeatNew = monthlyNewCapital * KERNEL_FACTOR[moClamp];
+    repeatCapital = repeatBase + repeatNew;
     totalCapital = newCapital + repeatCapital;
   } else {
     const targetVal = parseFloat(document.getElementById('inputTarget').value) || 0;
     months = parseInt(document.getElementById('inputTargetMonths').value) || 12;
 
+    // Base repeat is independent of new capital
+    repeatBase = baseRepeatMo * months;
+
+    // Kernel effective ratio for this term: KERNEL_FACTOR[N] / N
+    // repeat_new = (newCapital / N) * KERNEL_FACTOR[N] = newCapital * (KERNEL_FACTOR[N]/N)
+    const moClamp = Math.min(months, KERNEL_FACTOR.length - 1);
+    const kEffective = months > 0 ? KERNEL_FACTOR[moClamp] / months : 0;
+
     if (targetType === 'total') {
-      // Total capital = new + repeat = new × (1 + repeatRatio)
+      // totalCapital = newCapital + repeatBase + newCapital * kEffective
+      // totalCapital - repeatBase = newCapital * (1 + kEffective)
       totalCapital = targetVal;
-      newCapital = totalCapital / (1 + repeatRatio);
-      repeatCapital = totalCapital - newCapital;
+      const netTarget = Math.max(0, totalCapital - repeatBase);
+      newCapital = (1 + kEffective) > 0 ? netTarget / (1 + kEffective) : netTarget;
+      repeatNew = newCapital * kEffective;
+      repeatCapital = repeatBase + repeatNew;
     } else {
       newCapital = targetVal;
-      repeatCapital = newCapital * repeatRatio;
+      repeatNew = newCapital * kEffective;
+      repeatCapital = repeatBase + repeatNew;
       totalCapital = newCapital + repeatCapital;
     }
 
@@ -512,8 +563,20 @@ function recalc() {
   document.getElementById('countAvgCheck').innerHTML =
     `→ ${fmt(newCapital)} new capital · ${fmt(newCapital/mo)}/mo · ${costPctNew.toFixed(1)}% cost of new capital`;
 
+  // Repeat breakdown + horizon flag
+  const moClampDisp = Math.min(months, KERNEL_FACTOR.length - 1);
+  const kernelCum = moClampDisp > 0 ? REINVEST_KERNEL.slice(0, moClampDisp).reduce((a,b)=>a+b, 0) : 0;
+  const pctLifetime = Math.round(kernelCum / KERNEL_LIFETIME * 100);
   document.getElementById('countRepeatRatio').innerHTML =
-    `→ ${fmt(repeatCapital)} repeat · ${fmt(totalCapital)} total raised`;
+    `→ ${fmt(repeatBase)} from existing base · ${fmt(repeatNew)} from new investors · <strong>${fmt(repeatCapital)} total repeat</strong> · ${fmt(totalCapital)} total raised`;
+
+  const flagEl = document.getElementById('repeatFlag');
+  if (pctLifetime < 80) {
+    flagEl.style.display = '';
+    flagEl.textContent = `⚠ This ${months}-month projection captures ~${pctLifetime}% of the reinvestment curve. Repeat capital from new investors continues arriving for ~5 years after acquisition.`;
+  } else {
+    flagEl.style.display = 'none';
+  }
 
   // Funnel bars
   const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
@@ -707,7 +770,8 @@ async function load() {
     const discoHeldRate = discosBooked > 0 ? Math.round((discosHeld / discosBooked) * 1000) / 10 : 86.8;
     const closeRateVal = discosHeld > 0 ? Math.round((newI / discosHeld) * 1000) / 10 : 21.0;
     const avgCheckVal = newI > 0 ? Math.round(newC / newI) : 150415;
-    const repeatRatioVal = newC > 0 ? Math.round((rptC / newC) * 100) / 100 : 1.37;
+    // Base repeat run-rate: repeat capital in the baseline window / 12 months
+    const baseRepeatMonthlyVal = Math.round(rptC / 12);
 
     // LTV: group all-time investments by email, sum total capital per investor,
     // compare to their first investment to get the lifetime multiple.
@@ -737,7 +801,7 @@ async function load() {
       closeRate: Math.max(5, closeRateVal),
       avgCheck: Math.max(50000, avgCheckVal),
       ltv: Math.max(1, ltvVal),
-      repeatRatio: Math.max(0, repeatRatioVal),
+      baseRepeatMonthly: Math.max(0, baseRepeatMonthlyVal),
     };
 
     // Update baseline tags
@@ -746,7 +810,7 @@ async function load() {
     document.getElementById('tagDiscoHeld').textContent = 'Baseline: ' + DEFAULTS.discoHeld + '%';
     document.getElementById('tagCloseRate').textContent = 'Baseline: ' + DEFAULTS.closeRate + '%';
     document.getElementById('tagAvgCheck').textContent = 'Baseline: $' + DEFAULTS.avgCheck.toLocaleString();
-    document.getElementById('tagRepeatRatio').textContent = 'Baseline: ' + DEFAULTS.repeatRatio.toFixed(2) + '×';
+    document.getElementById('tagBaseRepeat').textContent = 'Baseline: $' + DEFAULTS.baseRepeatMonthly.toLocaleString() + '/mo';
 
     // Update banner
     const spendNote = spend > 0 ? 'Meta spend: ' + fmt(spend) : 'Spend data unavailable — using fallback defaults for CPAIL';
