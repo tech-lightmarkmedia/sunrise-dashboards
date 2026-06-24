@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.9)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.10)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -132,7 +132,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.9</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.10</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -806,12 +806,20 @@ function recalc() {
       <div class="card-sub">${costOfFromSpend.toFixed(1)}% of capital from spend</div>
     </div>`;
 
+  const ltvR = DEFAULTS.ltvRepeat || 3.26;
+  const reinvPct = DEFAULTS.reinvestRate || 39;
+  const reinvN = DEFAULTS.reinvestCount || 357;
+  const totalN = DEFAULTS.totalInvestors || 917;
+  const lifetimeRepeatInvestor = avgCheck * ltvR;
+
   document.getElementById('ltvBaseline').innerHTML =
-    `Investor LTV: ${ltvMult.toFixed(2)}× (all-time). ` +
-    `Over time, the ${fmt(costPerInvestor)} acquisition cost reduces from ` +
-    `${costPctNew2.toFixed(1)}% of the first check to ${costPctLifetime.toFixed(1)}% of lifetime capital ` +
-    `as investors reinvest.` +
-    (repeatBase > 0 ? ` <strong>Existing investor base adds ${fmt(repeatBase)} over ${months} months independent of any spend.</strong>` : '');
+    `<strong>All investors: ${ltvMult.toFixed(2)}×</strong> LTV (${totalN} investors). ` +
+    `<strong>Repeat investors only: ${ltvR.toFixed(2)}×</strong> LTV (${reinvN} of ${totalN}, ${reinvPct}% reinvestment rate). ` +
+    `A repeat investor averages ${fmt(lifetimeRepeatInvestor)} lifetime vs ${fmt(avgCheck)} first check. ` +
+    `The ${(100 - reinvPct).toFixed(0)}% who invest once pull the blended LTV from ${ltvR.toFixed(2)}× down to ${ltvMult.toFixed(2)}×.` +
+    `<br><strong style="color:var(--accent)">Converting one-time investors into repeaters is the highest-leverage growth path outside the ad funnel.</strong> ` +
+    `Each one-timer converted adds ~${fmt(lifetimeRepeatInvestor - avgCheck)} in lifetime value — more than any single funnel improvement at current rates.` +
+    (repeatBase > 0 ? ` Existing investor base adds ${fmt(repeatBase)} over ${months} months independent of any spend.` : '');
 }
 
 function card(label, value, sub, highlight) {
@@ -1003,20 +1011,31 @@ function recomputeBaseline() {
   for (const i of RAW_INVS) {
     if (!i.email || !i.fts || !i.amt) continue;
     if (!investorTotals[i.email]) {
-      investorTotals[i.email] = { first: 0, total: 0, firstTs: Infinity };
+      investorTotals[i.email] = { first: 0, total: 0, firstTs: Infinity, count: 0 };
     }
     investorTotals[i.email].total += i.amt;
+    investorTotals[i.email].count++;
     if (i.fts < investorTotals[i.email].firstTs) {
       investorTotals[i.email].firstTs = i.fts;
       investorTotals[i.email].first = i.amt;
     }
   }
-  let sumFirst = 0, sumTotal = 0;
+  let sumFirst = 0, sumTotal = 0, totalInvestors = 0;
+  let rptFirst = 0, rptTotal = 0, rptCount = 0;
   for (const email in investorTotals) {
-    sumFirst += investorTotals[email].first;
-    sumTotal += investorTotals[email].total;
+    const inv = investorTotals[email];
+    sumFirst += inv.first;
+    sumTotal += inv.total;
+    totalInvestors++;
+    if (inv.count >= 2) {
+      rptFirst += inv.first;
+      rptTotal += inv.total;
+      rptCount++;
+    }
   }
   const ltvVal = sumFirst > 0 ? Math.round((sumTotal / sumFirst) * 100) / 100 : 1.95;
+  const ltvRepeatVal = rptFirst > 0 ? Math.round((rptTotal / rptFirst) * 100) / 100 : 3.26;
+  const reinvestRatePct = totalInvestors > 0 ? Math.round((rptCount / totalInvestors) * 1000) / 10 : 39;
 
   DEFAULTS = {
     cpail: Math.max(30, cpail),
@@ -1025,6 +1044,10 @@ function recomputeBaseline() {
     closeRate: Math.max(5, closeRateVal),
     avgCheck: Math.max(50000, avgCheckVal),
     ltv: Math.max(1, ltvVal),
+    ltvRepeat: Math.max(1, ltvRepeatVal),
+    reinvestRate: reinvestRatePct,
+    reinvestCount: rptCount,
+    totalInvestors: totalInvestors,
     baseRepeatMonthly: Math.max(0, baseRepeatMonthlyVal),
   };
 
