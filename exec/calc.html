@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.1)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.2)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -66,6 +66,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .slider-label .baseline-tag{font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;display:block;margin-top:2px}
 .slider-desc{font-size:11px;color:var(--text3);line-height:1.45;margin-top:4px;text-transform:none;letter-spacing:0;font-weight:400}
 .slider-count{font-size:11px;color:var(--green);font-weight:600;margin-top:4px;text-transform:none;letter-spacing:0;line-height:1.4}
+.slider-impact{font-size:10px;font-weight:600;margin-top:3px;text-transform:none;letter-spacing:0;line-height:1.3}
 .slider-row.featured{background:var(--accent-bg);margin:-12px -24px;padding:16px 24px 16px;border:1px solid var(--accent);border-radius:8px;margin-bottom:16px}
 .impact-tag{display:inline-block;font-size:9px;font-weight:700;color:var(--accent);background:#fff;border:1px solid var(--accent);border-radius:4px;padding:1px 6px;margin-left:6px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle}
 .slider-wrap{display:flex;flex-direction:column;gap:4px;padding-top:2px}
@@ -128,7 +129,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.1</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.2</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -204,6 +205,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       <span class="baseline-tag" id="tagCPAIL">Baseline: —</span>
       <div class="slider-desc">Cost per accredited investor lead. Total ad spend ÷ accredited contacts created in the period. Lower = more efficient lead gen.</div>
       <div class="slider-count" id="countCPAIL"></div>
+      <div class="slider-impact" id="impactCPAIL"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCPAIL" min="30" max="500" step="1" value="131" oninput="syncFromSlider('CPAIL')">
@@ -215,13 +217,13 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
     </div>
   </div>
 
-  <div class="slider-row featured">
+  <div class="slider-row">
     <div class="slider-label">
       AI Lead → Discovery
       <span class="baseline-tag" id="tagLeadDisco">Baseline: —</span>
-      <span class="impact-tag">★ Highest-impact lever</span>
       <div class="slider-desc">% of accredited leads that book a discovery call. Driven by setter outreach — dials, connections, and booking skill. Currently 93% of AI leads never reach a discovery. Every percentage point improvement here multiplies straight through to investors and capital.</div>
       <div class="slider-count" id="countLeadDisco"></div>
+      <div class="slider-impact" id="impactLeadDisco"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderLeadDisco" min="1" max="30" step="0.1" value="7.6" oninput="syncFromSlider('LeadDisco')">
@@ -239,6 +241,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       <span class="baseline-tag" id="tagDiscoHeld">Baseline: —</span>
       <div class="slider-desc">% of booked discoveries that actually happen. No-shows, reschedules, and cancellations reduce this. Higher = better confirmation/reminder process.</div>
       <div class="slider-count" id="countDiscoHeld"></div>
+      <div class="slider-impact" id="impactDiscoHeld"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderDiscoHeld" min="50" max="100" step="0.5" value="86.8" oninput="syncFromSlider('DiscoHeld')">
@@ -256,6 +259,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       <span class="baseline-tag" id="tagCloseRate">Baseline: —</span>
       <div class="slider-desc">% of held discoveries that result in a first-time investment. The close rate — driven by closer skill, investor readiness, and fund attractiveness.</div>
       <div class="slider-count" id="countCloseRate"></div>
+      <div class="slider-impact" id="impactCloseRate"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderCloseRate" min="5" max="50" step="0.5" value="21.0" oninput="syncFromSlider('CloseRate')">
@@ -273,6 +277,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
       <span class="baseline-tag" id="tagAvgCheck">Baseline: —</span>
       <div class="slider-desc">Average dollar amount of a new investor's first investment. Larger checks = more capital per investor acquired.</div>
       <div class="slider-count" id="countAvgCheck"></div>
+      <div class="slider-impact" id="impactAvgCheck"></div>
     </div>
     <div class="slider-wrap">
       <input type="range" id="sliderAvgCheck" min="50000" max="500000" step="5000" value="150415" oninput="syncFromSlider('AvgCheck')">
@@ -331,7 +336,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 
   <h3>The Formula</h3>
   <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, repeat capital flows from two sources: the existing investor base reinvesting at their historical run-rate, and new investors acquired during the projection who begin reinvesting on a lagged schedule calibrated from real data.</p>
-  <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Drag any slider and watch the numbers cascade through every stage below it.</p>
+  <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Below that, a ranked sensitivity line shows how much a 10% relative improvement on that lever would add. Drag any slider and watch the numbers cascade through every stage below it.</p>
 
   <h3>Forward Mode (Spend → Capital)</h3>
   <p>Enter a monthly ad spend and time horizon. The calculator pushes that spend forward through the funnel at the current conversion rates to project AI leads generated, discoveries booked and held, new investors funded, and total capital raised (new + repeat).</p>
@@ -344,6 +349,11 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 
   <h3>Inline Metrics (green text)</h3>
   <p>Below each slider, green text shows the computed output of that stage given the current inputs. For cost-bearing stages (Discovery, Held, New Funded), it also shows the <strong>cost per unit</strong> — total ad spend divided by the count at that stage. For capital stages (Avg First Check, Repeat Capital Ratio), it shows <strong>cost as a percentage of capital</strong> — how much of the raised capital went to ad spend. These metrics update live as any slider moves, making it immediately visible where improvement at one stage reduces cost at every downstream stage.</p>
+
+  <h3>Sensitivity Ranking</h3>
+  <p>Below each slider's green metrics, a ranked impact line shows what a <strong>10% relative improvement</strong> on that lever would produce — additional capital in forward mode, or spend savings in reverse mode. The five levers are ranked #1–#5 by impact, updated live as sliders move. The #1 lever is highlighted in accent color.</p>
+  <p>"10% relative" means proportional to the current value: a 7% booking rate improves to 7.7%, a 28% close rate improves to 30.8%. This normalizes for the fact that a 1 percentage-point change is a much bigger effort at a high base rate than a low one. For CPAIL, improvement means 10% lower cost (more efficient).</p>
+  <p>The ranking measures <strong>mathematical sensitivity</strong> — which lever the formula responds to most. It does not measure operational difficulty. A lever ranked #1 might involve coordinating multiple teams, while a lever ranked #3 might be a single process change. Use the ranking to understand where the formula is most responsive, then apply judgment about which improvements are most achievable.</p>
 
   <h3>CPAIL (Cost Per AI Lead)</h3>
   <p>Total ad spend divided by the number of accredited investor contacts created in the period. This is the blended cost across all platforms (Meta, Google, LinkedIn) spread across all accredited leads — paid and organic — because the ad spend fuels the entire lead machine, not just directly-attributed contacts. Lower CPAIL means more efficient lead generation. The inline metric shows the total AI lead count and monthly run rate.</p>
@@ -615,6 +625,82 @@ function recalc() {
     flagEl.textContent = `⚠ This ${months}-month projection captures ~${pctLifetime}% of the reinvestment curve. Repeat capital from new investors continues arriving for ~5 years after acquisition.`;
   } else {
     flagEl.style.display = 'none';
+  }
+
+  // ── Sensitivity analysis: 10% relative improvement on each lever ──
+  // Forward mode: compute how much MORE total capital a 10% improvement yields.
+  // Reverse mode: compute how much LESS total spend is needed.
+  // For CPAIL, "improvement" = 10% lower cost (more efficient), multiply by 0.9.
+  // For all others, improvement = 10% higher rate, multiply by 1.1.
+  function funnelForward(cp, ld, dh, cr, ac) {
+    const ms2 = parseFloat(document.getElementById('inputSpend').value) || 0;
+    const mo2 = parseInt(document.getElementById('inputMonths').value) || 12;
+    const ts2 = ms2 * mo2;
+    const ai = ts2 / cp;
+    const db = ai * ld;
+    const dhn = db * dh;
+    const ni = dhn * cr;
+    const nc = ni * ac;
+    const rb = baseRepeatMo * mo2;
+    const mc = Math.min(mo2, KERNEL_FACTOR.length - 1);
+    const rn = (mo2 > 0 ? nc / mo2 : 0) * KERNEL_FACTOR[mc];
+    return nc + rb + rn;
+  }
+
+  function funnelReverse(cp, ld, dh, cr, ac) {
+    const tv = parseFloat(document.getElementById('inputTarget').value) || 0;
+    const mo2 = parseInt(document.getElementById('inputTargetMonths').value) || 12;
+    const rb = baseRepeatMo * mo2;
+    const mc = Math.min(mo2, KERNEL_FACTOR.length - 1);
+    const ke = mo2 > 0 ? KERNEL_FACTOR[mc] / mo2 : 0;
+    let nc;
+    if (targetType === 'total') {
+      const net = Math.max(0, tv - rb);
+      nc = (1 + ke) > 0 ? net / (1 + ke) : net;
+    } else {
+      nc = tv;
+    }
+    const ni = nc / ac;
+    const dhn = ni / cr;
+    const db = dhn / dh;
+    const ai = db / ld;
+    return ai * cp;
+  }
+
+  const levers = [
+    { key: 'CPAIL',     bumpCp: cpail * 0.9,       bumpLd: aiLeadDisco, bumpDh: discoHeld, bumpCr: closeRate, bumpAc: avgCheck, label: '→ $' + Math.round(cpail * 0.9) },
+    { key: 'LeadDisco', bumpCp: cpail,              bumpLd: aiLeadDisco * 1.1, bumpDh: discoHeld, bumpCr: closeRate, bumpAc: avgCheck, label: '→ ' + (aiLeadDisco * 110).toFixed(1) + '%' },
+    { key: 'DiscoHeld', bumpCp: cpail,              bumpLd: aiLeadDisco, bumpDh: discoHeld * 1.1, bumpCr: closeRate, bumpAc: avgCheck, label: '→ ' + (discoHeld * 110).toFixed(1) + '%' },
+    { key: 'CloseRate', bumpCp: cpail,              bumpLd: aiLeadDisco, bumpDh: discoHeld, bumpCr: closeRate * 1.1, bumpAc: avgCheck, label: '→ ' + (closeRate * 110).toFixed(1) + '%' },
+    { key: 'AvgCheck',  bumpCp: cpail,              bumpLd: aiLeadDisco, bumpDh: discoHeld, bumpCr: closeRate, bumpAc: avgCheck * 1.1, label: '→ $' + Math.round(avgCheck * 1.1).toLocaleString() },
+  ];
+
+  const sensitivities = levers.map(l => {
+    let delta;
+    if (mode === 'forward') {
+      delta = funnelForward(l.bumpCp, l.bumpLd, l.bumpDh, l.bumpCr, l.bumpAc) - totalCapital;
+    } else {
+      delta = totalSpend - funnelReverse(l.bumpCp, l.bumpLd, l.bumpDh, l.bumpCr, l.bumpAc);
+    }
+    return { key: l.key, label: l.label, delta };
+  });
+
+  // Rank by delta descending (biggest improvement first)
+  sensitivities.sort((a, b) => b.delta - a.delta);
+  const rankMap = {};
+  sensitivities.forEach((s, i) => { rankMap[s.key] = i + 1; });
+
+  // Render impact lines
+  const isForward = mode === 'forward';
+  for (const s of sensitivities) {
+    const rank = rankMap[s.key];
+    const el = document.getElementById('impact' + s.key);
+    if (el) {
+      el.style.color = rank === 1 ? 'var(--accent)' : 'var(--text3)';
+      const verb = isForward ? 'adds' : 'saves';
+      const what = isForward ? 'total capital' : 'in spend';
+      el.innerHTML = `#${rank} — 10% improvement (${s.label}) ${verb} ${fmt(Math.abs(s.delta))} ${what}`;
+    }
   }
 
   // Funnel bars
