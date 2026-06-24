@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.5)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.6)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -92,7 +92,9 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .step-value{font-size:16px;font-weight:700;text-align:right}
 
 /* Sticky summary bar */
-.sticky-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:sticky;bottom:0;z-index:100;background:var(--bg);padding:12px 28px 16px;margin:0 -28px;border-top:2px solid var(--border);box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+.sticky-summary{position:sticky;bottom:0;z-index:100;background:var(--bg);padding:12px 28px 16px;margin:0 -28px;border-top:2px solid var(--border);box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+.summary-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.summary-total-line{text-align:center;font-size:13px;font-weight:600;color:var(--accent);margin-top:10px;line-height:1.4}
 .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center}
 .summary-card .card-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
 .summary-card .card-value{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
@@ -130,7 +132,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.5</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.6</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -333,8 +335,11 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 </div>
 
 <!-- Sticky summary bar -->
-<div class="sticky-summary" id="summaryCards">
-  <!-- filled by JS: 4 cards -->
+<div class="sticky-summary" id="summaryBar">
+  <div class="summary-cards" id="summaryCards">
+    <!-- filled by JS: 4 cards -->
+  </div>
+  <div class="summary-total-line" id="summaryTotalLine"></div>
 </div>
 
 </div><!-- /content -->
@@ -766,6 +771,11 @@ function recalc() {
     s += card('Total from Spend', fmt(totalFromSpend), fmt(totalFromSpend / months) + '/mo', true);
   }
   document.getElementById('summaryCards').innerHTML = s;
+
+  // Total raise line — includes base repeat from existing investors
+  const totalRaise = totalFromSpend + repeatBase;
+  document.getElementById('summaryTotalLine').innerHTML =
+    `Including reinvestment from the existing investor base: <strong>${fmt(totalRaise)} total capital raised over ${months} months</strong>`;
 
   // Cost & LTV perspective section
   const ltvMult = DEFAULTS.ltv || 1.95;
