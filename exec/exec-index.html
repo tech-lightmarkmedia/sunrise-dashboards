@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Executive Dashboards</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;
+  --surface:#fff;
+  --surface2:#edeae3;
+  --surface3:#faf8f3;
+  --border:#ddd9d0;
+  --border2:#c9c4b6;
+  --text:#1a1814;
+  --text2:#6b6558;
+  --text3:#9e9789;
+  --accent:#14213D;
+  --accent-bg:#EDF1F8;
+  --accent-dark:#0d1629;
+
+  --portfolio:#14213D; --portfolio-bg:#EDF1F8;
+  --kpi:#b45309;       --kpi-bg:#fef3c7;
+  --calc:#0e7490;      --calc-bg:#ecfeff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+html,body{background:var(--bg);color:var(--text)}
+body{font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+
+header.top{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:14px}
+header.top .version{font-size:10px;color:#9e9789;font-weight:500;letter-spacing:.4px;padding:3px 9px;border:1px solid #3a352e;border-radius:10px;background:rgba(245,243,239,.04)}
+header.top .built-by{font-size:11px;color:#9e9789;font-style:italic}
+header.top .built-by b{color:#c4b6a2;font-weight:500;font-style:normal}
+.back-link{font-size:12px;color:#9e9789;text-decoration:none;display:flex;align-items:center;gap:4px;}
+.back-link:hover{color:#c4b6a2;}
+
+main{max-width:1200px;margin:0 auto;padding:48px 28px 80px}
+
+.intro{margin-bottom:56px;max-width:780px}
+.eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.4px;color:var(--accent);margin-bottom:10px}
+.intro h2{font-family:'DM Serif Display',serif;font-size:44px;line-height:1.08;font-weight:400;letter-spacing:-.5px;margin-bottom:18px;color:var(--text)}
+.intro h2 em{font-style:italic;color:var(--accent-dark)}
+.intro .lede{font-size:16px;line-height:1.6;color:var(--text2);max-width:680px}
+.intro .lede strong{color:var(--text);font-weight:500}
+
+.access-note{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:8px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text2);}
+.access-note .lock{font-size:14px;}
+
+.row{display:grid;grid-template-columns:520px 1fr;gap:42px;align-items:center;padding:36px 0;border-top:1px solid var(--border);scroll-margin-top:20px}
+.row:first-of-type{border-top:none;padding-top:8px}
+
+.mock-wrap{position:relative}
+.mock{width:100%;aspect-ratio:520/340;border-radius:14px;background:var(--surface);box-shadow:0 1px 0 var(--border),0 12px 32px -16px rgba(26,24,20,.18),0 4px 12px -6px rgba(26,24,20,.08);overflow:hidden;border:1px solid var(--border)}
+.mock svg{width:100%;height:100%;display:block}
+
+.info{min-width:0}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;margin-bottom:14px}
+.badge-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+.info h3{font-family:'DM Serif Display',serif;font-size:32px;line-height:1.1;font-weight:400;letter-spacing:-.2px;color:var(--text);margin-bottom:8px}
+.info .tagline{font-family:'DM Serif Display',serif;font-style:italic;font-size:16px;color:var(--text2);line-height:1.35;margin-bottom:18px;font-weight:400}
+.info ul{list-style:none;padding:0;margin:0 0 22px}
+.info li{font-size:13px;line-height:1.55;color:var(--text2);padding:5px 0 5px 22px;position:relative}
+.info li::before{content:'';position:absolute;left:0;top:11px;width:11px;height:1px;background:var(--text3)}
+.info li b{color:var(--text);font-weight:500}
+.info .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn-open{display:inline-flex;align-items:center;gap:6px;background:var(--text);color:#f5f3ef;padding:9px 18px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:.1px;transition:background .15s ease,transform .15s ease;border:none;cursor:pointer}
+.btn-open:hover{background:#33302a;transform:translateY(-1px)}
+.btn-open .arrow{font-size:14px;line-height:1}
+
+.row[data-d="portfolio"] .badge{background:var(--portfolio-bg);color:var(--portfolio)} .row[data-d="portfolio"] .badge-dot{background:var(--portfolio)}
+.row[data-d="kpi"]       .badge{background:var(--kpi-bg);color:var(--kpi)}             .row[data-d="kpi"]       .badge-dot{background:var(--kpi)}
+.row[data-d="calc"]      .badge{background:var(--calc-bg);color:var(--calc)}           .row[data-d="calc"]      .badge-dot{background:var(--calc)}
+
+footer.bot{margin-top:56px;padding:32px 28px;background:var(--text);color:#9e9789}
+footer.bot .inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+footer.bot .brand{font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:#c4b6a2}
+footer.bot .meta{font-size:11px;color:#76705f}
+
+@media (max-width:960px){
+  .row{grid-template-columns:1fr;gap:24px;padding:30px 0}
+  .mock{max-width:520px}
+  .info h3{font-size:26px}
+  .intro h2{font-size:32px}
+  main{padding:36px 22px 60px}
+}
+
+.mock-text-mono{font-family:'DM Sans',sans-serif;font-weight:500}
+.mock-text-serif{font-family:'DM Serif Display',serif}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="hdr">
+    <span style="font-family:'DM Serif Display',serif;font-size:17px;letter-spacing:.2px;font-style:italic">Sunrise Capital</span>
+    <span class="version">Executive</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:20px;">
+    <a class="back-link" href="/">← All dashboards</a>
+    <span class="built-by">built by <b>Lightmark Media</b></span>
+  </div>
+</header>
+
+<main>
+
+  <div class="intro">
+    <div class="eyebrow">Executive Suite</div>
+    <h2>Leadership <em>dashboards</em></h2>
+    <p class="lede">
+      Tools built for the <strong>executive committee</strong> — portfolio-level analysis,
+      capital raise forecasting, and operational KPI tracking. These pages sit behind
+      a separate access policy and are not visible from the main dashboard hub.
+    </p>
+    <div class="access-note">
+      <span class="lock">🔒</span>
+      Restricted access — authorized email addresses only
+    </div>
+  </div>
+
+  <!-- ═══════ Portfolio Review ═══════ -->
+  <section class="row" data-d="portfolio" id="portfolio">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="340" fill="#f5f3ef"/>
+        <!-- Navy header -->
+        <rect width="520" height="45" fill="#14213D"/>
+        <text x="18" y="18" fill="#8899AA" font-size="7" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing="1">SUNRISE CAPITAL INVESTORS</text>
+        <text x="18" y="33" fill="#fff" font-size="13" font-family="DM Serif Display, serif">Portfolio Performance Review</text>
+        <!-- KPI cards -->
+        <g transform="translate(14,58)">
+          <rect width="116" height="52" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="10" y="14" fill="#9e9789" font-size="6.5" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing=".5">YTD NOI</text>
+          <text x="10" y="33" fill="#2E7D5B" font-size="16" font-family="DM Sans, sans-serif" font-weight="700">$7.79M</text>
+          <text x="10" y="44" fill="#9e9789" font-size="7" font-family="DM Sans, sans-serif">+4.9% vs budget</text>
+
+          <rect x="124" width="116" height="52" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="134" y="14" fill="#9e9789" font-size="6.5" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing=".5">YTD INCOME</text>
+          <text x="134" y="33" fill="#1a1814" font-size="16" font-family="DM Sans, sans-serif" font-weight="700">$12.40M</text>
+
+          <rect x="248" width="116" height="52" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="258" y="14" fill="#9e9789" font-size="6.5" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing=".5">YTD EXPENSE</text>
+          <text x="258" y="33" fill="#2E7D5B" font-size="16" font-family="DM Sans, sans-serif" font-weight="700">$4.60M</text>
+
+          <rect x="372" width="116" height="52" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="382" y="14" fill="#9e9789" font-size="6.5" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing=".5">CASH RUNWAY</text>
+          <text x="382" y="33" fill="#1a1814" font-size="16" font-family="DM Sans, sans-serif" font-weight="700">~1.2 yrs</text>
+        </g>
+        <!-- Narrative blocks -->
+        <g transform="translate(14,124)">
+          <rect width="238" height="90" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="10" y="14" fill="#2E7D5B" font-size="8" font-family="DM Sans, sans-serif" font-weight="700">What is working</text>
+          <g fill="#9e9789" font-size="6" font-family="DM Sans, sans-serif"><text x="10" y="28">The portfolio delivers $7.79M in NOI through four</text><text x="10" y="37">months, running $367K or 4.9% ahead of budget on</text><text x="10" y="46">the strength of expense control rather than revenue…</text></g>
+
+          <rect x="250" width="238" height="90" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <text x="260" y="14" fill="#B23A48" font-size="8" font-family="DM Sans, sans-serif" font-weight="700">What needs attention</text>
+          <g fill="#9e9789" font-size="6" font-family="DM Sans, sans-serif"><text x="260" y="28">Eight assets sit below the 1.25x DSCR threshold,</text><text x="260" y="37">with Mancuso Village at 0.68x and Princess at</text><text x="260" y="46">0.64x representing acute refinancing risk…</text></g>
+        </g>
+        <!-- Property spotlight hint -->
+        <g transform="translate(14,228)">
+          <rect width="492" height="100" rx="6" fill="#fff" stroke="#ddd9d0"/>
+          <rect width="492" height="22" rx="6" fill="#14213D"/>
+          <text x="10" y="14" fill="#8899AA" font-size="6.5" font-family="DM Sans, sans-serif" font-weight="600" letter-spacing=".5">FUND IV · MHP · AHEAD OF BUDGET</text>
+          <text x="10" y="36" fill="#1a1814" font-size="11" font-family="DM Serif Display, serif">Charlotte — Property Spotlight</text>
+          <g transform="translate(10,48)">
+            <rect width="80" height="36" rx="4" fill="#F3F6FB" stroke="#ddd9d0"/>
+            <text x="8" y="11" fill="#9e9789" font-size="5.5" font-weight="600">YTD NOI</text>
+            <text x="8" y="26" fill="#2E7D5B" font-size="11" font-weight="700">$1.19M</text>
+            <rect x="88" width="80" height="36" rx="4" fill="#F3F6FB" stroke="#ddd9d0"/>
+            <text x="96" y="11" fill="#9e9789" font-size="5.5" font-weight="600">INC VS BUD</text>
+            <text x="96" y="26" fill="#2E7D5B" font-size="11" font-weight="700">+16.3%</text>
+            <rect x="176" width="80" height="36" rx="4" fill="#F3F6FB" stroke="#ddd9d0"/>
+            <text x="184" y="11" fill="#9e9789" font-size="5.5" font-weight="600">EXP VS BUD</text>
+            <text x="184" y="26" fill="#2E7D5B" font-size="11" font-weight="700">-2.0%</text>
+            <rect x="264" width="80" height="36" rx="4" fill="#F3F6FB" stroke="#ddd9d0"/>
+            <text x="272" y="11" fill="#9e9789" font-size="5.5" font-weight="600">DSCR</text>
+            <text x="272" y="26" fill="#1a1814" font-size="11" font-weight="700">3.06x</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Portfolio analysis · CFO reporting</span>
+      <h3>Portfolio Review</h3>
+      <div class="tagline">Budget vs actual across the entire portfolio.</div>
+      <ul>
+        <li><b>Portfolio KPIs</b>: YTD NOI, income, expense, and cash runway at a glance</li>
+        <li><b>AI-generated executive narrative</b>: what's working, what needs attention, actions, and risks — editable before publish</li>
+        <li><b>Fund-level performance table</b> with NOI margin and variance</li>
+        <li><b>Property spotlight cards</b> for winners and underperformers with SVG bar charts</li>
+        <li><b>Click any property name</b> to open a detail drawer with full line-item P&L</li>
+        <li><b>Date picker in drawer</b>: Jan, Feb, Mar, Apr, Q1, Q2, or YTD view — switches instantly</li>
+        <li>Also generates a <b>PowerPoint deck</b> (54 slides) from the same data</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="/exec/portfolio.html">Open builder <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ KPI Tracker ═══════ -->
+  <section class="row" data-d="kpi" id="kpi">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="340" fill="#f5f3ef"/>
+        <rect width="520" height="36" fill="#1a1814"/>
+        <text x="18" y="23" fill="#f5f3ef" font-size="12" font-family="DM Sans, sans-serif" font-weight="600">KPI Tracker</text>
+        <text x="502" y="23" text-anchor="end" fill="#9e9789" font-size="9">v2.1</text>
+        <!-- Weekly grid -->
+        <g transform="translate(14,48)" font-family="DM Sans, sans-serif">
+          <rect width="492" height="280" rx="8" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="20" fill="#1a1814" font-size="10" font-weight="600">June 2026</text>
+          <!-- Column headers -->
+          <g font-size="7" fill="#9e9789" font-weight="600" letter-spacing=".3">
+            <text x="160" y="38">6/1–6/7</text>
+            <text x="230" y="38">6/8–6/14</text>
+            <text x="300" y="38">6/15–6/21</text>
+            <text x="370" y="38">6/22–6/28</text>
+            <text x="450" y="38" text-anchor="end">MTD</text>
+          </g>
+          <line x1="14" y1="44" x2="478" y2="44" stroke="#ebe9e2"/>
+          <!-- Row labels -->
+          <g font-size="8" fill="#6b6558">
+            <text x="14" y="60">Discovery Calls Set</text>
+            <text x="14" y="78">Closing Ratio (60d)</text>
+            <text x="14" y="96">Soft Commits Signed</text>
+            <text x="14" y="114">$ Soft Commits</text>
+            <text x="14" y="132">Monthly Capital Raise</text>
+            <text x="14" y="156" fill="#1a1814" font-weight="600">Projected Weekly</text>
+            <text x="14" y="174" fill="#1a1814" font-weight="600">Projected Monthly</text>
+            <text x="14" y="198">Annual Capital YTD</text>
+            <text x="14" y="216">New Capital</text>
+            <text x="14" y="234">Repeat Capital</text>
+          </g>
+          <!-- Sample data -->
+          <g font-size="8" fill="#1a1814" text-anchor="end">
+            <text x="180" y="60">12</text><text x="250" y="60">15</text><text x="320" y="60">11</text><text x="390" y="60">—</text><text x="450" y="60">38</text>
+            <text x="180" y="78">18.2%</text><text x="250" y="78">19.1%</text><text x="320" y="78">17.8%</text>
+            <text x="180" y="114">$425K</text><text x="250" y="114">$650K</text><text x="320" y="114">$380K</text><text x="450" y="114">$1.46M</text>
+            <text x="180" y="132" fill="#2E7D5B">$1.8M</text><text x="250" y="132" fill="#2E7D5B">$2.1M</text><text x="320" y="132" fill="#2E7D5B">$3.2M</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Weekly tracking · leadership KPIs</span>
+      <h3>KPI Tracker</h3>
+      <div class="tagline">The weekly scorecard Kelvin reviews with the team.</div>
+      <ul>
+        <li><b>Weekly columns</b> within the month — discovery calls, closing ratio, soft commitments, capital raised</li>
+        <li><b>Projected capital raise</b>: manual entry for weekly and monthly forecasts from pipeline review</li>
+        <li><b>New vs repeat capital</b> breakdown with partner/referral tracking</li>
+        <li><b>Rolling closing ratio</b> (60-day window, new investments only, no-shows excluded)</li>
+        <li>All data pulled live from HubSpot — no manual data entry except projections</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="/exec/kpi.html">Open dashboard <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ Predictive Calculator ═══════ -->
+  <section class="row" data-d="calc" id="calc">
+    <div class="mock-wrap">
+      <div class="mock"><svg viewBox="0 0 520 340" xmlns="http://www.w3.org/2000/svg">
+        <rect width="520" height="340" fill="#f5f3ef"/>
+        <rect width="520" height="36" fill="#1a1814"/>
+        <text x="18" y="23" fill="#f5f3ef" font-size="12" font-family="DM Sans, sans-serif" font-weight="600">Predictive Capital Raising</text>
+        <text x="502" y="23" text-anchor="end" fill="#9e9789" font-size="9">v3.0</text>
+        <!-- Sliders mockup -->
+        <g transform="translate(14,48)" font-family="DM Sans, sans-serif">
+          <rect width="240" height="280" rx="8" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="20" fill="#1a1814" font-size="10" font-weight="600">Input Assumptions</text>
+          <g font-size="8" fill="#6b6558">
+            <text x="14" y="42">Monthly Ad Spend</text>
+            <rect x="14" y="48" width="210" height="4" rx="2" fill="#ebe9e2"/>
+            <rect x="14" y="48" width="140" height="4" rx="2" fill="#0e7490"/>
+            <circle cx="154" cy="50" r="5" fill="#0e7490"/>
+            <text x="210" y="42" text-anchor="end" font-weight="600" fill="#1a1814">$45K</text>
+
+            <text x="14" y="76">AI Lead Rate</text>
+            <rect x="14" y="82" width="210" height="4" rx="2" fill="#ebe9e2"/>
+            <rect x="14" y="82" width="120" height="4" rx="2" fill="#0e7490"/>
+
+            <text x="14" y="110">Intro Book Rate</text>
+            <rect x="14" y="116" width="210" height="4" rx="2" fill="#ebe9e2"/>
+            <rect x="14" y="116" width="160" height="4" rx="2" fill="#0e7490"/>
+
+            <text x="14" y="144">Discovery Conversion</text>
+            <rect x="14" y="150" width="210" height="4" rx="2" fill="#ebe9e2"/>
+            <rect x="14" y="150" width="90" height="4" rx="2" fill="#0e7490"/>
+
+            <text x="14" y="178">Avg First Investment</text>
+            <rect x="14" y="184" width="210" height="4" rx="2" fill="#ebe9e2"/>
+            <rect x="14" y="184" width="130" height="4" rx="2" fill="#0e7490"/>
+          </g>
+        </g>
+        <!-- Results mockup -->
+        <g transform="translate(268,48)" font-family="DM Sans, sans-serif">
+          <rect width="238" height="280" rx="8" fill="#fff" stroke="#ddd9d0"/>
+          <text x="14" y="20" fill="#1a1814" font-size="10" font-weight="600">12-Month Projection</text>
+          <g transform="translate(14,40)">
+            <rect width="210" height="44" rx="6" fill="#ecfeff" stroke="#ddd9d0"/>
+            <text x="10" y="14" fill="#9e9789" font-size="6.5" font-weight="600">NEW CAPITAL</text>
+            <text x="10" y="32" fill="#0e7490" font-size="16" font-weight="700">$14.2M</text>
+            <rect y="54" width="210" height="44" rx="6" fill="#ecfeff" stroke="#ddd9d0"/>
+            <text x="10" y="68" fill="#9e9789" font-size="6.5" font-weight="600">REPEAT CAPITAL</text>
+            <text x="10" y="86" fill="#0e7490" font-size="16" font-weight="700">$5.8M</text>
+            <rect y="108" width="210" height="44" rx="6" fill="#14213D"/>
+            <text x="10" y="122" fill="#8899AA" font-size="6.5" font-weight="600">TOTAL PROJECTED</text>
+            <text x="10" y="140" fill="#fff" font-size="16" font-weight="700">$20.0M</text>
+          </g>
+        </g>
+      </svg></div>
+    </div>
+    <div class="info">
+      <span class="badge"><span class="badge-dot"></span>Forecasting · scenario planning</span>
+      <h3>Predictive Capital Raising</h3>
+      <div class="tagline">Model the future with real conversion data.</div>
+      <ul>
+        <li><b>Full-funnel sliders</b>: ad spend, AI lead rate, intro booking, discovery conversion, average investment</li>
+        <li><b>Reinvestment kernel model</b> (v3.0): 60-month empirical curve calibrated from 917 investors — repeat capital lags correctly</li>
+        <li><b>Two-component repeat</b>: base run-rate from existing investor base + new-investor repeat from the kernel</li>
+        <li><b>Forward and reverse modes</b>: "what will this spend produce?" or "what spend do I need for this target?"</li>
+        <li><b>Horizon flag</b> when projection window captures less than 80% of the reinvestment curve</li>
+      </ul>
+      <div class="actions">
+        <a class="btn-open" href="/exec/calc.html">Open calculator <span class="arrow">↗</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="bot">
+  <div class="inner">
+    <div class="brand">Built for Sunrise Capital by Lightmark Media</div>
+    <div class="meta">Executive suite — restricted access. Contact ops for permission changes.</div>
+  </div>
+</footer>
+
+</body>
+</html>
