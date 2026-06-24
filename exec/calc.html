@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.8)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -132,7 +132,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.8</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.9</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -304,8 +304,8 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 
   <div class="slider-row" style="grid-template-columns:1fr;border-bottom:none">
     <div class="slider-label">
-      Repeat Capital <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--text3)">(computed from term + base)</span>
-      <div class="slider-desc">Repeat capital comes from two sources: (1) the existing investor base reinvesting at their historical run-rate, and (2) new investors acquired during this projection who begin reinvesting on a lagged schedule. Shorter projections capture less of the new-investor repeat because the reinvestment curve hasn't played out yet. The base run-rate is derived from the trailing baseline window and can be overridden below.</div>
+      Existing Investor Base <span style="font-weight:400;text-transform:none;font-size:11px;color:var(--text3)">(independent of ad spend)</span>
+      <div class="slider-desc">Investors acquired before this projection reinvest at a historical run-rate. This capital flows regardless of what you spend on ads — it's the return on years of building the investor base. The default is computed from the trailing 15-month window (total repeat capital ÷ 15) for the smoothest average. If you believe the recent trend is more representative, override it below. This number × months is the single largest component of total capital raised — small changes here have a large effect on the bottom line.</div>
       <div class="slider-count" id="countRepeatRatio"></div>
       <div id="repeatFlag" style="font-size:11px;color:var(--accent);font-weight:600;margin-top:6px;display:none"></div>
     </div>
@@ -351,7 +351,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h2>How This Works</h2>
 
   <h3>The Formula</h3>
-  <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, repeat capital flows from two sources: the existing investor base reinvesting at their historical run-rate, and new investors acquired during the projection who begin reinvesting on a lagged schedule calibrated from real data.</p>
+  <p>This calculator models the capital-raising funnel from ad spend to funded investments. The spend-driven chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. New investors also begin reinvesting on a lagged schedule, adding new-investor repeat capital over time. Separately, the existing investor base (acquired before the projection) reinvests at a historical run-rate independent of any ad spend — this is context, not a product of the funnel.</p>
   <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Below that, a lever line shows what that slider would need to move to in order to add $1M in capital. Drag any slider and watch the numbers cascade through every stage below it.</p>
 
   <h3>Forward Mode (Spend → Capital)</h3>
@@ -364,7 +364,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <p>Each conversion rate can be adjusted by dragging the slider or by clicking the value on the right and typing a number directly. The <strong>Reset to Defaults</strong> button reverts all sliders to the live-computed baseline values.</p>
 
   <h3>Inline Metrics (green text)</h3>
-  <p>Below each slider, green text shows the computed output of that stage given the current inputs. For cost-bearing stages (Discovery, Held, New Funded), it also shows the <strong>cost per unit</strong> — total ad spend divided by the count at that stage. For capital stages (Avg First Check, Repeat Capital Ratio), it shows <strong>cost as a percentage of capital</strong> — how much of the raised capital went to ad spend. These metrics update live as any slider moves, making it immediately visible where improvement at one stage reduces cost at every downstream stage.</p>
+  <p>Below each slider, green text shows the computed output of that stage given the current inputs. For cost-bearing stages (Discovery, Held, New Funded), it also shows the <strong>cost per unit</strong> — total ad spend divided by the count at that stage. For Avg First Check, it shows <strong>cost as a percentage of new capital</strong> — how much of the raised capital went to ad spend. These metrics update live as any slider moves, making it immediately visible where improvement at one stage reduces cost at every downstream stage.</p>
 
   <h3>Lever Analysis</h3>
   <p>Below each slider's green metrics, a lever line shows <strong>what that lever would need to move to</strong> in order to add $1M in total capital (forward mode) or save $1M in spend (reverse mode). The percentage shown is the relative move from the current slider value to the required value.</p>
@@ -387,21 +387,25 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h3>Avg First Check</h3>
   <p>The average dollar amount of a new investor's first investment. This determines how much capital each new investor adds. Larger average checks mean fewer investors needed to hit a capital target. The inline metric shows total new capital, the monthly rate, and ad spend as a percentage of new capital raised — this is the present cost of acquiring that capital.</p>
 
-  <h3>Repeat Capital</h3>
-  <p>Repeat capital is modeled as two separate flows, not a single ratio:</p>
-  <p><strong>Base repeat (existing investor base):</strong> investors acquired before the projection window who continue reinvesting at their historical run-rate. This is derived from the trailing baseline window — total repeat capital in the window ÷ 12 months — and can be overridden. This flow is independent of ad spend and new investor acquisition.</p>
-  <p><strong>New-investor repeat (reinvestment kernel):</strong> investors acquired during the projection who begin reinvesting on a lagged schedule. This is computed using an empirical reinvestment curve calibrated from the full SCI investment history (917 investors, 357 repeat, 38.9% reinvestment rate). The average lag to reinvestment is ~25 months, and the lifetime reinvestment yield is $0.94 per $1 of first investment — but that $0.94 arrives over ~5 years, not instantly. The model accounts for staggered entry: investors acquired in month 1 of a 12-month projection have 11 months to reinvest, while investors acquired in month 12 have none.</p>
-  <p>This means shorter projections naturally show less repeat capital from new investors. A 12-month projection captures roughly 16% of the lifetime reinvestment from new investors; a 24-month projection captures ~30%. The dominant source of repeat capital in any practical projection horizon is the existing base, not new acquisitions — which correctly reflects that repeat capital is a return on prior investment in the investor base, not a contemporaneous byproduct of current spend.</p>
+  <h3>Existing Investor Base (independent of spend)</h3>
+  <p>Investors acquired before the projection window continue reinvesting at a historical run-rate. This capital flows regardless of ad spend — it's the cumulative return on years of building the investor base. The default run-rate is computed from the <strong>trailing 15-month window</strong> (total repeat capital ÷ 15 months), regardless of which baseline window is selected for the funnel conversion rates. The 15-month average smooths out lumpiness from large individual reinvestments that can skew a shorter window.</p>
+  <p>The field is editable. If you believe the recent trend (e.g. last 6 months) is more representative of where repeat capital is heading, override it. This number × projection months is typically the single largest component of total capital raised — at the current default, it's roughly $3.5M/month or $42M/year. Small changes here have a disproportionate effect on the total raise figure.</p>
+  <p>This number does <strong>not</strong> appear in the four summary cards at the bottom — those show only capital produced by ad spend. It appears in the total raise line below the cards, which adds base repeat back in for the complete picture.</p>
+
+  <h3>New-Investor Repeat (from the funnel)</h3>
+  <p>Investors acquired <em>during</em> the projection begin reinvesting on a lagged schedule. This is computed using an empirical reinvestment curve calibrated from the full SCI investment history (917 investors, 357 repeat, 38.9% reinvestment rate). The average lag to reinvestment is ~25 months, and the lifetime reinvestment yield is $0.94 per $1 of first investment — but that $0.94 arrives over ~5 years, not instantly. The model accounts for staggered entry: investors acquired in month 1 of a 12-month projection have 11 months to reinvest, while investors acquired in month 12 have none.</p>
+  <p>This means shorter projections naturally show less new-investor repeat. A 12-month projection captures roughly 16% of the lifetime reinvestment from new investors; a 24-month projection captures ~30%. This component <em>does</em> appear in the summary cards as "New-Investor Repeat" because it's a direct product of the ad spend that acquired those investors.</p>
   <p>When the projection horizon captures less than ~80% of the reinvestment curve, a flag appears noting that additional repeat capital would arrive beyond the window. This is informational, not an error — it's the nature of lagged reinvestment.</p>
 
   <h3>Output Bar (sticky at bottom)</h3>
-  <p>The four key output numbers — Total Spend, New Capital, Repeat Capital, Total Capital — stick to the bottom of the screen. As you adjust any slider, these update in real time without needing to scroll. In reverse mode, Total Spend becomes "Required Spend." These are the raw outputs of the funnel formula.</p>
+  <p>Four cards showing what ad spend produces: Total Spend, New Capital, New-Investor Repeat, and Total from Spend. These stick to the bottom of the screen and update in real time. In reverse mode, Total Spend becomes "Required Spend." Base repeat from the existing investor base is <strong>not</strong> included in these cards — it's independent of spend.</p>
+  <p>Below the cards, a total raise line adds the base repeat back in: "Including reinvestment from those investors who had invested prior to N months ago ($X): $Y total capital raised over N months." This is the complete picture — spend-driven capital plus the independent base.</p>
 
   <h3>Cost &amp; Lifetime Value (above the output bar)</h3>
   <p>This section shows cost perspective on the funnel output. Three cards side by side:</p>
   <p><strong>Cost / New Investor</strong> (present cost, accent border): the acquisition cost per new investor, shown as both a dollar amount and a percentage of their first check. This is the present cost — what you're paying today against what they invest today.</p>
   <p><strong>Cost / Lifetime Capital</strong> (future cost, green border): that same acquisition cost as a percentage of the investor's lifetime capital. The dollar cost doesn't change; the denominator grows as the investor reinvests over time. The LTV multiple is computed from all-time investment data — for each investor (grouped by email), total lifetime capital ÷ first investment. As the investor base matures, the LTV multiple increases and this percentage drops automatically.</p>
-  <p><strong>Return on Total Capital:</strong> total capital raised divided by total spend. This includes repeat capital, which has no direct acquisition cost — it exists because the machine built the investor base over time, and new investors begin reinvesting on a lagged schedule. This is the overall efficiency of the capital-raising operation.</p>
+  <p><strong>Return on Spend:</strong> total capital from spend (new capital + new-investor repeat) divided by total spend. This measures the efficiency of the ad-driven funnel only — base repeat from the existing investor base is excluded because it flows independent of any spend.</p>
 
   <h3>Baseline Window &amp; Live Data</h3>
   <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window ends 90 days ago (snapped to a complete calendar month) so every discovery has had a full maturity period to fund. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically.</p>
@@ -409,7 +413,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h3>Window Options (6 / 12 / 15 months)</h3>
   <p>The toggle above the baseline banner selects how far back the window reaches. Each option handles discovery call data differently because of a data quality issue: <strong>before January 2026, most discovery calls were not dispositioned</strong> (no outcome recorded). An undispositioned call counts as "held" — which inflates the held-discovery count and understates the close rate.</p>
   <p><strong>6 months</strong> — all metrics use the same window. The entire window falls after Jan 2026, so all discovery data is clean. Tighter sample but fully reliable.</p>
-  <p><strong>12 months</strong> (default) — the full 12-month window is used for CPAIL, AI Lead → Discovery %, Avg First Check, and base repeat run-rate. These metrics don't depend on discovery dispositions, so the longer window gives better statistical depth. <strong>Discovery → Held % and Held → New Funded %</strong> use a shorter sub-window starting Jan 2026 (the disposition floor). This means these two rates are computed from fewer months of data than the other metrics. Metrics using the shorter window are marked with ⁺ in the baseline tag.</p>
+  <p><strong>12 months</strong> (default) — the full 12-month window is used for CPAIL, AI Lead → Discovery %, and Avg First Check. These metrics don't depend on discovery dispositions, so the longer window gives better statistical depth. <strong>Discovery → Held % and Held → New Funded %</strong> use a shorter sub-window starting Jan 2026 (the disposition floor). This means these two rates are computed from fewer months of data than the other metrics. Metrics using the shorter window are marked with ⁺ in the baseline tag. The base repeat run-rate always uses a fixed 15-month window regardless of this toggle — see the Existing Investor Base section above.</p>
   <p><strong>15 months</strong> — same split as 12 months, but with an even longer window for the non-disposition metrics. The disposition-dependent metrics still start at Jan 2026. As the team's dispositioning history grows, the clean sub-window expands automatically — once the trailing window start passes Jan 2026 (around April 2027), the floor becomes a no-op and all metrics use the full window.</p>
   <p>The window snaps to complete calendar months — it ends at the last day of the month before the 90-day lookback point, and starts 12 months before that. This means the effective lag varies from 90 days (at the start of a month) to ~120 days (at the end). The tradeoff is intentional: partial months at the window edges would produce artificially low counts (half a month of leads against a full month of spend), distorting the computed rates. Complete months give cleaner rate calculations. The 30-day variability in the lag doesn't meaningfully affect 12-month conversion rates.</p>
   <p>The green counts below each slider are model projections at the rounded default rates — they won't exactly match the raw baseline counts in the banner. This is expected: default rates round to one decimal place, and that rounding compounds through the six-stage formula. The banner shows what actually happened; the sliders show what the model projects at those rounded rates.</p>
@@ -978,8 +982,21 @@ function recomputeBaseline() {
   const discoHeldRate = discosBookedClean > 0 ? Math.round((discosHeld / discosBookedClean) * 1000) / 10 : 86.8;
   const closeRateVal = discosHeld > 0 ? Math.round((cleanNewI / discosHeld) * 1000) / 10 : 21.0;
   const avgCheckVal = fullNewI > 0 ? Math.round(fullNewC / fullNewI) : 150415;
-  // Base repeat run-rate: repeat capital in the full baseline window ÷ months
-  const baseRepeatMonthlyVal = Math.round(fullRptC / baselineMonths);
+  // Base repeat run-rate: always computed from a fixed 15-month window (longest available,
+  // smoothest average) regardless of the baseline toggle. Repeat capital is lumpy — a few
+  // large reinvestments can skew a short window. The 15-month average smooths this out.
+  // The field is editable; this is just the default.
+  const repeatWindowMonths = 15;
+  const repeatEndMonth = new Date(endMonth); // same end as main baseline
+  const repeatStartMonth = new Date(repeatEndMonth.getFullYear(), repeatEndMonth.getMonth() - (repeatWindowMonths - 1), 1);
+  const repeatFromMs = repeatStartMonth.getTime();
+  const repeatWindowInvs = RAW_INVS.filter(v => v.fts >= repeatFromMs && v.fts <= toMs);
+  let repeatWindowRptC = 0;
+  for (const v of repeatWindowInvs) {
+    if (!v.fts) continue;
+    if (!(v.email && RAW_INVESTOR_FIRST[v.email] === v.fts)) { repeatWindowRptC += v.amt; }
+  }
+  const baseRepeatMonthlyVal = Math.round(repeatWindowRptC / repeatWindowMonths);
 
   // LTV: group all-time investments by email
   const investorTotals = {};
