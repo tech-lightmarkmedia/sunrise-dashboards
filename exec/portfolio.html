@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Review Builder v0.6.1</title>
+<title>Portfolio Review Builder v0.7</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
@@ -277,7 +277,7 @@ body {
 
 <div class="header">
   <h1>Portfolio Review Builder</h1>
-  <span class="vpill">v0.6.1</span>
+  <span class="vpill">v0.7</span>
 </div>
 
 <!-- ── Phase 1: Upload ── -->
@@ -1845,117 +1845,27 @@ function generateWebReport() {
     </tr>`;
   });
 
-  // ── Property detail P&L — generate hidden drawer content ──
-  function fmtCell(v) {
-    if (v == null) return '';
-    if (Math.abs(v) >= 1e6) return (v < 0 ? '-' : '') + '$' + (Math.abs(v)/1e6).toFixed(2) + 'M';
-    if (Math.abs(v) >= 1000) return (v < 0 ? '-' : '') + '$' + Math.round(Math.abs(v)).toLocaleString();
-    if (Math.abs(v) < 0.01 && v !== 0) return '—';
-    return (v < 0 ? '-' : '') + '$' + Math.abs(v).toFixed(0);
-  }
-  function fmtVarPct(v) {
-    if (v == null) return '';
-    return (v * 100).toFixed(1) + '%';
-  }
-  function cellColor(v) {
-    if (v == null || v === 0) return '';
-    return v > 0 ? 'color:#2E7D5B;' : 'color:#B23A48;';
-  }
-
-  let propertyPanels = '';
-
+  // ── Build JSON data for dynamic drawer rendering ──
+  const propertyDataJSON = {};
   d.properties.forEach(prop => {
     const detail = d.propertyDetails[prop.name];
     const slug = prop.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const beat = (prop.noiVarDollar||0) >= 0;
-
-    let plRows = '';
-    if (detail && detail.rows.length) {
-      detail.rows.forEach(r => {
-        if (r.type === 'section') {
-          plRows += '<tr style="background:#14213D;color:#fff;"><td colspan="13" style="padding:8px 12px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;">' + r.label + '</td></tr>';
-          return;
-        }
-        if (r.type === 'subheader') {
-          const pad = 12 + r.indent * 16;
-          plRows += '<tr style="background:#F3F6FB;"><td colspan="13" style="padding:6px 12px 6px ' + pad + 'px;font-weight:600;font-size:11px;color:#5A6A7A;">' + r.label + '</td></tr>';
-          return;
-        }
-
-        const isBold = r.type === 'total' || r.type === 'summary';
-        const bgColor = r.type === 'summary' ? 'background:#EDF1F8;' : r.type === 'total' ? 'background:#F8F9FB;' : '';
-        const fw = isBold ? 'font-weight:600;' : '';
-        const pad = 12 + r.indent * 16;
-        const apr = r.months[3] || {};
-        const ytd = r.ytd || {};
-        const isExpense = r.label.match(/expense|cost|fee|tax|insurance|salary|repair|util|maint|payroll|snow|landscape|travel|market|deprec|amort|mortgage|phone/i);
-        const expInvert = isExpense ? -1 : 1;
-
-        plRows += '<tr style="' + bgColor + '">' +
-          '<td style="padding:6px 12px 6px ' + pad + 'px;' + fw + 'white-space:nowrap;">' + r.label + '</td>' +
-          '<td class="num" style="' + fw + '">' + fmtCell(apr.actual) + '</td>' +
-          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(apr.budget) + '</td>' +
-          '<td class="num" style="' + fw + cellColor((apr.varD||0) * expInvert) + '">' + fmtCell(apr.varD) + '</td>' +
-          '<td class="num" style="' + fw + cellColor((apr.varP||0) * expInvert) + '">' + fmtVarPct(apr.varP) + '</td>' +
-          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
-          '<td class="num" style="' + fw + '">' + fmtCell(ytd.actual) + '</td>' +
-          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(ytd.budget) + '</td>' +
-          '<td class="num" style="' + fw + cellColor((ytd.varD||0) * expInvert) + '">' + fmtCell(ytd.varD) + '</td>' +
-          '<td class="num" style="' + fw + cellColor((ytd.varP||0) * expInvert) + '">' + fmtVarPct(ytd.varP) + '</td>' +
-          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
-          '<td class="num" style="' + fw + 'color:#5A6A7A;">' + fmtCell(r.annual) + '</td>' +
-          '</tr>';
-      });
-    }
-
-    propertyPanels += `
-    <div id="panel-${slug}" style="display:none;">
-      <div style="background:#14213D;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:10px;letter-spacing:2px;color:#8899AA;text-transform:uppercase;">${prop.fund.toUpperCase()} · ${noiStatus(prop).toUpperCase()}</div>
-          <div style="font-size:20px;font-weight:700;color:#fff;margin-top:4px;">${prop.name}</div>
-        </div>
-        <button onclick="closeDrawer()" style="background:none;border:none;color:#8899AA;font-size:24px;cursor:pointer;padding:4px 8px;">✕</button>
-      </div>
-      <div style="padding:16px 24px;">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
-          <div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">
-            <div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">YTD NOI</div>
-            <div style="font-size:18px;font-weight:700;color:${vc(prop.noiVarDollar)};">${fmtDollar(prop.noiActual)}</div>
-            <div style="font-size:11px;color:#5A6A7A;">${beat?'beat':'missed'} by ${fmtDollar(Math.abs(prop.noiVarDollar))}</div>
-          </div>
-          <div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">
-            <div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">Income vs Budget</div>
-            <div style="font-size:18px;font-weight:700;color:${vc(prop.incVarPct)};">${fmtPct(prop.incVarPct)}</div>
-          </div>
-          <div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">
-            <div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">Expense vs Budget</div>
-            <div style="font-size:18px;font-weight:700;color:${vcInv(prop.expVarPct)};">${fmtPct(prop.expVarPct)}</div>
-          </div>
-          <div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">
-            <div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">DSCR</div>
-            <div style="font-size:18px;font-weight:700;color:${prop.dscr!=null?(prop.dscr>=1.25?'#2E7D5B':'#B23A48'):'#888'};">${fmtDSCR(prop.dscr)}</div>
-          </div>
-        </div>
-        ${plRows ? '<div style="overflow-x:auto;"><table style="font-size:12px;width:100%;border-collapse:collapse;">' +
-          '<thead><tr style="background:#14213D;">' +
-          '<th style="color:#fff;text-align:left;padding:8px 12px;min-width:180px;position:sticky;left:0;background:#14213D;z-index:1;">Line Item</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;white-space:nowrap;">Apr Actual</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;white-space:nowrap;">Apr Budget</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>' +
-          '<th style="width:2px;background:#14213D;padding:0;"></th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;white-space:nowrap;">YTD Actual</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;white-space:nowrap;">YTD Budget</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>' +
-          '<th style="width:2px;background:#14213D;padding:0;"></th>' +
-          '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">Annual</th>' +
-          '</tr></thead><tbody>' + plRows + '</tbody></table></div>'
-        : '<p style="text-align:center;color:#5A6A7A;padding:24px;">No detail sheet found for this property.</p>'}
-      </div>
-    </div>`;
+    propertyDataJSON[slug] = {
+      name: prop.name,
+      fund: prop.fund,
+      status: noiStatus(prop),
+      noiActual: prop.noiActual, noiVarDollar: prop.noiVarDollar,
+      incActual: prop.incActual, incVarPct: prop.incVarPct,
+      expActual: prop.expActual, expVarPct: prop.expVarPct,
+      dscr: prop.dscr, beat: beat,
+      rows: detail ? detail.rows.map(r => ({
+        label: r.label, type: r.type, indent: r.indent,
+        m: r.months, ytd: r.ytd, annual: r.annual
+      })) : []
+    };
   });
+  const propDataStr = JSON.stringify(propertyDataJSON);
 
   // Build the spotlight sections (with chart JS collection)
   const winnersHTML = addSpotlightCards(SPOTLIGHTS.winners);
@@ -2086,7 +1996,7 @@ function generateWebReport() {
     <h1>Portfolio Performance Review</h1>
     <div class="sub">Budget vs Actual — April 2026 and Year-to-Date (January–April) · Published ${now}</div>
   </div>
-  <span style="font-size:11px;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:10px;color:#AABBCC;white-space:nowrap;margin-top:8px;">v0.6.1</span>
+  <span style="font-size:11px;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:10px;color:#AABBCC;white-space:nowrap;margin-top:8px;">v0.7</span>
 </div>
 
 <div class="container">
@@ -2218,29 +2128,213 @@ function generateWebReport() {
 
 <!-- ═══════ DRAWER OVERLAY ═══════ -->
 <div id="drawer-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:999;" onclick="closeDrawer()"></div>
-<div id="drawer-panel" style="display:none;position:fixed;top:0;right:0;width:85%;max-width:1200px;height:100%;background:#fff;z-index:1000;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,0.15);transition:transform 0.25s ease;"></div>
+<div id="drawer-panel" style="display:none;position:fixed;top:0;right:0;width:85%;max-width:1200px;height:100%;background:#fff;z-index:1000;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,0.15);"></div>
 
-<!-- Hidden property detail panels -->
-<div id="property-panels" style="display:none;">
-  ${propertyPanels}
-</div>
-
+<!-- Property data for dynamic rendering -->
 <script>
+var PROP_DATA = ${propDataStr};
+var currentSlug = null;
+
+function fc(v) {
+  if (v == null) return '';
+  var abs = Math.abs(v);
+  var sign = v < 0 ? '-' : '';
+  if (abs >= 1e6) return sign + '$' + (abs/1e6).toFixed(2) + 'M';
+  if (abs >= 1000) return sign + '$' + Math.round(abs).toLocaleString();
+  if (abs < 0.01 && v !== 0) return '—';
+  return sign + '$' + abs.toFixed(0);
+}
+function fp(v) { return v == null ? '' : (v*100).toFixed(1) + '%'; }
+function cc(v) { return (!v || v===0) ? '' : v > 0 ? 'color:#2E7D5B;' : 'color:#B23A48;'; }
+function fd(v) { return v == null ? '—' : (v < 0 ? '-':'') + '$' + (Math.abs(v) >= 1e6 ? (Math.abs(v)/1e6).toFixed(2)+'M' : Math.abs(v) >= 1e3 ? Math.round(Math.abs(v)/1e3).toLocaleString()+'K' : Math.abs(v).toFixed(0)); }
+function fpct(v) { if(v==null) return '—'; var s=(v*100).toFixed(1)+'%'; return v>0?'+'+s:s; }
+
+function sumMonths(months, indices) {
+  var out = { actual:0, budget:0, varD:0 };
+  indices.forEach(function(i) {
+    var m = months[i];
+    if (!m) return;
+    out.actual += m.actual || 0;
+    out.budget += m.budget || 0;
+  });
+  out.varD = out.actual - out.budget;
+  out.varP = out.budget ? (out.actual - out.budget) / out.budget : null;
+  return out;
+}
+
 function openDrawer(slug) {
-  var panel = document.getElementById('panel-' + slug);
-  if (!panel) return;
-  var drawer = document.getElementById('drawer-panel');
-  drawer.innerHTML = panel.innerHTML;
-  drawer.style.display = 'block';
+  currentSlug = slug;
+  renderDrawer(slug, 'apr');
+  document.getElementById('drawer-panel').style.display = 'block';
   document.getElementById('drawer-overlay').style.display = 'block';
   document.body.style.overflow = 'hidden';
-  drawer.scrollTop = 0;
+  document.getElementById('drawer-panel').scrollTop = 0;
 }
+
 function closeDrawer() {
   document.getElementById('drawer-panel').style.display = 'none';
   document.getElementById('drawer-overlay').style.display = 'none';
   document.body.style.overflow = '';
+  currentSlug = null;
 }
+
+function changePeriod(period) {
+  if (currentSlug) renderDrawer(currentSlug, period);
+}
+
+function renderDrawer(slug, period) {
+  var p = PROP_DATA[slug];
+  if (!p) return;
+  var drawer = document.getElementById('drawer-panel');
+
+  // Period config
+  var periods = {
+    jan:  { label:'January',   monthIdx:[0], colLabel:'Jan' },
+    feb:  { label:'February',  monthIdx:[1], colLabel:'Feb' },
+    mar:  { label:'March',     monthIdx:[2], colLabel:'Mar' },
+    apr:  { label:'April',     monthIdx:[3], colLabel:'Apr' },
+    q1:   { label:'Q1 (Jan–Mar)', monthIdx:[0,1,2], colLabel:'Q1' },
+    q2:   { label:'Q2 (Apr)',     monthIdx:[3], colLabel:'Q2' },
+    ytd:  { label:'YTD (Jan–Apr)', monthIdx:null, colLabel:'YTD' }
+  };
+  var per = periods[period] || periods.apr;
+
+  // Pill buttons
+  var pills = '';
+  ['jan','feb','mar','apr','q1','q2','ytd'].forEach(function(k) {
+    var sel = k === period ? 'background:#14213D;color:#fff;' : 'background:#D9E0EA;color:#1F2733;';
+    pills += '<button onclick="changePeriod(\\'' + k + '\\')" style="' + sel + 'border:none;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px;">' + periods[k].colLabel + '</button>';
+  });
+
+  // KPI tiles
+  var vc = function(v) { return (v||0)>=0 ? '#2E7D5B' : '#B23A48'; };
+  var vci = function(v) { return (v||0)<=0 ? '#2E7D5B' : '#B23A48'; };
+  var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">' +
+    '<div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">' +
+      '<div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">YTD NOI</div>' +
+      '<div style="font-size:18px;font-weight:700;color:' + vc(p.noiVarDollar) + ';">' + fd(p.noiActual) + '</div>' +
+      '<div style="font-size:11px;color:#5A6A7A;">' + (p.beat?'beat':'missed') + ' by ' + fd(Math.abs(p.noiVarDollar)) + '</div></div>' +
+    '<div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">' +
+      '<div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">Income vs Budget</div>' +
+      '<div style="font-size:18px;font-weight:700;color:' + vc(p.incVarPct) + ';">' + fpct(p.incVarPct) + '</div></div>' +
+    '<div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">' +
+      '<div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">Expense vs Budget</div>' +
+      '<div style="font-size:18px;font-weight:700;color:' + vci(p.expVarPct) + ';">' + fpct(p.expVarPct) + '</div></div>' +
+    '<div style="background:#F3F6FB;padding:10px;border-radius:6px;border:1px solid #D0D8E4;">' +
+      '<div style="font-size:9px;text-transform:uppercase;color:#5A6A7A;font-weight:600;">DSCR</div>' +
+      '<div style="font-size:18px;font-weight:700;color:' + (p.dscr!=null?(p.dscr>=1.25?'#2E7D5B':'#B23A48'):'#888') + ';">' + (p.dscr!=null?p.dscr.toFixed(2)+'x':'—') + '</div></div>' +
+    '</div>';
+
+  // Table rows
+  var trows = '';
+  if (p.rows && p.rows.length) {
+    var colSpan = period === 'ytd' ? 11 : 7;
+    p.rows.forEach(function(r) {
+      if (r.type === 'section') {
+        trows += '<tr style="background:#14213D;color:#fff;"><td colspan="' + colSpan + '" style="padding:8px 12px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;">' + r.label + '</td></tr>';
+        return;
+      }
+      if (r.type === 'subheader') {
+        var pad = 12 + r.indent * 16;
+        trows += '<tr style="background:#F3F6FB;"><td colspan="' + colSpan + '" style="padding:6px 12px 6px ' + pad + 'px;font-weight:600;font-size:11px;color:#5A6A7A;">' + r.label + '</td></tr>';
+        return;
+      }
+
+      var isBold = r.type === 'total' || r.type === 'summary';
+      var bg = r.type === 'summary' ? 'background:#EDF1F8;' : r.type === 'total' ? 'background:#F8F9FB;' : '';
+      var fw = isBold ? 'font-weight:600;' : '';
+      var pad = 12 + r.indent * 16;
+
+      // Get period data
+      var d;
+      if (period === 'ytd') {
+        d = r.ytd || {};
+      } else if (per.monthIdx.length === 1) {
+        d = r.m[per.monthIdx[0]] || {};
+      } else {
+        d = sumMonths(r.m, per.monthIdx);
+      }
+
+      var ytd = r.ytd || {};
+
+      if (period === 'ytd') {
+        // YTD view: Period columns + Annual
+        trows += '<tr style="' + bg + '">' +
+          '<td style="padding:6px 12px 6px ' + pad + 'px;' + fw + 'white-space:nowrap;">' + r.label + '</td>' +
+          '<td style="text-align:right;' + fw + '">' + fc(ytd.actual) + '</td>' +
+          '<td style="text-align:right;' + fw + 'color:#5A6A7A;">' + fc(ytd.budget) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(ytd.varD) + '">' + fc(ytd.varD) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(ytd.varP) + '">' + fp(ytd.varP) + '</td>' +
+          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
+          '<td style="text-align:right;' + fw + 'color:#5A6A7A;">' + fc(r.annual) + '</td>' +
+          '</tr>';
+      } else {
+        // Month/Quarter view: Period columns + YTD columns
+        trows += '<tr style="' + bg + '">' +
+          '<td style="padding:6px 12px 6px ' + pad + 'px;' + fw + 'white-space:nowrap;">' + r.label + '</td>' +
+          '<td style="text-align:right;' + fw + '">' + fc(d.actual) + '</td>' +
+          '<td style="text-align:right;' + fw + 'color:#5A6A7A;">' + fc(d.budget) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(d.varD) + '">' + fc(d.varD) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(d.varP) + '">' + fp(d.varP) + '</td>' +
+          '<td style="width:2px;background:#D0D8E4;padding:0;"></td>' +
+          '<td style="text-align:right;' + fw + '">' + fc(ytd.actual) + '</td>' +
+          '<td style="text-align:right;' + fw + 'color:#5A6A7A;">' + fc(ytd.budget) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(ytd.varD) + '">' + fc(ytd.varD) + '</td>' +
+          '<td style="text-align:right;' + fw + cc(ytd.varP) + '">' + fp(ytd.varP) + '</td>' +
+          '</tr>';
+      }
+    });
+  }
+
+  // Table header
+  var thead;
+  if (period === 'ytd') {
+    thead = '<tr style="background:#14213D;">' +
+      '<th style="color:#fff;text-align:left;padding:8px 12px;min-width:180px;">Line Item</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Actual</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Budget</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>' +
+      '<th style="width:2px;background:#14213D;padding:0;"></th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">Annual</th>' +
+      '</tr>';
+  } else {
+    thead = '<tr style="background:#14213D;">' +
+      '<th style="color:#fff;text-align:left;padding:8px 12px;min-width:180px;">Line Item</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">' + per.colLabel + ' Actual</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">' + per.colLabel + ' Budget</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>' +
+      '<th style="width:2px;background:#14213D;padding:0;"></th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Actual</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">YTD Budget</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">$ Var</th>' +
+      '<th style="color:#AABBCC;text-align:right;padding:8px 6px;">% Var</th>' +
+      '</tr>';
+  }
+
+  var table = p.rows && p.rows.length
+    ? '<div style="overflow-x:auto;"><table style="font-size:12px;width:100%;border-collapse:collapse;"><thead>' + thead + '</thead><tbody>' + trows + '</tbody></table></div>'
+    : '<p style="text-align:center;color:#5A6A7A;padding:24px;">No detail sheet found for this property.</p>';
+
+  drawer.innerHTML =
+    '<div style="background:#14213D;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<div style="font-size:10px;letter-spacing:2px;color:#8899AA;text-transform:uppercase;">' + p.fund.toUpperCase() + ' · ' + p.status.toUpperCase() + '</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#fff;margin-top:4px;">' + p.name + '</div>' +
+      '</div>' +
+      '<button onclick="closeDrawer()" style="background:none;border:none;color:#8899AA;font-size:24px;cursor:pointer;padding:4px 8px;">✕</button>' +
+    '</div>' +
+    '<div style="padding:16px 24px;">' +
+      kpis +
+      '<div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:12px;color:#5A6A7A;font-weight:600;">Period:</span>' +
+        pills +
+      '</div>' +
+      table +
+    '</div>';
+}
+
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
 <\/script>
 
