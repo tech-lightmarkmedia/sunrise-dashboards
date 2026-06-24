@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.0)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -26,6 +26,13 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 .loading{text-align:center;padding:80px 0;color:var(--text3)}
 .loading .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* Baseline window toggle */
+.bw-bar{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.bw-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.bw-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text3);cursor:pointer;transition:all .15s}
+.bw-btn:hover{border-color:var(--text3);background:var(--surface2)}
+.bw-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
 
 /* Baseline note */
 .baseline-banner{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.6}
@@ -121,7 +128,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.0</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.1</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -133,6 +140,13 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 </div>
 
 <div id="content" style="display:none">
+
+<div class="bw-bar">
+  <span class="bw-label">Baseline window</span>
+  <button class="bw-btn" onclick="setBaselineMonths(6)" id="bw6">6 mo</button>
+  <button class="bw-btn active" onclick="setBaselineMonths(12)" id="bw12">12 mo</button>
+  <button class="bw-btn" onclick="setBaselineMonths(15)" id="bw15">15 mo</button>
+</div>
 
 <div class="baseline-banner" id="baselineBanner">
   Loading baseline data…
@@ -363,7 +377,13 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <p><strong>Return on Total Capital:</strong> total capital raised divided by total spend. This includes repeat capital, which has no direct acquisition cost — it exists because the machine built the investor base over time, and new investors begin reinvesting on a lagged schedule. This is the overall efficiency of the capital-raising operation.</p>
 
   <h3>Baseline Window &amp; Live Data</h3>
-  <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window is the trailing 12 months ending 90 days ago. The 90-day buffer ensures every discovery in the window has had a full maturity period to fund, so the close rate reflects true conversion, not pipeline lag. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically. The banner at the top of the page shows the exact window, raw counts, and spend source used for the current baseline.</p>
+  <p>Default slider values are computed from live cached data on each page load — not hardcoded. The baseline window ends 90 days ago (snapped to a complete calendar month) so every discovery has had a full maturity period to fund. As new data flows through the nightly cache rebuild (2 AM ET), the baselines update automatically.</p>
+
+  <h3>Window Options (6 / 12 / 15 months)</h3>
+  <p>The toggle above the baseline banner selects how far back the window reaches. Each option handles discovery call data differently because of a data quality issue: <strong>before January 2026, most discovery calls were not dispositioned</strong> (no outcome recorded). An undispositioned call counts as "held" — which inflates the held-discovery count and understates the close rate.</p>
+  <p><strong>6 months</strong> — all metrics use the same window. The entire window falls after Jan 2026, so all discovery data is clean. Tighter sample but fully reliable.</p>
+  <p><strong>12 months</strong> (default) — the full 12-month window is used for CPAIL, AI Lead → Discovery %, Avg First Check, and base repeat run-rate. These metrics don't depend on discovery dispositions, so the longer window gives better statistical depth. <strong>Discovery → Held % and Held → New Funded %</strong> use a shorter sub-window starting Jan 2026 (the disposition floor). This means these two rates are computed from fewer months of data than the other metrics. Metrics using the shorter window are marked with ⁺ in the baseline tag.</p>
+  <p><strong>15 months</strong> — same split as 12 months, but with an even longer window for the non-disposition metrics. The disposition-dependent metrics still start at Jan 2026. As the team's dispositioning history grows, the clean sub-window expands automatically — once the trailing window start passes Jan 2026 (around April 2027), the floor becomes a no-op and all metrics use the full window.</p>
   <p>The window snaps to complete calendar months — it ends at the last day of the month before the 90-day lookback point, and starts 12 months before that. This means the effective lag varies from 90 days (at the start of a month) to ~120 days (at the end). The tradeoff is intentional: partial months at the window edges would produce artificially low counts (half a month of leads against a full month of spend), distorting the computed rates. Complete months give cleaner rate calculations. The 30-day variability in the lag doesn't meaningfully affect 12-month conversion rates.</p>
   <p>The green counts below each slider are model projections at the rounded default rates — they won't exactly match the raw baseline counts in the banner. This is expected: default rates round to one decimal place, and that rounding compounds through the six-stage formula. The banner shows what actually happened; the sliders show what the model projects at those rounded rates.</p>
   <p>Meta spend loads from the R2 archive (fast, no API calls). Google Ads and LinkedIn spend are fetched asynchronously after the page renders — the CPAIL baseline updates silently when they arrive. If additional platform spend is less than $1,000 for the period, it's treated as negligible and CPAIL stays Meta-only.</p>
@@ -414,7 +434,26 @@ let DEFAULTS = {
 
 let mode = 'forward';
 let targetType = 'new'; // 'new' or 'total'
-let baselineWindow = 'Apr 2025 – Mar 2026';
+let baselineWindow = '';
+let baselineMonths = 12;
+
+// Disposition data floor: consistent call dispositioning started Jan 2026.
+// Before this date, undispositioned calls inflate "held" counts and deflate
+// the close rate and disco-held rate. The 12mo and 15mo windows use this
+// floor for those two metrics; the 6mo window is short enough to be all-clean.
+const DISPOSITION_FLOOR = new Date(2026, 0, 1); // 2026-01-01
+
+// Cached raw data (set once in load(), reused on window change)
+let RAW_CONTACTS = [], RAW_INVS = [], RAW_MEETINGS = [], RAW_META_DAILY = [], RAW_INVESTOR_FIRST = {};
+
+function setBaselineMonths(n) {
+  baselineMonths = n;
+  document.getElementById('bw6').className = 'bw-btn' + (n === 6 ? ' active' : '');
+  document.getElementById('bw12').className = 'bw-btn' + (n === 12 ? ' active' : '');
+  document.getElementById('bw15').className = 'bw-btn' + (n === 15 ? ' active' : '');
+  recomputeBaseline();
+  resetDefaults();
+}
 
 // ── Slider ↔ Input sync ──
 function syncFromSlider(key) {
@@ -683,17 +722,8 @@ async function load() {
       metaDaily = j.rows || (Array.isArray(j) ? j : []);
     } catch(e) {}
 
-    // Compute baseline window: trailing 12 months ending 90 days ago
-    const now = new Date();
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
-    const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0, 23, 59, 59, 999); // last day of month before
-    const startMonth = new Date(endMonth.getFullYear(), endMonth.getMonth() - 11, 1);
-
-    const moLabel = (d) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    baselineWindow = moLabel(startMonth) + ' – ' + moLabel(endMonth);
-
-    // Normalize
-    const cs = contacts.map(c => {
+    // Normalize and cache
+    RAW_CONTACTS = contacts.map(c => {
       const p = c.properties || {};
       return {
         ts: p.createdate ? new Date(p.createdate).getTime() : null,
@@ -702,25 +732,24 @@ async function load() {
       };
     });
 
-    const invs = investments.map(r => {
+    RAW_INVS = investments.map(r => {
       const p = r.properties || {};
       return {
         email: (p.email_address || '').trim().toLowerCase(),
         amt: parseFloat(p.investment_amount) || 0,
-        fts: p.funds_received ? new Date(p.funds_received).getTime() : null,
+        fts: p.funds_received ? new Date(p.funds_received + 'T12:00:00').getTime() : null,
       };
     });
 
     // Investor first-ever map (across all time, not just window)
-    const investorFirst = {};
-    for (const i of invs) {
+    RAW_INVESTOR_FIRST = {};
+    for (const i of RAW_INVS) {
       if (!i.email || !i.fts) continue;
-      if (!investorFirst[i.email] || i.fts < investorFirst[i.email]) investorFirst[i.email] = i.fts;
+      if (!RAW_INVESTOR_FIRST[i.email] || i.fts < RAW_INVESTOR_FIRST[i.email]) RAW_INVESTOR_FIRST[i.email] = i.fts;
     }
 
     // Meeting classification
     const fails = new Set(['NO_SHOW', 'RESCHEDULED', 'CANCELED', 'DISQUALIFIED']);
-    const nowMs = Date.now();
     function classify(p) {
       const at = (p.hs_activity_type || '').toLowerCase();
       if (at.includes('discovery')) return 'discovery';
@@ -729,7 +758,7 @@ async function load() {
       if (ti.includes('discovery call') || ti.includes('discovery')) return 'discovery';
       return 'other';
     }
-    const ms = meetings.map(r => {
+    RAW_MEETINGS = meetings.map(r => {
       const p = r.properties || {};
       return {
         type: classify(p),
@@ -738,106 +767,173 @@ async function load() {
       };
     }).filter(m => m.type === 'discovery');
 
-    // Aggregate over baseline window
-    const fromMs = startMonth.getTime();
-    const toMs = endMonth.getTime();
-    const fromIso = startMonth.toISOString().slice(0, 10);
-    const toIso = endMonth.toISOString().slice(0, 10);
+    RAW_META_DAILY = metaDaily;
 
-    const windowContacts = cs.filter(c => c.ts >= fromMs && c.ts <= toMs);
-    const aiLeads = windowContacts.filter(c => c.acc).length;
-
-    const windowMeetings = ms.filter(m => m.sTs >= fromMs && m.sTs <= toMs);
-    const discosBooked = windowMeetings.length;
-    const discosHeld = windowMeetings.filter(m => m.sTs < nowMs && !fails.has(m.out)).length;
-
-    const windowInvs = invs.filter(v => v.fts >= fromMs && v.fts <= toMs);
-    let newI = 0, newC = 0, rptC = 0;
-    for (const v of windowInvs) {
-      if (!v.fts) continue;
-      if (v.email && investorFirst[v.email] === v.fts) { newI++; newC += v.amt; }
-      else { rptC += v.amt; }
-    }
-
-    let spend = 0;
-    for (const d of metaDaily) {
-      if (d.date >= fromIso && d.date <= toIso) spend += d.spend;
-    }
-
-    // Compute rates
-    const cpail = aiLeads > 0 ? Math.round(spend / aiLeads) : 131;
-    const aiLeadDiscoRate = aiLeads > 0 ? Math.round((discosBooked / aiLeads) * 1000) / 10 : 7.6;
-    const discoHeldRate = discosBooked > 0 ? Math.round((discosHeld / discosBooked) * 1000) / 10 : 86.8;
-    const closeRateVal = discosHeld > 0 ? Math.round((newI / discosHeld) * 1000) / 10 : 21.0;
-    const avgCheckVal = newI > 0 ? Math.round(newC / newI) : 150415;
-    // Base repeat run-rate: repeat capital in the baseline window / 12 months
-    const baseRepeatMonthlyVal = Math.round(rptC / 12);
-
-    // LTV: group all-time investments by email, sum total capital per investor,
-    // compare to their first investment to get the lifetime multiple.
-    const investorTotals = {};  // email → { first: amount, total: amount }
-    for (const i of invs) {
-      if (!i.email || !i.fts || !i.amt) continue;
-      if (!investorTotals[i.email]) {
-        investorTotals[i.email] = { first: 0, total: 0, firstTs: Infinity };
-      }
-      investorTotals[i.email].total += i.amt;
-      if (i.fts < investorTotals[i.email].firstTs) {
-        investorTotals[i.email].firstTs = i.fts;
-        investorTotals[i.email].first = i.amt;
-      }
-    }
-    let sumFirst = 0, sumTotal = 0;
-    for (const email in investorTotals) {
-      sumFirst += investorTotals[email].first;
-      sumTotal += investorTotals[email].total;
-    }
-    const ltvVal = sumFirst > 0 ? Math.round((sumTotal / sumFirst) * 100) / 100 : 1.95;
-
-    DEFAULTS = {
-      cpail: Math.max(30, cpail),
-      aiLeadDisco: Math.max(1, aiLeadDiscoRate),
-      discoHeld: Math.max(50, discoHeldRate),
-      closeRate: Math.max(5, closeRateVal),
-      avgCheck: Math.max(50000, avgCheckVal),
-      ltv: Math.max(1, ltvVal),
-      baseRepeatMonthly: Math.max(0, baseRepeatMonthlyVal),
-    };
-
-    // Update baseline tags
-    document.getElementById('tagCPAIL').textContent = 'Baseline: $' + DEFAULTS.cpail;
-    document.getElementById('tagLeadDisco').textContent = 'Baseline: ' + DEFAULTS.aiLeadDisco + '%';
-    document.getElementById('tagDiscoHeld').textContent = 'Baseline: ' + DEFAULTS.discoHeld + '%';
-    document.getElementById('tagCloseRate').textContent = 'Baseline: ' + DEFAULTS.closeRate + '%';
-    document.getElementById('tagAvgCheck').textContent = 'Baseline: $' + DEFAULTS.avgCheck.toLocaleString();
-    document.getElementById('tagBaseRepeat').textContent = 'Baseline: $' + DEFAULTS.baseRepeatMonthly.toLocaleString() + '/mo';
-
-    // Update banner
-    const spendNote = spend > 0 ? 'Meta spend: ' + fmt(spend) : 'Spend data unavailable — using fallback defaults for CPAIL';
-    document.getElementById('baselineBanner').innerHTML =
-      '<strong>Baseline window: ' + baselineWindow + '</strong> (trailing 12 months, 90-day maturity buffer). ' +
-      'Default slider values are computed from live cached data on each page load. ' +
-      aiLeads.toLocaleString() + ' AI leads · ' +
-      discosBooked.toLocaleString() + ' discoveries booked · ' +
-      discosHeld.toLocaleString() + ' held · ' +
-      newI.toLocaleString() + ' new investors · ' +
-      fmt(newC) + ' new capital · ' +
-      fmt(rptC) + ' repeat capital. ' +
-      spendNote + '. ' +
-      '<em>Note: the green counts below each slider are model projections at the rounded default rates — they won\'t exactly match the raw baseline counts above, because rounding at each stage compounds through the formula.</em>';
-
-    // Set defaults and show
+    // Compute baseline and show
+    recomputeBaseline();
     resetDefaults();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = '';
-
-    // Async: fetch Google + LinkedIn spend in background and update CPAIL if meaningful
-    fetchAdditionalSpend(fromIso, toIso, spend, aiLeads);
 
   } catch(err) {
     msg.textContent = 'Error: ' + err.message;
     console.error(err);
   }
+}
+
+function recomputeBaseline() {
+  const fails = new Set(['NO_SHOW', 'RESCHEDULED', 'CANCELED', 'DISQUALIFIED']);
+  const nowMs = Date.now();
+
+  // Compute main window: trailing N months ending 90 days ago, snapped to complete months
+  const now = new Date();
+  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+  const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0, 23, 59, 59, 999);
+  const startMonth = new Date(endMonth.getFullYear(), endMonth.getMonth() - (baselineMonths - 1), 1);
+
+  const moLabel = (d) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  const fromMs = startMonth.getTime();
+  const toMs = endMonth.getTime();
+  const fromIso = startMonth.toISOString().slice(0, 10);
+  const toIso = endMonth.toISOString().slice(0, 10);
+
+  // For 12mo and 15mo: close rate and disco-held use a floored window
+  // (disposition data reliable from Jan 2026 onward). For 6mo the main
+  // window is short enough that it's entirely post-floor.
+  const dispoFloorMs = DISPOSITION_FLOOR.getTime();
+  const dispoFromMs = Math.max(fromMs, dispoFloorMs);
+  const dispoStartDate = new Date(dispoFromMs);
+  // Snap to first of month if the floor pushed us forward
+  if (dispoFromMs > fromMs) {
+    dispoStartDate.setDate(1);
+    dispoStartDate.setHours(0, 0, 0, 0);
+  }
+  const dispoFromMsSnapped = dispoStartDate.getTime();
+  const usingSplitWindow = dispoFromMsSnapped > fromMs;
+
+  // Main window metrics (full range)
+  const windowContacts = RAW_CONTACTS.filter(c => c.ts >= fromMs && c.ts <= toMs);
+  const aiLeads = windowContacts.filter(c => c.acc).length;
+
+  // All discoveries in main window (for booked count used in AI→Disco rate)
+  const allWindowMeetings = RAW_MEETINGS.filter(m => m.sTs >= fromMs && m.sTs <= toMs);
+  const discosBookedFull = allWindowMeetings.length;
+
+  // Disposition-clean window meetings (for held count and close rate denominator)
+  const cleanWindowMeetings = RAW_MEETINGS.filter(m => m.sTs >= dispoFromMsSnapped && m.sTs <= toMs);
+  const discosBookedClean = cleanWindowMeetings.length;
+  const discosHeld = cleanWindowMeetings.filter(m => m.sTs < nowMs && !fails.has(m.out)).length;
+
+  // Investments: close rate uses clean window, avg check + repeat use full window
+  const fullWindowInvs = RAW_INVS.filter(v => v.fts >= fromMs && v.fts <= toMs);
+  const cleanWindowInvs = RAW_INVS.filter(v => v.fts >= dispoFromMsSnapped && v.fts <= toMs);
+
+  // Full window: for avg check and repeat run-rate
+  let fullNewI = 0, fullNewC = 0, fullRptC = 0;
+  for (const v of fullWindowInvs) {
+    if (!v.fts) continue;
+    if (v.email && RAW_INVESTOR_FIRST[v.email] === v.fts) { fullNewI++; fullNewC += v.amt; }
+    else { fullRptC += v.amt; }
+  }
+
+  // Clean window: for close rate
+  let cleanNewI = 0;
+  for (const v of cleanWindowInvs) {
+    if (!v.fts) continue;
+    if (v.email && RAW_INVESTOR_FIRST[v.email] === v.fts) { cleanNewI++; }
+  }
+
+  // Spend (full window)
+  let spend = 0;
+  for (const d of RAW_META_DAILY) {
+    if (d.date >= fromIso && d.date <= toIso) spend += d.spend;
+  }
+
+  // Compute rates
+  const cpail = aiLeads > 0 ? Math.round(spend / aiLeads) : 131;
+  const aiLeadDiscoRate = aiLeads > 0 ? Math.round((discosBookedFull / aiLeads) * 1000) / 10 : 7.6;
+  const discoHeldRate = discosBookedClean > 0 ? Math.round((discosHeld / discosBookedClean) * 1000) / 10 : 86.8;
+  const closeRateVal = discosHeld > 0 ? Math.round((cleanNewI / discosHeld) * 1000) / 10 : 21.0;
+  const avgCheckVal = fullNewI > 0 ? Math.round(fullNewC / fullNewI) : 150415;
+  // Base repeat run-rate: repeat capital in the full baseline window ÷ months
+  const baseRepeatMonthlyVal = Math.round(fullRptC / baselineMonths);
+
+  // LTV: group all-time investments by email
+  const investorTotals = {};
+  for (const i of RAW_INVS) {
+    if (!i.email || !i.fts || !i.amt) continue;
+    if (!investorTotals[i.email]) {
+      investorTotals[i.email] = { first: 0, total: 0, firstTs: Infinity };
+    }
+    investorTotals[i.email].total += i.amt;
+    if (i.fts < investorTotals[i.email].firstTs) {
+      investorTotals[i.email].firstTs = i.fts;
+      investorTotals[i.email].first = i.amt;
+    }
+  }
+  let sumFirst = 0, sumTotal = 0;
+  for (const email in investorTotals) {
+    sumFirst += investorTotals[email].first;
+    sumTotal += investorTotals[email].total;
+  }
+  const ltvVal = sumFirst > 0 ? Math.round((sumTotal / sumFirst) * 100) / 100 : 1.95;
+
+  DEFAULTS = {
+    cpail: Math.max(30, cpail),
+    aiLeadDisco: Math.max(1, aiLeadDiscoRate),
+    discoHeld: Math.max(50, discoHeldRate),
+    closeRate: Math.max(5, closeRateVal),
+    avgCheck: Math.max(50000, avgCheckVal),
+    ltv: Math.max(1, ltvVal),
+    baseRepeatMonthly: Math.max(0, baseRepeatMonthlyVal),
+  };
+
+  // Update baseline tags
+  document.getElementById('tagCPAIL').textContent = 'Baseline: $' + DEFAULTS.cpail;
+  document.getElementById('tagLeadDisco').textContent = 'Baseline: ' + DEFAULTS.aiLeadDisco + '%';
+  document.getElementById('tagDiscoHeld').textContent = 'Baseline: ' + DEFAULTS.discoHeld + '%' + (usingSplitWindow ? ' ⁺' : '');
+  document.getElementById('tagCloseRate').textContent = 'Baseline: ' + DEFAULTS.closeRate + '%' + (usingSplitWindow ? ' ⁺' : '');
+  document.getElementById('tagAvgCheck').textContent = 'Baseline: $' + DEFAULTS.avgCheck.toLocaleString();
+  document.getElementById('tagBaseRepeat').textContent = 'Baseline: $' + DEFAULTS.baseRepeatMonthly.toLocaleString() + '/mo';
+
+  // Build banner
+  const mainWindowLabel = moLabel(startMonth) + ' – ' + moLabel(endMonth);
+  const cleanWindowLabel = moLabel(dispoStartDate) + ' – ' + moLabel(endMonth);
+  baselineWindow = mainWindowLabel;
+
+  const spendNote = spend > 0 ? 'Meta spend: ' + fmt(spend) : 'Spend data unavailable — using fallback defaults for CPAIL';
+
+  let bannerHtml = '<strong>Baseline: ' + baselineMonths + '-month window</strong> (' + mainWindowLabel + '), 90-day maturity buffer. ';
+
+  if (usingSplitWindow) {
+    bannerHtml += '<br><strong>Disposition-dependent metrics</strong> (Discovery → Held, Held → New Funded) use a shorter window: <strong>' + cleanWindowLabel + '</strong>. ' +
+      'Before Jan 2026, most discovery calls were not dispositioned — undispositioned calls count as "held," inflating the denominator and understating the close rate. ' +
+      'The ' + baselineMonths + '-month window is used for all other metrics (CPAIL, AI Lead → Discovery, Avg Check, base repeat). ' +
+      'Metrics using the shorter window are marked with ⁺. ';
+    bannerHtml += '<br>' +
+      aiLeads.toLocaleString() + ' AI leads · ' +
+      discosBookedFull.toLocaleString() + ' discoveries booked (full window) · ' +
+      discosBookedClean.toLocaleString() + ' booked / ' + discosHeld.toLocaleString() + ' held (clean window) · ' +
+      cleanNewI.toLocaleString() + ' new investors (clean window) · ' +
+      fullNewI.toLocaleString() + ' new investors (full window) · ' +
+      fmt(fullNewC) + ' new capital · ' + fmt(fullRptC) + ' repeat capital. ' + spendNote + '.';
+  } else {
+    bannerHtml += 'All metrics use the same window — disposition data is reliable throughout. ';
+    bannerHtml += '<br>' +
+      aiLeads.toLocaleString() + ' AI leads · ' +
+      discosBookedFull.toLocaleString() + ' discoveries booked · ' +
+      discosHeld.toLocaleString() + ' held · ' +
+      fullNewI.toLocaleString() + ' new investors · ' +
+      fmt(fullNewC) + ' new capital · ' + fmt(fullRptC) + ' repeat capital. ' + spendNote + '.';
+  }
+
+  bannerHtml += ' <em>Note: the green counts below each slider are model projections at the rounded default rates — they won\'t exactly match the raw baseline counts above, because rounding at each stage compounds through the formula.</em>';
+
+  document.getElementById('baselineBanner').innerHTML = bannerHtml;
+
+  // Async: fetch Google + LinkedIn spend in background and update CPAIL if meaningful
+  fetchAdditionalSpend(fromIso, toIso, spend, aiLeads);
 }
 
 async function fetchAdditionalSpend(fromIso, toIso, metaSpend, aiLeads) {
