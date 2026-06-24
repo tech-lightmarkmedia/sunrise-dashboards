@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.4)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -130,7 +130,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.4</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.5</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -611,7 +611,6 @@ function recalc() {
   const costPerHeld = discosHeldN > 0 ? totalSpend / discosHeldN : 0;
   const costPerInv = newInvestors > 0 ? totalSpend / newInvestors : 0;
   const costPctNew = newCapital > 0 ? (totalSpend / newCapital * 100) : 0;
-  const costPctTotal = totalCapital > 0 ? (totalSpend / totalCapital * 100) : 0;
 
   document.getElementById('countCPAIL').innerHTML =
     `→ ${fmtInt(aiLeads)} AI leads · ${fmtInt(aiLeads/mo)}/mo`;
@@ -628,8 +627,10 @@ function recalc() {
   const moClampDisp = Math.min(months, KERNEL_FACTOR.length - 1);
   const kernelCum = moClampDisp > 0 ? REINVEST_KERNEL.slice(0, moClampDisp).reduce((a,b)=>a+b, 0) : 0;
   const pctLifetime = Math.round(kernelCum / KERNEL_LIFETIME * 100);
+  const totalFromSpend = newCapital + repeatNew;
   document.getElementById('countRepeatRatio').innerHTML =
-    `→ ${fmt(repeatBase)} from existing base · ${fmt(repeatNew)} from new investors · <strong>${fmt(repeatCapital)} total repeat</strong> · ${fmt(totalCapital)} total raised`;
+    `→ ${fmt(repeatNew)} new-investor repeat over ${months} months · <strong>${fmt(totalFromSpend)} total capital from spend</strong>` +
+    `<br><span style="color:var(--text3)">Existing investor base adds ${fmt(repeatBase)} over ${months} months independent of any spend (${fmt(baseRepeatMo)}/mo)</span>`;
 
   const flagEl = document.getElementById('repeatFlag');
   if (pctLifetime < 80) {
@@ -639,9 +640,7 @@ function recalc() {
     flagEl.style.display = 'none';
   }
 
-  // ── Lever analysis: what does each lever need to move to for +$1M capital (or -$1M spend)? ──
-  // For each lever, solve for the value that adds $1M to total capital (forward)
-  // or saves $1M in spend (reverse). The lever needing the smallest relative move is "best."
+  // ── Lever analysis: what does each lever need to move to for +$1M from spend (or -$1M spend)? ──
   const TARGET_DELTA = 1000000;
 
   const leverResults = [];
@@ -652,20 +651,15 @@ function recalc() {
     const tSpend = monthlySpendVal * moVal;
     const mcl = Math.min(moVal, KERNEL_FACTOR.length - 1);
     const kRatio = moVal > 0 ? KERNEL_FACTOR[mcl] / moVal : 0;
-    const repeatBaseVal = baseRepeatMo * moVal;
 
-    // totalCapital = (tSpend/cp) * ld * dh * cr * ac * (1 + kRatio) + repeatBase
-    // Isolate each lever from: targetTC = baseTc + TARGET_DELTA
-    const baseTc = (tSpend / cpail) * aiLeadDisco * discoHeld * closeRate * avgCheck * (1 + kRatio) + repeatBaseVal;
-    const targetTc = baseTc + TARGET_DELTA;
-    const newCapNeeded = (targetTc - repeatBaseVal) / (1 + kRatio);
-    // newCapNeeded = (tSpend / cpReq) * ld * dh * cr * ac  →  cpReq = tSpend * ld * dh * cr * ac / newCapNeeded
-    // newCapNeeded = (tSpend / cp) * ldReq * dh * cr * ac  →  ldReq = newCapNeeded / ((tSpend/cp) * dh * cr * ac)
-    // etc.
+    // totalFromSpend = newCapital * (1 + kRatio)  (base repeat is independent)
+    // newCapital = (tSpend / cp) * ld * dh * cr * ac
+    // target: totalFromSpend + TARGET_DELTA = newCapNeeded * (1 + kRatio)
+    const baseFromSpend = newCapital * (1 + kRatio);
+    const targetFromSpend = baseFromSpend + TARGET_DELTA;
+    const newCapNeeded = targetFromSpend / (1 + kRatio);
 
-    const base4 = aiLeadDisco * discoHeld * closeRate * avgCheck; // product of the 4 rate levers
-
-    const cpReq = newCapNeeded > 0 ? (tSpend * base4) / newCapNeeded : cpail;
+    const cpReq = newCapNeeded > 0 ? (tSpend * aiLeadDisco * discoHeld * closeRate * avgCheck) / newCapNeeded : cpail;
     const ldReq = (tSpend / cpail) * discoHeld * closeRate * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * discoHeld * closeRate * avgCheck) : aiLeadDisco;
     const dhReq = (tSpend / cpail) * aiLeadDisco * closeRate * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * aiLeadDisco * closeRate * avgCheck) : discoHeld;
     const crReq = (tSpend / cpail) * aiLeadDisco * discoHeld * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * aiLeadDisco * discoHeld * avgCheck) : closeRate;
@@ -722,7 +716,7 @@ function recalc() {
   const bestKey = leverResults.length > 0 ? leverResults[0].key : '';
 
   // Render
-  const deltaLabel = mode === 'forward' ? '+' + fmt(TARGET_DELTA) + ' capital' : '−' + fmt(TARGET_DELTA) + ' spend';
+  const deltaLabel = mode === 'forward' ? '+' + fmt(TARGET_DELTA) + ' from spend' : '−' + fmt(TARGET_DELTA) + ' spend';
   for (const lv of leverResults) {
     const el = document.getElementById('impact' + lv.key);
     if (el) {
@@ -755,21 +749,21 @@ function recalc() {
 
   // Summary cards
   const costPerInvestor = newInvestors > 0 ? totalSpend / newInvestors : 0;
-  const returnOnTotal = totalSpend > 0 ? totalCapital / totalSpend : 0;
-  const costOfCapital = totalCapital > 0 ? (totalSpend / totalCapital * 100) : 0;
+  const returnFromSpend = totalSpend > 0 ? totalFromSpend / totalSpend : 0;
+  const costOfFromSpend = totalFromSpend > 0 ? (totalSpend / totalFromSpend * 100) : 0;
 
-  // Sticky summary bar — 4 key output numbers
+  // Sticky summary bar — 4 key output numbers (all from spend; base repeat is independent)
   let s = '';
   if (mode === 'forward') {
     s += card('Total Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo');
     s += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo', true);
-    s += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
-    s += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
+    s += card('New-Investor Repeat', fmt(repeatNew), fmt(repeatNew / months) + '/mo');
+    s += card('Total from Spend', fmt(totalFromSpend), fmt(totalFromSpend / months) + '/mo', true);
   } else {
     s += card('Required Spend', fmt(totalSpend), fmt(totalSpend / months) + '/mo', true);
     s += card('New Capital', fmt(newCapital), fmt(newCapital / months) + '/mo');
-    s += card('Repeat Capital', fmt(repeatCapital), fmt(repeatCapital / months) + '/mo');
-    s += card('Total Capital', fmt(totalCapital), fmt(totalCapital / months) + '/mo', true);
+    s += card('New-Investor Repeat', fmt(repeatNew), fmt(repeatNew / months) + '/mo');
+    s += card('Total from Spend', fmt(totalFromSpend), fmt(totalFromSpend / months) + '/mo', true);
   }
   document.getElementById('summaryCards').innerHTML = s;
 
@@ -793,16 +787,17 @@ function recalc() {
     </div>
     <div class="cost-arrow">·</div>
     <div class="cost-card">
-      <div class="card-label">Return on Total Capital</div>
-      <div class="card-value">${returnOnTotal.toFixed(1)}×</div>
-      <div class="card-sub">${costOfCapital.toFixed(1)}% of capital</div>
+      <div class="card-label">Return on Spend</div>
+      <div class="card-value">${returnFromSpend.toFixed(1)}×</div>
+      <div class="card-sub">${costOfFromSpend.toFixed(1)}% of capital from spend</div>
     </div>`;
 
   document.getElementById('ltvBaseline').innerHTML =
     `Investor LTV: ${ltvMult.toFixed(2)}× (all-time). ` +
     `Over time, the ${fmt(costPerInvestor)} acquisition cost reduces from ` +
     `${costPctNew2.toFixed(1)}% of the first check to ${costPctLifetime.toFixed(1)}% of lifetime capital ` +
-    `as investors reinvest.`;
+    `as investors reinvest.` +
+    (repeatBase > 0 ? ` <strong>Existing investor base adds ${fmt(repeatBase)} over ${months} months independent of any spend.</strong>` : '');
 }
 
 function card(label, value, sub, highlight) {
