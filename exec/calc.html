@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunrise Capital — Predictive Capital Raising (v3.3)</title>
+<title>Sunrise Capital — Predictive Capital Raising (v3.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -130,7 +130,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 <body>
 
 <header>
-  <h1>Predictive Capital Raising <span class="vpill">v3.3</span></h1>
+  <h1>Predictive Capital Raising <span class="vpill">v3.4</span></h1>
   <div class="source-links">Built from: <a href="/d/setter" target="_blank">Setter</a> · <a href="/d/closer" target="_blank">Closer</a> · <a href="/d/conversion" target="_blank">Conversion</a> · <a href="/d/roi" target="_blank">ROI</a> · <a href="/d/sunrise" target="_blank">Sunrise</a></div>
 </header>
 
@@ -347,7 +347,7 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
 
   <h3>The Formula</h3>
   <p>This calculator models the full capital-raising funnel from ad spend to funded investments. The chain: ad spend produces accredited investor leads (AI Leads) at a blended cost (CPAIL). Setters convert a percentage of those into discovery calls. A percentage of booked discoveries are held. A percentage of held discoveries result in a first-time investment. Each new investor writes an average first check. On top of that, repeat capital flows from two sources: the existing investor base reinvesting at their historical run-rate, and new investors acquired during the projection who begin reinvesting on a lagged schedule calibrated from real data.</p>
-  <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Below that, a ranked sensitivity line shows how much a 10% relative improvement on that lever would add. Drag any slider and watch the numbers cascade through every stage below it.</p>
+  <p>Every slider adjusts one link in this chain. The green text below each slider shows the downstream impact: how many units that stage produces, the cost to produce each one, and the resulting capital. Below that, a lever line shows what that slider would need to move to in order to add $1M in capital. Drag any slider and watch the numbers cascade through every stage below it.</p>
 
   <h3>Forward Mode (Spend → Capital)</h3>
   <p>Enter a monthly ad spend and time horizon. The calculator pushes that spend forward through the funnel at the current conversion rates to project AI leads generated, discoveries booked and held, new investors funded, and total capital raised (new + repeat).</p>
@@ -361,10 +361,11 @@ main{max-width:960px;margin:0 auto;padding:24px 28px 60px}
   <h3>Inline Metrics (green text)</h3>
   <p>Below each slider, green text shows the computed output of that stage given the current inputs. For cost-bearing stages (Discovery, Held, New Funded), it also shows the <strong>cost per unit</strong> — total ad spend divided by the count at that stage. For capital stages (Avg First Check, Repeat Capital Ratio), it shows <strong>cost as a percentage of capital</strong> — how much of the raised capital went to ad spend. These metrics update live as any slider moves, making it immediately visible where improvement at one stage reduces cost at every downstream stage.</p>
 
-  <h3>Sensitivity Ranking</h3>
-  <p>Below each slider's green metrics, a ranked impact line shows what a <strong>10% relative improvement</strong> on that lever would produce — additional capital in forward mode, or spend savings in reverse mode. The five levers are ranked #1–#5 by impact, updated live as sliders move. The #1 lever is highlighted in accent color.</p>
-  <p>"10% relative" means proportional to the current value: a 7% booking rate improves to 7.7%, a 28% close rate improves to 30.8%. This normalizes for the fact that a 1 percentage-point change is a much bigger effort at a high base rate than a low one. For CPAIL, improvement means 10% lower cost (more efficient).</p>
-  <p>The ranking measures <strong>mathematical sensitivity</strong> — which lever the formula responds to most. It does not measure operational difficulty. A lever ranked #1 might involve coordinating multiple teams, while a lever ranked #3 might be a single process change. Use the ranking to understand where the formula is most responsive, then apply judgment about which improvements are most achievable.</p>
+  <h3>Lever Analysis</h3>
+  <p>Below each slider's green metrics, a lever line shows <strong>what that lever would need to move to</strong> in order to add $1M in total capital (forward mode) or save $1M in spend (reverse mode). The percentage shown is the relative move from the current slider value to the required value.</p>
+  <p>The lever requiring the <strong>smallest relative move</strong> is highlighted in accent color and marked "smallest move." This tells you which lever the funnel is most responsive to right now — the one where a small adjustment produces the target gain.</p>
+  <p>Because the funnel is a multiplication chain, the required relative move is the same for all rate levers (AI Lead → Discovery, Discovery → Held, Held → New Funded, Avg First Check). CPAIL requires a slightly smaller move because it sits on the denominator — reducing cost by X% produces slightly more than X% more leads. The differentiation becomes meaningful when sliders are moved away from their baselines, because each lever's headroom (distance to its ceiling) differs.</p>
+  <p>The analysis measures <strong>mathematical sensitivity</strong>, not operational difficulty. A lever showing the smallest required move might involve coordinating multiple teams, while a lever showing a larger move might be a single process change. Use it to understand where the formula is most responsive, then apply judgment about which improvements are most achievable.</p>
 
   <h3>CPAIL (Cost Per AI Lead)</h3>
   <p>Total ad spend divided by the number of accredited investor contacts created in the period. This is the blended cost across all platforms (Meta, Google, LinkedIn) spread across all accredited leads — paid and organic — because the ad spend fuels the entire lead machine, not just directly-attributed contacts. Lower CPAIL means more efficient lead generation. The inline metric shows the total AI lead count and monthly run rate.</p>
@@ -638,13 +639,12 @@ function recalc() {
     flagEl.style.display = 'none';
   }
 
-  // ── Sensitivity analysis: 10% relative improvement on each lever ──
-  // Forward: how much MORE total capital. Reverse: how much LESS spend.
-  // Pure multiplication chain: totalNew = (spend/cpail) * ld * dh * cr * ac
-  // totalCapital = totalNew * (1 + kernelRatio) + repeatBase
-  // For CPAIL improvement = 10% lower cost; for all others = 10% higher rate.
+  // ── Lever analysis: what does each lever need to move to for +$1M capital (or -$1M spend)? ──
+  // For each lever, solve for the value that adds $1M to total capital (forward)
+  // or saves $1M in spend (reverse). The lever needing the smallest relative move is "best."
+  const TARGET_DELTA = 1000000;
 
-  const sensitivities = [];
+  const leverResults = [];
 
   if (mode === 'forward') {
     const monthlySpendVal = parseFloat(document.getElementById('inputSpend').value) || 0;
@@ -654,20 +654,28 @@ function recalc() {
     const kRatio = moVal > 0 ? KERNEL_FACTOR[mcl] / moVal : 0;
     const repeatBaseVal = baseRepeatMo * moVal;
 
-    // Helper: given the five rates, compute totalCapital
-    const fwd = (cp, ld, dh, cr, ac) => {
-      const nc = (tSpend / cp) * ld * dh * cr * ac;
-      const rn = nc * kRatio;
-      return nc + rn + repeatBaseVal;
-    };
+    // totalCapital = (tSpend/cp) * ld * dh * cr * ac * (1 + kRatio) + repeatBase
+    // Isolate each lever from: targetTC = baseTc + TARGET_DELTA
+    const baseTc = (tSpend / cpail) * aiLeadDisco * discoHeld * closeRate * avgCheck * (1 + kRatio) + repeatBaseVal;
+    const targetTc = baseTc + TARGET_DELTA;
+    const newCapNeeded = (targetTc - repeatBaseVal) / (1 + kRatio);
+    // newCapNeeded = (tSpend / cpReq) * ld * dh * cr * ac  →  cpReq = tSpend * ld * dh * cr * ac / newCapNeeded
+    // newCapNeeded = (tSpend / cp) * ldReq * dh * cr * ac  →  ldReq = newCapNeeded / ((tSpend/cp) * dh * cr * ac)
+    // etc.
 
-    const baseTc = fwd(cpail, aiLeadDisco, discoHeld, closeRate, avgCheck);
+    const base4 = aiLeadDisco * discoHeld * closeRate * avgCheck; // product of the 4 rate levers
 
-    sensitivities.push({ key: 'CPAIL',     delta: fwd(cpail * 0.9, aiLeadDisco, discoHeld, closeRate, avgCheck) - baseTc, label: '→ $' + Math.round(cpail * 0.9) });
-    sensitivities.push({ key: 'LeadDisco', delta: fwd(cpail, aiLeadDisco * 1.1, discoHeld, closeRate, avgCheck) - baseTc, label: '→ ' + (aiLeadDisco * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'DiscoHeld', delta: fwd(cpail, aiLeadDisco, discoHeld * 1.1, closeRate, avgCheck) - baseTc, label: '→ ' + (discoHeld * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'CloseRate', delta: fwd(cpail, aiLeadDisco, discoHeld, closeRate * 1.1, avgCheck) - baseTc, label: '→ ' + (closeRate * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'AvgCheck',  delta: fwd(cpail, aiLeadDisco, discoHeld, closeRate, avgCheck * 1.1) - baseTc, label: '→ $' + Math.round(avgCheck * 1.1).toLocaleString() });
+    const cpReq = newCapNeeded > 0 ? (tSpend * base4) / newCapNeeded : cpail;
+    const ldReq = (tSpend / cpail) * discoHeld * closeRate * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * discoHeld * closeRate * avgCheck) : aiLeadDisco;
+    const dhReq = (tSpend / cpail) * aiLeadDisco * closeRate * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * aiLeadDisco * closeRate * avgCheck) : discoHeld;
+    const crReq = (tSpend / cpail) * aiLeadDisco * discoHeld * avgCheck > 0 ? newCapNeeded / ((tSpend / cpail) * aiLeadDisco * discoHeld * avgCheck) : closeRate;
+    const acReq = (tSpend / cpail) * aiLeadDisco * discoHeld * closeRate > 0 ? newCapNeeded / ((tSpend / cpail) * aiLeadDisco * discoHeld * closeRate) : avgCheck;
+
+    leverResults.push({ key: 'CPAIL',     current: cpail,        required: cpReq,  pctMove: cpail > 0 ? Math.abs(cpReq - cpail) / cpail * 100 : 0,     fmtReq: '$' + Math.round(cpReq),                        direction: 'down' });
+    leverResults.push({ key: 'LeadDisco', current: aiLeadDisco,  required: ldReq,  pctMove: aiLeadDisco > 0 ? (ldReq - aiLeadDisco) / aiLeadDisco * 100 : 0, fmtReq: (ldReq * 100).toFixed(1) + '%',              direction: 'up' });
+    leverResults.push({ key: 'DiscoHeld', current: discoHeld,    required: dhReq,  pctMove: discoHeld > 0 ? (dhReq - discoHeld) / discoHeld * 100 : 0,       fmtReq: (dhReq * 100).toFixed(1) + '%',              direction: 'up' });
+    leverResults.push({ key: 'CloseRate', current: closeRate,    required: crReq,  pctMove: closeRate > 0 ? (crReq - closeRate) / closeRate * 100 : 0,       fmtReq: (crReq * 100).toFixed(1) + '%',              direction: 'up' });
+    leverResults.push({ key: 'AvgCheck',  current: avgCheck,     required: acReq,  pctMove: avgCheck > 0 ? (acReq - avgCheck) / avgCheck * 100 : 0,         fmtReq: '$' + Math.round(acReq).toLocaleString(),    direction: 'up' });
 
   } else {
     const tvVal = parseFloat(document.getElementById('inputTarget').value) || 0;
@@ -676,7 +684,6 @@ function recalc() {
     const mcl = Math.min(moVal, KERNEL_FACTOR.length - 1);
     const kRatio = moVal > 0 ? KERNEL_FACTOR[mcl] / moVal : 0;
 
-    // Compute newCapital (same regardless of lever — target is fixed)
     let ncVal;
     if (targetType === 'total') {
       const net = Math.max(0, tvVal - repeatBaseVal);
@@ -685,30 +692,47 @@ function recalc() {
       ncVal = tvVal;
     }
 
-    // Required spend = (ncVal / ac / cr / dh / ld) * cp
-    const rev = (cp, ld, dh, cr, ac) => (ncVal / ac / cr / dh / ld) * cp;
+    // spend = (ncVal / ac / cr / dh / ld) * cp
+    // For -$1M spend: targetSpend = totalSpend - TARGET_DELTA
+    const baseSpd = (ncVal / avgCheck / closeRate / discoHeld / aiLeadDisco) * cpail;
+    const targetSpd = baseSpd - TARGET_DELTA;
+    if (targetSpd > 0) {
+      // Solve each: e.g. targetSpd = (ncVal / ac / cr / dh / ld) * cpReq  →  cpReq = targetSpd * ac * cr * dh * ld / ncVal
+      const denom4 = avgCheck * closeRate * discoHeld * aiLeadDisco;
+      const cpReq = ncVal > 0 ? (targetSpd * denom4) / ncVal : cpail;
+      const ldReq = ncVal > 0 ? ncVal / (targetSpd / cpail * avgCheck * closeRate * discoHeld) : aiLeadDisco;
+      // Actually simpler: spend = K / lever (for rate levers) or K * cpail
+      // spend = cpail * ncVal / (ld * dh * cr * ac).  targetSpd = cpail * ncVal / (ldReq * dh * cr * ac)
+      // ldReq = cpail * ncVal / (targetSpd * dh * cr * ac)
+      const ldReq2 = (cpail * ncVal) / (targetSpd * discoHeld * closeRate * avgCheck);
+      const dhReq = (cpail * ncVal) / (targetSpd * aiLeadDisco * closeRate * avgCheck);
+      const crReq = (cpail * ncVal) / (targetSpd * aiLeadDisco * discoHeld * avgCheck);
+      const acReq = (cpail * ncVal) / (targetSpd * aiLeadDisco * discoHeld * closeRate);
 
-    const baseSpd = rev(cpail, aiLeadDisco, discoHeld, closeRate, avgCheck);
-
-    sensitivities.push({ key: 'CPAIL',     delta: baseSpd - rev(cpail * 0.9, aiLeadDisco, discoHeld, closeRate, avgCheck), label: '→ $' + Math.round(cpail * 0.9) });
-    sensitivities.push({ key: 'LeadDisco', delta: baseSpd - rev(cpail, aiLeadDisco * 1.1, discoHeld, closeRate, avgCheck), label: '→ ' + (aiLeadDisco * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'DiscoHeld', delta: baseSpd - rev(cpail, aiLeadDisco, discoHeld * 1.1, closeRate, avgCheck), label: '→ ' + (discoHeld * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'CloseRate', delta: baseSpd - rev(cpail, aiLeadDisco, discoHeld, closeRate * 1.1, avgCheck), label: '→ ' + (closeRate * 110).toFixed(1) + '%' });
-    sensitivities.push({ key: 'AvgCheck',  delta: baseSpd - rev(cpail, aiLeadDisco, discoHeld, closeRate, avgCheck * 1.1), label: '→ $' + Math.round(avgCheck * 1.1).toLocaleString() });
+      leverResults.push({ key: 'CPAIL',     current: cpail,        required: cpReq,   pctMove: cpail > 0 ? Math.abs(cpReq - cpail) / cpail * 100 : 0,         fmtReq: '$' + Math.round(cpReq),                        direction: 'down' });
+      leverResults.push({ key: 'LeadDisco', current: aiLeadDisco,  required: ldReq2,  pctMove: aiLeadDisco > 0 ? (ldReq2 - aiLeadDisco) / aiLeadDisco * 100 : 0, fmtReq: (ldReq2 * 100).toFixed(1) + '%',             direction: 'up' });
+      leverResults.push({ key: 'DiscoHeld', current: discoHeld,    required: dhReq,   pctMove: discoHeld > 0 ? (dhReq - discoHeld) / discoHeld * 100 : 0,       fmtReq: (dhReq * 100).toFixed(1) + '%',              direction: 'up' });
+      leverResults.push({ key: 'CloseRate', current: closeRate,    required: crReq,   pctMove: closeRate > 0 ? (crReq - closeRate) / closeRate * 100 : 0,       fmtReq: (crReq * 100).toFixed(1) + '%',              direction: 'up' });
+      leverResults.push({ key: 'AvgCheck',  current: avgCheck,     required: acReq,   pctMove: avgCheck > 0 ? (acReq - avgCheck) / avgCheck * 100 : 0,         fmtReq: '$' + Math.round(acReq).toLocaleString(),    direction: 'up' });
+    }
   }
 
-  // Rank by delta descending (biggest improvement first)
-  sensitivities.sort((a, b) => b.delta - a.delta);
-  sensitivities.forEach((s, i) => {
-    const el = document.getElementById('impact' + s.key);
+  // Rank by smallest relative move (easiest path)
+  leverResults.sort((a, b) => a.pctMove - b.pctMove);
+  const bestKey = leverResults.length > 0 ? leverResults[0].key : '';
+
+  // Render
+  const deltaLabel = mode === 'forward' ? '+' + fmt(TARGET_DELTA) + ' capital' : '−' + fmt(TARGET_DELTA) + ' spend';
+  for (const lv of leverResults) {
+    const el = document.getElementById('impact' + lv.key);
     if (el) {
-      const rank = i + 1;
-      el.style.color = rank === 1 ? 'var(--accent)' : 'var(--text3)';
-      const verb = mode === 'forward' ? 'adds' : 'saves';
-      const what = mode === 'forward' ? 'total capital' : 'in spend';
-      el.innerHTML = `#${rank} — 10% improvement (${s.label}) ${verb} ${fmt(Math.abs(s.delta))} ${what}`;
+      const isBest = lv.key === bestKey;
+      el.style.color = isBest ? 'var(--accent)' : 'var(--text3)';
+      const arrow = lv.direction === 'down' ? '↓' : '↑';
+      const movePct = lv.pctMove.toFixed(1);
+      el.innerHTML = `${deltaLabel}: ${arrow} ${lv.fmtReq} (${movePct}% move)${isBest ? ' — smallest move' : ''}`;
     }
-  });
+  }
 
   // Funnel bars
   const maxVal = Math.max(aiLeads, discosBooked, discosHeldN, newInvestors, 1);
