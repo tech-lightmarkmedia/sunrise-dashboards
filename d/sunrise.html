@@ -249,10 +249,16 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 .dd-tag.type-repeat{background:var(--inv-bg);color:var(--inv);border:1px solid #c4b5fd}
 .dd-tag.type-bolt{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .dd-footer{padding:12px 22px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);background:#fef9eb}
-.dd-vtab{padding:3px 10px;font-size:10px;font-weight:600;letter-spacing:.03em;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;border-radius:4px;font-family:'DM Sans',sans-serif}
-.dd-vtab:first-child{border-radius:4px 0 0 4px;border-right:none}
-.dd-vtab:last-child{border-radius:0 4px 4px 0}
-.dd-vtab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.dd-inv-row{border-bottom:1px solid var(--surface2);cursor:pointer}
+.dd-inv-row:hover{background:var(--surface2)}
+.dd-inv-header{display:flex;justify-content:space-between;align-items:center;padding:10px 22px}
+.dd-inv-name{font-family:'DM Serif Display',serif;font-size:14px;color:var(--text)}
+.dd-inv-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.dd-inv-tags{display:flex;gap:6px;align-items:center}
+.dd-inv-children{display:none;padding:0 22px 8px 40px;border-top:1px dashed var(--surface2)}
+.dd-inv-children.open{display:block}
+.dd-inv-child{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px;color:var(--text2);border-bottom:1px solid var(--surface2)}
+.dd-inv-child:last-child{border-bottom:none}
 
 /* Make clickable surfaces visibly clickable */
 .kpi.clickable{cursor:pointer;transition:box-shadow .12s ease}
@@ -335,10 +341,6 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
   <div class="dd-records-wrap">
     <div class="dd-records-header" id="dd-records-header">
       <span id="dd-records-label">Individual records</span>
-      <span id="dd-view-toggle" style="display:none;margin-left:12px">
-        <button class="dd-vtab active" data-view="investments" onclick="toggleDdView('investments')">Investments</button>
-        <button class="dd-vtab" data-view="investors" onclick="toggleDdView('investors')">Investors</button>
-      </span>
     </div>
     <div class="dd-body" id="dd-body"></div>
     <div class="dd-footer" id="dd-footer" style="display:none"></div>
@@ -2251,7 +2253,8 @@ function renderRPSummary(allFunded){
   const totRepCount=totBo+totRet;
   const totRepRate=totAll>0?(totRepCount/totAll*100).toFixed(1)+'%':'—';
   const totRepLtvX=totRFC>0?(totRLtv/totRFC).toFixed(2)+'x':'—';
-  pfHtml+=`<tr class="rp-total"><td>Overall</td><td>${totalInvestors}</td><td>${totAll}</td><td>${totOt}</td><td>${totBo}</td><td>${totRet}</td><td>${totRepCount}</td><td>${totRepRate}</td><td>${totRepLtvX}</td></tr>`;
+  pfHtml+=`<tr class="rp-total"><td>Overall</td><td>${totalInvestors}*</td><td>${totAll}</td><td>${totOt}</td><td>${totBo}</td><td>${totRet}</td><td>${totRepCount}</td><td>${totRepRate}</td><td>${totRepLtvX}</td></tr>`;
+  pfHtml+=`<tr><td colspan="9" style="text-align:left;font-size:10px;color:var(--text3);font-style:italic;padding:6px 8px;border:none">* Fund Investors counts each investor in every fund they've invested in — returning investors appear in multiple funds, so per-fund numbers sum higher than the unique total.</td></tr>`;
   document.getElementById('rp-perfund-body').innerHTML=pfHtml;
 
   // ── LTV bucket distribution charts ──
@@ -2300,10 +2303,15 @@ function renderRPSummary(allFunded){
     y:{ticks:{font:{size:10},color:textCol},grid:{color:gridCol},border:{display:false}}
   };
 
-  const bucketOnClick = (chartLabel) => (evt, elements) => {
-    if(elements.length === 0) return;
-    const idx = elements[0].index;
+  const bucketOnClick = (chartLabel) => (evt) => {
+    const chart = evt.chart;
+    const xScale = chart.scales.x;
+    const rect = chart.canvas.getBoundingClientRect();
+    const x = evt.native.clientX - rect.left;
+    const idx = xScale.getValueForPixel(x);
+    if(idx == null || idx < 0 || idx >= bLabels.length) return;
     const matchingInvIds = LTV_BUCKETS_CACHE.bucketInvIds[idx] || [];
+    if(!matchingInvIds.length) return;
     ddLtvBucket(matchingInvIds, `${chartLabel}: ${bLabels[idx]} bucket`, idx);
   };
   const bucketOnHover = (evt, elements) => {
@@ -2451,7 +2459,6 @@ const DD_STATE = {
   subtitle: '',
   dimension: null,      // currently selected breakdown dimension
   selectedGroup: null,  // selected breakdown row (filter), or null
-  investorView: false,  // toggle: false=investments, true=investors (LTV buckets only)
   bucketInvestors: null, // RP investor rows for the current bucket (set by ddLtvBucket)
 };
 
@@ -2617,21 +2624,6 @@ function openDrilldown(opts){
   DD_STATE.selectedGroup = null;
   DD_STATE.dimension = opts.defaultDim || 'source';
   DD_STATE.bucketInvestors = opts.bucketInvestors || null;
-  DD_STATE.investorView = false;
-
-  document.getElementById('dd-title').textContent = DD_STATE.title;
-  document.getElementById('dd-sub').textContent = `${DD_STATE.subtitle} · ${DD_STATE.records.length} record${DD_STATE.records.length===1?'':'s'}`;
-
-  // Show/hide investor toggle based on whether bucket investor data is available
-  const toggleEl = document.getElementById('dd-view-toggle');
-  if(toggleEl){
-    if(DD_STATE.bucketInvestors && DD_STATE.bucketInvestors.length){
-      toggleEl.style.display='';
-      document.querySelectorAll('.dd-vtab').forEach(b=>b.classList.toggle('active', b.dataset.view==='investments'));
-    } else {
-      toggleEl.style.display='none';
-    }
-  }
 
   document.getElementById('dd-title').textContent = DD_STATE.title;
   document.getElementById('dd-sub').textContent = `${DD_STATE.subtitle} · ${DD_STATE.records.length} record${DD_STATE.records.length===1?'':'s'}`;
@@ -2681,11 +2673,6 @@ function onBreakdownRowClick(groupValue){
 }
 function clearBreakdownFilter(){
   DD_STATE.selectedGroup = null;
-  renderBreakdownAndRecords();
-}
-function toggleDdView(view){
-  DD_STATE.investorView = (view === 'investors');
-  document.querySelectorAll('.dd-vtab').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   renderBreakdownAndRecords();
 }
 
@@ -2752,14 +2739,12 @@ function renderBreakdownAndRecords(){
     });
   }
 
-  // Update records label (preserve toggle HTML)
+  // Update records label
   const labelEl = document.getElementById('dd-records-label');
   if(labelEl){
-    if(DD_STATE.investorView && DD_STATE.bucketInvestors){
+    if(DD_STATE.bucketInvestors && !DD_STATE.selectedGroup){
       const invCount = DD_STATE.bucketInvestors.length;
-      labelEl.textContent = DD_STATE.selectedGroup
-        ? `(filtered view — switch to Investments to see filtered records)`
-        : `${invCount} ${invCount === 1 ? 'investor' : 'investors'}`;
+      labelEl.textContent = `${invCount} investor${invCount===1?'':'s'} · ${DD_STATE.records.length} investment${DD_STATE.records.length===1?'':'s'}`;
     } else {
       labelEl.textContent = DD_STATE.selectedGroup
         ? `${filtered.length} of ${DD_STATE.records.length} records (filtered)`
@@ -2770,11 +2755,66 @@ function renderBreakdownAndRecords(){
   const body = document.getElementById('dd-body');
   body.innerHTML = '';
 
-  if(DD_STATE.investorView && DD_STATE.bucketInvestors){
-    // Investor view: show grouped investor rows sorted by totalAmt desc
+  if(DD_STATE.bucketInvestors && !DD_STATE.selectedGroup){
+    // Accordion investor view: investor rows sorted by totalAmt desc, click to expand investments
     const invRows = [...DD_STATE.bucketInvestors].sort((a,b) => b.totalAmt - a.totalAmt);
     const shown = invRows.slice(0, 200);
-    shown.forEach(inv => body.appendChild(renderInvestorRow(inv)));
+    const invIdToRecord = {};
+    DD_STATE.records.forEach(rec => { if(rec.kind==='inv') invIdToRecord[String(rec.record.id)] = rec; });
+    shown.forEach((inv, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'dd-inv-row';
+      // Header
+      const hdr = document.createElement('div');
+      hdr.className = 'dd-inv-header';
+      const left = document.createElement('div');
+      const nameEl = document.createElement('div');
+      nameEl.className = 'dd-inv-name';
+      nameEl.textContent = inv.rp;
+      left.appendChild(nameEl);
+      const meta = document.createElement('div');
+      meta.className = 'dd-inv-meta';
+      meta.textContent = `${inv.count} investment${inv.count===1?'':'s'} · First: ${fmt(inv.firstAmt)} · Lifetime: ${fmt(inv.totalAmt)}`;
+      left.appendChild(meta);
+      hdr.appendChild(left);
+      const tags = document.createElement('div');
+      tags.className = 'dd-inv-tags';
+      const ltvTag = document.createElement('span');
+      ltvTag.className = 'dd-tag amount';
+      ltvTag.textContent = inv.firstAmt > 0 ? (inv.totalAmt / inv.firstAmt).toFixed(2) + 'x' : '—';
+      tags.appendChild(ltvTag);
+      const typeTag = document.createElement('span');
+      typeTag.className = 'dd-tag ' + (inv.type==='One Time'?'type-new':inv.type==='Returning'?'type-repeat':'type-bolt');
+      typeTag.textContent = inv.type;
+      tags.appendChild(typeTag);
+      hdr.appendChild(tags);
+      wrap.appendChild(hdr);
+      // Children (investments)
+      const children = document.createElement('div');
+      children.className = 'dd-inv-children';
+      children.id = 'dd-inv-children-' + idx;
+      inv.invIds.forEach(id => {
+        const rec = invIdToRecord[String(id)];
+        if(!rec) return;
+        const p = rec.record.properties || {};
+        const child = document.createElement('div');
+        child.className = 'dd-inv-child';
+        const cLeft = document.createElement('span');
+        cLeft.textContent = `${p.funds_received||'—'} · ${p.fund_invested||'—'} · Closer: ${closerName(p.closer)} · Setter: ${setterName(p.setter)}`;
+        child.appendChild(cLeft);
+        const cRight = document.createElement('span');
+        cRight.style.fontWeight = '600';
+        cRight.textContent = fmt(parseFloat(p.investment_amount)||0);
+        child.appendChild(cRight);
+        children.appendChild(child);
+      });
+      wrap.appendChild(children);
+      // Click to toggle
+      hdr.addEventListener('click', () => {
+        children.classList.toggle('open');
+      });
+      body.appendChild(wrap);
+    });
     const footer = document.getElementById('dd-footer');
     if(invRows.length > 200){
       footer.style.display = '';
@@ -2783,7 +2823,7 @@ function renderBreakdownAndRecords(){
       footer.style.display = 'none';
     }
   } else {
-    // Investment view (default)
+    // Flat investment/deal records (default, or when breakdown filter is active)
     if(filtered.length === 0){
       body.innerHTML = '<div class="dd-empty">No records match this filter.</div>';
     } else {
@@ -2902,38 +2942,6 @@ function renderDrilldownRow(rec){
     meta.textContent = `DCB ${dcbDate} · Closer: ${closerLabel} · Setter: ${setterLabel}`;
     main.appendChild(meta);
   }
-
-  row.appendChild(main);
-  row.appendChild(tags);
-  return row;
-}
-
-function renderInvestorRow(inv){
-  const row = document.createElement('div');
-  row.className = 'dd-row';
-  const main = document.createElement('div'); main.className = 'dd-row-main';
-  const tags = document.createElement('div'); tags.className = 'dd-row-tags';
-
-  const nameEl = document.createElement('div');
-  nameEl.className = 'dd-row-name';
-  nameEl.style.cursor = 'default';
-  nameEl.textContent = inv.rp;
-  main.appendChild(nameEl);
-
-  const meta = document.createElement('div');
-  meta.className = 'dd-row-meta';
-  meta.textContent = `${inv.count} investment${inv.count===1?'':'s'} · First fund: ${inv.firstFund} · First: ${fmt(inv.firstAmt)} · Lifetime: ${fmt(inv.totalAmt)}`;
-  main.appendChild(meta);
-
-  const ltvTag = document.createElement('span');
-  ltvTag.className = 'dd-tag amount';
-  ltvTag.textContent = inv.firstAmt > 0 ? (inv.totalAmt / inv.firstAmt).toFixed(2) + 'x' : '—';
-  tags.appendChild(ltvTag);
-
-  const typeTag = document.createElement('span');
-  typeTag.className = 'dd-tag ' + (inv.type==='One Time'?'type-new':inv.type==='Returning'?'type-repeat':'type-bolt');
-  typeTag.textContent = inv.type;
-  tags.appendChild(typeTag);
 
   row.appendChild(main);
   row.appendChild(tags);
