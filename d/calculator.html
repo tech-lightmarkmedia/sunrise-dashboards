@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your Fund 5 Depreciation Estimate — Sunrise Capital Investors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#16203A; --ink-2:#26314F;
+    --horizon:#E8A14B; --glow:#F6C98E; --land:#2E4642;
+    --surface:#FCFAF6; --surface-2:#F4EFE6;
+    --hair:rgba(22,32,58,.12); --muted:#5A6275;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--surface);-webkit-font-smoothing:antialiased;line-height:1.55;}
+
+  /* ---- Sky hero ---- */
+  .sky{position:relative;text-align:center;padding:58px 24px 0;overflow:hidden;
+    background:radial-gradient(120% 90% at 50% 124%,var(--horizon) 0%,rgba(232,161,75,0) 46%),
+      linear-gradient(180deg,#0F1730 0%,#1B2647 42%,#3A3556 74%,#7A5A52 100%);}
+  .sun{position:absolute;left:50%;bottom:-160px;width:280px;height:280px;margin-left:-140px;border-radius:50%;
+    background:radial-gradient(circle at 50% 40%,#FFE6C0 0%,var(--horizon) 55%,rgba(232,161,75,.3) 76%,rgba(232,161,75,0) 80%);
+    transform:translateY(40px);opacity:0;transition:transform 1.3s cubic-bezier(.2,.7,.2,1) .1s,opacity 1.1s ease .1s;}
+  .sky.in .sun{transform:translateY(0);opacity:1;}
+  .sky-inner{position:relative;z-index:2;max-width:720px;margin:0 auto;}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--glow);margin-bottom:18px;display:inline-block;opacity:0;transform:translateY(8px);transition:.7s ease .2s;}
+  .sky.in .eyebrow{opacity:1;transform:none;}
+  h1{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:clamp(30px,5.2vw,50px);line-height:1.06;letter-spacing:-.01em;color:#FCFAF6;margin:0 0 14px;opacity:0;transform:translateY(10px);transition:.8s ease .3s;}
+  h1 .accent{color:var(--glow);font-style:italic;}
+  .sub{font-size:clamp(15px,2.2vw,17px);color:rgba(252,250,246,.82);max-width:540px;margin:0 auto;opacity:0;transform:translateY(10px);transition:.8s ease .4s;}
+  .sky.in h1,.sky.in .sub{opacity:1;transform:none;}
+  .horizon-line{position:relative;z-index:2;height:78px;margin-top:38px;background:linear-gradient(180deg,rgba(252,250,246,0) 0%,var(--surface) 86%);}
+  .horizon-line::before{content:"";position:absolute;left:50%;top:6px;transform:translateX(-50%);width:min(560px,80%);height:1px;background:linear-gradient(90deg,transparent,rgba(232,161,75,.7),transparent);}
+
+  /* ---- Calculator ---- */
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px;}
+  .calc{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-top:-30px;}
+
+  .panel{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:28px 26px;}
+  .panel h2{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:20px;margin:0 0 22px;}
+
+  .field{margin-bottom:26px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;letter-spacing:.02em;margin-bottom:12px;}
+  .field label .val{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:600;color:var(--ink);}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:4px;background:var(--surface-2);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--horizon);border:3px solid #fff;box-shadow:0 2px 6px rgba(22,32,58,.3);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--horizon);border:3px solid #fff;box-shadow:0 2px 6px rgba(22,32,58,.3);cursor:pointer;}
+  input[type=range]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--ink);outline-offset:2px;}
+
+  .hint{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5;}
+
+  /* bracket pills */
+  .pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill{flex:1;min-width:54px;text-align:center;padding:11px 6px;border:1px solid var(--hair);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:#fff;transition:.15s ease;}
+  .pill[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .pill:hover{border-color:var(--ink);}
+
+  /* historical reference chips */
+  .refs{display:flex;gap:8px;margin-top:11px;}
+  .ref{font-size:12px;padding:6px 10px;border-radius:8px;border:1px dashed rgba(232,161,75,.6);color:#9A6A2C;background:rgba(232,161,75,.06);cursor:pointer;}
+  .ref:hover{background:rgba(232,161,75,.14);}
+  .ref-note{font-size:11.5px;color:var(--muted);margin-top:9px;font-style:italic;}
+
+  /* toggle */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--surface-2);border-radius:12px;padding:14px 16px;}
+  .toggle-row .q{font-size:13.5px;font-weight:600;}
+  .switch{position:relative;width:54px;height:30px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .track{position:absolute;inset:0;background:#C9CCD4;border-radius:30px;transition:.2s;cursor:pointer;}
+  .track::before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .switch input:checked + .track{background:var(--land);}
+  .switch input:checked + .track::before{transform:translateX(24px);}
+  .switch input:focus-visible + .track{outline:2px solid var(--ink);outline-offset:2px;}
+
+  /* calculate / reveal */
+  .calc-btn{padding:15px 30px;border-radius:11px;border:none;background:var(--horizon);color:var(--ink);font-family:'Inter',sans-serif;font-weight:600;font-size:15px;cursor:pointer;transition:.15s ease;box-shadow:0 12px 30px -8px rgba(232,161,75,.55);}
+  .calc-btn:hover{background:#EFB063;}
+  .calc-btn:active{transform:translateY(1px);}
+  .saved{position:relative;z-index:1;margin-top:16px;font-size:13px;font-weight:600;color:#CDEBD4;background:rgba(46,70,66,.45);border:1px solid rgba(205,235,212,.28);border-radius:10px;padding:11px 13px;line-height:1.45;}
+
+  /* ---- Result ---- */
+  .result{background:var(--ink);color:#fff;border:none;position:sticky;top:24px;overflow:hidden;}
+  .result::after{content:"";position:absolute;left:50%;bottom:-180px;width:340px;height:340px;margin-left:-170px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(246,201,142,.22) 0%,rgba(232,161,75,0) 70%);pointer-events:none;}
+  .result h2{color:#fff;position:relative;z-index:1;}
+  .res-tag{position:relative;z-index:1;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--glow);margin-bottom:10px;display:inline-block;}
+  .big{position:relative;z-index:1;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(40px,8vw,56px);line-height:1;color:var(--glow);letter-spacing:-.01em;}
+  .big-label{position:relative;z-index:1;font-size:13.5px;color:rgba(255,255,255,.8);margin-top:10px;line-height:1.5;}
+  .res-note{position:relative;z-index:1;font-size:13px;line-height:1.6;color:rgba(255,255,255,.78);margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);}
+  .secondary-stat{position:relative;z-index:1;margin-top:18px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
+  .secondary-stat .s-num{font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:600;color:#fff;}
+  .secondary-stat .s-lbl{font-size:12.5px;color:rgba(255,255,255,.7);text-align:right;max-width:60%;}
+  .result-body{position:relative;z-index:1;min-height:236px;}
+  .res-output{transition:filter .35s ease,opacity .35s ease;}
+  .res-output.locked{filter:blur(11px);opacity:.55;pointer-events:none;user-select:none;}
+  .reveal-overlay{position:absolute;inset:-6px;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:14px;background:radial-gradient(120% 80% at 50% 50%,rgba(15,23,48,.22),rgba(15,23,48,.5));transition:opacity .3s ease;}
+  .reveal-overlay.hidden{opacity:0;pointer-events:none;}
+
+  /* explainer + CTAs */
+  .explain{max-width:1000px;margin:46px auto 0;padding:0 24px;}
+  .explain h3{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:clamp(21px,3vw,26px);margin:0 0 8px;text-align:center;}
+  .explain .lede{text-align:center;color:var(--muted);font-size:15px;max-width:620px;margin:0 auto 30px;}
+  .flow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .step{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px 20px;position:relative;}
+  .step .n{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:600;color:#B9722A;margin-bottom:10px;}
+  .step h4{font-size:15px;font-weight:600;margin:0 0 6px;}
+  .step p{font-size:13.5px;color:var(--muted);margin:0;}
+
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:1000px;margin:34px auto 0;padding:0 24px;}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:30px 28px;display:flex;flex-direction:column;transition:.25s ease;}
+  .card.primary{border-color:rgba(232,161,75,.5);}
+  .card:hover{box-shadow:0 18px 40px -22px rgba(22,32,58,.4);}
+  .card.primary:hover{border-color:var(--horizon);}
+  .card.secondary:hover{border-color:var(--land);}
+  .card-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .card.primary .card-tag{color:#B9722A;} .card.secondary .card-tag{color:var(--land);}
+  .dot{width:8px;height:8px;border-radius:50%;} .card.primary .dot{background:var(--horizon);} .card.secondary .dot{background:var(--land);}
+  .card h2{font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:23px;margin:0 0 8px;color:var(--ink);}
+  .card p{font-size:14.5px;color:var(--muted);margin:0 0 24px;flex:1;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;border-radius:11px;font-weight:600;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:.15s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--horizon);color:var(--ink);} .btn-primary:hover{background:#EFB063;}
+  .btn-secondary{background:transparent;color:var(--land);border-color:rgba(46,70,66,.35);} .btn-secondary:hover{background:var(--land);color:#fff;border-color:var(--land);}
+  .btn .arrow{transition:transform .2s ease;} .btn:hover .arrow{transform:translateX(3px);}
+
+  footer{max-width:780px;margin:54px auto 0;padding:26px 24px 48px;border-top:1px solid var(--hair);text-align:center;}
+  .wordmark{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:13px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink);margin-bottom:14px;}
+  .disclaimer{font-size:11.5px;line-height:1.7;color:#8A8F9C;max-width:660px;margin:0 auto;}
+
+  @media (max-width:780px){
+    .calc{grid-template-columns:1fr;margin-top:-22px;}
+    .result{position:static;}
+    .flow{grid-template-columns:1fr;}
+    .paths{grid-template-columns:1fr;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .sun,.eyebrow,h1,.sub{transition:none!important;transform:none!important;opacity:1!important;}
+  }
+</style>
+</head>
+<body>
+  <section class="sky" id="sky">
+    <div class="sun" aria-hidden="true"></div>
+    <div class="sky-inner">
+      <span class="eyebrow">Your Fund 5 estimate</span>
+      <h1>See what your depreciation could <span class="accent">shield</span>.</h1>
+      <p class="sub">Move the inputs to model your first-year loss and the tax shield it builds. Figures are illustrative — not a projection of any specific year.</p>
+    </div>
+  </section>
+
+  <div class="horizon-line" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <div class="calc">
+
+      <!-- INPUTS -->
+      <section class="panel">
+        <h2>Your numbers</h2>
+
+        <div class="field">
+          <label for="amt">Investment amount <span class="val" id="amtVal">$150,000</span></label>
+          <input type="range" id="amt" min="25000" max="1000000" step="5000" value="150000" />
+          <div class="hint">The average first-time investment in Fund 5 is ~$150K.</div>
+        </div>
+
+        <div class="field">
+          <label>Your top marginal tax rate</label>
+          <div class="pills" id="pills" role="group" aria-label="Marginal tax rate">
+            <button class="pill" data-rate="0.22">22%</button>
+            <button class="pill" data-rate="0.24">24%</button>
+            <button class="pill" data-rate="0.32">32%</button>
+            <button class="pill" data-rate="0.35" aria-pressed="true">35%</button>
+            <button class="pill" data-rate="0.37">37%</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="factor">Illustrative first-year loss <span class="val" id="factorVal">90%</span></label>
+          <input type="range" id="factor" min="40" max="125" step="1" value="90" />
+          <div class="refs">
+            <span class="ref" data-f="93">Fund 5 · 2025 → 93%</span>
+            <span class="ref" data-f="123">Fund 4 · 2024 → 123%</span>
+          </div>
+          <div class="ref-note">Prior-fund results, shown for reference. Your year depends on what's acquired and when — not a projection.</div>
+        </div>
+
+        <div class="field">
+          <div class="toggle-row">
+            <span class="q">Do you have passive income to offset this year?</span>
+            <label class="switch">
+              <input type="checkbox" id="passive" aria-label="Have passive income this year" />
+              <span class="track" aria-hidden="true"></span>
+            </label>
+          </div>
+          <div class="hint" id="toggleHint">If you're a high-W-2-income accredited investor and don't yet have passive income to offset, in many cases use this as a bank against that future passive income. Unused losses never expire. Check with your CPA for your particular case.</div>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section class="panel result" id="result" aria-live="polite">
+        <h2 style="margin:0 0 14px;font-size:18px;">Your estimate</h2>
+
+        <div class="result-body">
+          <!-- estimate, soft-filtered until revealed -->
+          <div class="res-output locked" id="resOutput">
+            <span class="res-tag" id="resTag">Tax shield banked</span>
+            <div class="big" id="bigNum">$0</div>
+            <div class="big-label" id="bigLabel">Estimated tax shield you bank in year one</div>
+
+            <div class="secondary-stat">
+              <span class="s-num" id="lossNum">$0</span>
+              <span class="s-lbl">First-year passive loss generated</span>
+            </div>
+
+            <div class="res-note" id="resNote"></div>
+            <div class="saved" id="saved" hidden></div>
+          </div>
+
+          <!-- reveal control sits on top of the soft-filtered estimate -->
+          <div class="reveal-overlay" id="revealOverlay">
+            <button class="calc-btn" id="calcBtn">Calculate my shield</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============================================================
+       HIDDEN HUBSPOT CAPTURE FORM
+       Paste your HubSpot form embed below (uncomment it) so the form
+       renders into #hs-capture-form. Keep the container hidden — the
+       Calculate button fills the fields and submits it. No API.
+       The form should contain these fields (hidden fields are fine):
+         email, calc_investment_amount, calc_marginal_rate,
+         calc_loss_factor, calc_has_passive_income,
+         calc_first_year_loss, calc_tax_shield
+       Turn on "pre-populate contact fields from cookie" so email
+       auto-fills for known visitors; ?email= in the URL is a fallback.
+       ============================================================ -->
+  <div id="hs-capture-form" aria-hidden="true" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;"></div>
+  <!--
+  <script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/embed/v2.js"></script>
+  <script>
+    hbspt.forms.create({
+      portalId: "23126809",
+      formId: "REPLACE-with-form-guid",
+      region: "na1",
+      target: "#hs-capture-form"
+    });
+  </script>
+  -->
+
+  <!-- EXPLAINER -->
+  <section class="explain">
+    <h3>No passive income yet? The benefit still builds.</h3>
+    <p class="lede">The losses don't expire — they bank in your name and wait for income to absorb.</p>
+    <div class="flow">
+      <div class="step"><div class="n">01</div><h4>Generate the loss</h4><p>Cost segregation plus 100% bonus depreciation turns a large share of your investment into a first-year paper loss on your K-1.</p></div>
+      <div class="step"><div class="n">02</div><h4>Bank it</h4><p>If you can't use it this year, it isn't lost — it carries forward indefinitely as a suspended passive loss.</p></div>
+      <div class="step"><div class="n">03</div><h4>Absorb income later</h4><p>It offsets future passive income from any source, and at a full taxable exit the remaining shield releases in one year.</p></div>
+    </div>
+  </section>
+
+  <!-- CTAs -->
+  <section class="paths">
+    <div class="card primary">
+      <span class="card-tag"><span class="dot"></span> Ready to invest</span>
+      <h2>Get started in Fund&nbsp;5</h2>
+      <p>Begin your subscription and reserve your allocation. Our team guides you through entity details, documents, and funding.</p>
+      <!-- REPLACE href with your invest / subscription start URL -->
+      <a class="btn btn-primary" href="#REPLACE-invest-url">Get started <span class="arrow">→</span></a>
+    </div>
+    <div class="card secondary">
+      <span class="card-tag"><span class="dot"></span> Want to talk it through</span>
+      <h2>Talk to Investor Relations</h2>
+      <p>Book a call to walk through your number, the mobile-home-park strategy, and how the depreciation fits your tax picture.</p>
+      <!-- REPLACE href with your HubSpot Meetings / booking URL -->
+      <a class="btn btn-secondary" href="#REPLACE-booking-url">Book a call <span class="arrow">→</span></a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wordmark">Sunrise Capital Investors</div>
+    <p class="disclaimer">
+      This calculator is an illustrative tool, not tax advice, a projection, or a guarantee. Outputs depend on assumptions you select and do not reflect any specific year's results. Prior-fund figures are historical and not indicative of future results. Depreciation passes through subject to passive-activity loss limitations, at-risk and basis rules, and recapture on sale; suspended losses are tracked per activity and net against passive income at the return level, but availability and any grouping depend on your facts. Passive losses do not offset wages or portfolio income (interest, dividends, stock gains). Any offering is made solely to accredited investors through the PPM, which should be read in full. Confirm everything with your own CPA and advisors.
+    </p>
+  </footer>
+
+  <script>
+    var usd = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+    var state = { amt:150000, rate:0.35, factor:0.90, passive:false };
+
+    var amt=document.getElementById('amt'), amtVal=document.getElementById('amtVal');
+    var factor=document.getElementById('factor'), factorVal=document.getElementById('factorVal');
+    var pills=document.getElementById('pills'), passive=document.getElementById('passive');
+    var bigNum=document.getElementById('bigNum'), bigLabel=document.getElementById('bigLabel');
+    var resTag=document.getElementById('resTag'), resNote=document.getElementById('resNote');
+    var lossNum=document.getElementById('lossNum'), toggleHint=document.getElementById('toggleHint');
+    var calcBtn=document.getElementById('calcBtn'), saved=document.getElementById('saved');
+    var resOutput=document.getElementById('resOutput'), revealOverlay=document.getElementById('revealOverlay');
+
+    var OFF_HINT = "If you're a high-W-2-income accredited investor and don't yet have passive income to offset, in many cases use this as a bank against that future passive income. Unused losses never expire. Check with your CPA for your particular case.";
+    var ON_HINT  = "You have passive income — part or all of the loss may be usable this year.";
+
+    function renderInputs(){
+      amtVal.textContent = usd.format(state.amt);
+      factorVal.textContent = Math.round(state.factor*100) + '%';
+      toggleHint.textContent = state.passive ? ON_HINT : OFF_HINT;
+    }
+
+    function showSaved(msg){ saved.hidden=false; saved.textContent = msg || '✓ Saved — your IR rep can see this scenario.'; }
+
+    function renderResult(){
+      var loss = state.amt * state.factor;
+      var shield = loss * state.rate;
+      lossNum.textContent = usd.format(loss);
+      bigNum.textContent = usd.format(shield);
+      if(state.passive){
+        resTag.textContent = 'Year-1 tax benefit';
+        bigLabel.textContent = 'Estimated tax reduced this year, applied against your passive income';
+        resNote.innerHTML = 'Because you have passive income to offset, this loss can be used now — up to the amount of that passive income. Anything beyond it banks and carries forward to future years.';
+      } else {
+        resTag.textContent = 'Tax shield banked';
+        bigLabel.textContent = 'Estimated tax shield you bank in year one';
+        resNote.innerHTML = "If you can't use the full loss this year — because you don't have enough passive income to offset it, or it's limited against your active or W-2 income — the unused portion isn't lost. It carries forward, absorbs your future passive income from any source, and releases in full at a taxable exit. Check with your CPA for how it applies to you.";
+      }
+      return { loss:loss, shield:shield };
+    }
+
+    function lock(){ resOutput.classList.add('locked'); revealOverlay.classList.remove('hidden'); saved.hidden=true; }
+    function reveal(){
+      var out = renderResult();
+      resOutput.classList.remove('locked');
+      revealOverlay.classList.add('hidden');
+      capture(out.loss, out.shield);
+    }
+
+    // inputs update the (blurred) estimate but re-lock it, so the reveal — and the capture — happen on each Calculate
+    function onInput(){ renderInputs(); renderResult(); lock(); }
+
+    amt.addEventListener('input',function(){state.amt=+amt.value;onInput();});
+    factor.addEventListener('input',function(){state.factor=+factor.value/100;onInput();});
+    passive.addEventListener('change',function(){state.passive=passive.checked;onInput();});
+
+    pills.addEventListener('click',function(e){
+      var b=e.target.closest('.pill'); if(!b) return;
+      [].forEach.call(pills.children,function(p){p.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+      state.rate=+b.dataset.rate; onInput();
+    });
+
+    [].forEach.call(document.querySelectorAll('.ref'),function(r){
+      r.addEventListener('click',function(){
+        factor.value=r.dataset.f; state.factor=+r.dataset.f/100; onInput();
+      });
+    });
+
+    /* ============================================================
+       LEAD CAPTURE — hidden HubSpot form (no API)
+       The HubSpot form is embedded into #hs-capture-form (see the
+       commented snippet in the HTML). Calculate fills its fields and
+       submits it; HubSpot matches the contact via its own cookie.
+       Field internal names must match FIELDS below.
+       ============================================================ */
+    var FIELDS = {
+      email:   "email",
+      amount:  "calc_investment_amount",
+      rate:    "calc_marginal_rate",
+      factor:  "calc_loss_factor",
+      passive: "calc_has_passive_income",
+      loss:    "calc_first_year_loss",
+      shield:  "calc_tax_shield"
+    };
+
+    function getParam(n){return new URLSearchParams(location.search).get(n);}
+
+    function setField(form, name, value){
+      var el = form.querySelector('[name="'+name+'"]');
+      if(!el) return false;
+      var proto = el.tagName==='SELECT' ? window.HTMLSelectElement.prototype
+                : el.tagName==='TEXTAREA' ? window.HTMLTextAreaElement.prototype
+                : window.HTMLInputElement.prototype;
+      var setter = Object.getOwnPropertyDescriptor(proto,'value').set;
+      setter.call(el, value);
+      el.dispatchEvent(new Event('input',{bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+      return true;
+    }
+
+    function capture(loss, shield){
+      var form = document.querySelector('#hs-capture-form form');
+      if(!form){ showSaved('Connect your HubSpot form to turn on capture.'); return; }
+      var email = getParam('email') || getParam('hs_email') || '';
+      if(email) setField(form, FIELDS.email, email);
+      setField(form, FIELDS.amount,  String(Math.round(state.amt)));
+      setField(form, FIELDS.rate,    String(state.rate));
+      setField(form, FIELDS.factor,  String(state.factor));
+      setField(form, FIELDS.passive, state.passive ? 'Yes' : 'No');
+      setField(form, FIELDS.loss,    String(Math.round(loss)));
+      setField(form, FIELDS.shield,  String(Math.round(shield)));
+      var submit = form.querySelector('input[type=submit], button[type=submit]');
+      if(submit){ submit.click(); }
+    }
+
+    // HubSpot posts this message when the embedded form submits successfully
+    window.addEventListener('message', function(e){
+      if(e.data && e.data.type==='hsFormCallback' && e.data.eventName==='onFormSubmitted'){ showSaved(); }
+    });
+
+    calcBtn.addEventListener('click', reveal);
+
+    requestAnimationFrame(function(){requestAnimationFrame(function(){document.getElementById('sky').classList.add('in');});});
+    renderInputs();
+    renderResult();
+    lock();
+  </script>
+</body>
+</html>
