@@ -131,7 +131,8 @@ main{max-width:1500px;margin:0 auto;padding:24px 28px 60px}
     <p>Capital from investors tagged with a Lightmark partner tag (Passive Pockets, 506 Group, Freedom Founders). Broken into New and Repeat.</p>
 
     <h3>Projections (manual)</h3>
-    <p>Editable fields for Kelvin's judgment-based projections from pipeline review, soft commits, and call listening. Values persist in your browser's local storage.</p>
+    <p>Editable fields for Kelvin's judgment-based projections from pipeline review, soft commits, and call listening. Values are saved to the server (R2 storage) and shared across all browsers and devices.</p>
+    <p><strong>Projections are only visible in the default view</strong> (Calendar Month + Mon-Sun). Switching to a different week type or view mode hides the projection rows — the data is not lost, just hidden until you return to the default view. This prevents entries from being misaligned when week boundaries shift.</p>
     <p><strong>Projected Capital Raise — Week:</strong> Per-week projection. Monthly Total shows "—" (not summable — each week is an independent estimate).</p>
     <p><strong>Projected Capital Raise — Month:</strong> Per-week entries plus an editable Monthly Total for the overall month projection.</p>
 
@@ -161,7 +162,7 @@ main{max-width:1500px;margin:0 auto;padding:24px 28px 60px}
 
 <div class="note">
   All metrics pull from live HubSpot data via the nightly cache (2 AM ET).
-  Projected raises are manually entered and persist in your browser.
+  Projected raises are manually entered and shared across all users via server storage.
   Closing ratio uses a rolling 60-day window, new investments only, excluding no-shows.
 </div>
 
@@ -615,7 +616,7 @@ async function loadAllData() {
     }).filter(d => d.date);
     console.log(`[kpi] ${COMMIT_STAGE_DEALS.length} InvestNext commit-stage deals fetched`);
 
-    loadManualData();
+    await loadManualData();
     render();
   } catch(e) {
     document.getElementById('loading').innerHTML = `<div class="error">Error: ${e.message}</div>`;
@@ -623,9 +624,30 @@ async function loadAllData() {
   }
 }
 
-// ── Manual data (localStorage for v1) ─────────────────────
-function loadManualData() { try { MANUAL_DATA = JSON.parse(localStorage.getItem('kpi-manual-data') || '{}'); } catch(e){} }
-function saveManualData() { localStorage.setItem('kpi-manual-data', JSON.stringify(MANUAL_DATA)); }
+// ── Manual data (R2-backed via worker) ────────────────────
+const PROJECTIONS_URL = CACHE_BASE_URL + '/kpi-projections';
+const PROJECTIONS_KEY = 'sunrise-refresh-2026';
+let SAVE_TIMEOUT = null;
+
+async function loadManualData() {
+  try {
+    const r = await fetch(PROJECTIONS_URL);
+    if (r.ok) { MANUAL_DATA = await r.json(); } else { MANUAL_DATA = {}; }
+  } catch(e) { console.warn('Projection load error', e); MANUAL_DATA = {}; }
+}
+function saveManualData() {
+  // Debounce: wait 800ms after last edit before saving
+  if (SAVE_TIMEOUT) clearTimeout(SAVE_TIMEOUT);
+  SAVE_TIMEOUT = setTimeout(async () => {
+    try {
+      await fetch(PROJECTIONS_URL + '?key=' + PROJECTIONS_KEY, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(MANUAL_DATA)
+      });
+    } catch(e) { console.warn('Projection save error', e); }
+  }, 800);
+}
 function getManual(k, f) { return MANUAL_DATA[k]?.[f] ?? ''; }
 function setManual(k, f, v) { if (!MANUAL_DATA[k]) MANUAL_DATA[k] = {}; MANUAL_DATA[k][f] = v; saveManualData(); }
 
@@ -766,10 +788,13 @@ function render() {
   bb += dRow('New', d.map(w=>$z(w.partnerNew)), $(wSum('partnerNew')));
   bb += dRow('Repeat', d.map(w=>$z(w.partnerRepeat)), $(wSum('partnerRepeat')));
 
-  // Projections
-  bb += secRow('Projections (manual)', weeks.length);
-  bb += eRow('Projected Capital Raise — Week', d, 'projectedWeekly');
-  bb += eRow('Projected Capital Raise — Month', d, 'projectedMonthly');
+  // Projections — only shown in default mode (Calendar Month + Mon-Sun)
+  const isDefaultMode = (weekType === 'mon' && viewMode === 'calendar');
+  if (isDefaultMode) {
+    bb += secRow('Projections (manual)', weeks.length);
+    bb += eRow('Projected Capital Raise — Week', d, 'projectedWeekly');
+    bb += eRow('Projected Capital Raise — Month', d, 'projectedMonthly');
+  }
 
   // Bottom summary
   bb += secRow('Summary', weeks.length);
