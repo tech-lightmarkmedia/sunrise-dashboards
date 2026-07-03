@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunrise Capital — First-Touch Attribution v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf9f6;--surface:#fff;--text:#2c2a26;--text2:#6b6860;--text3:#9e9789;--accent:#b05a30;--accent-bg:#faf0ea;--border:#e2dfd8;--green:#3a8a5c;--red:#c0392b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:var(--surface);border-bottom:1px solid var(--border)}
+header h1{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:var(--text)}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+.header-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3)}
+.btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+.btn:hover{background:var(--accent-bg)}
+
+#controls{display:flex;align-items:center;gap:16px;padding:10px 28px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+#controls label{font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:10px;color:var(--text2)}
+#controls select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
+#controls input[type="date"]{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}
+.custom-dates{display:none;gap:8px;align-items:center}
+.custom-dates.show{display:flex}
+
+.kpi-bar{display:flex;gap:16px;padding:16px 28px;flex-wrap:wrap}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;min-width:140px}
+.kpi-card .kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.kpi-card .kpi-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+
+main{padding:16px 28px}
+#status{padding:12px 28px;color:var(--text3);font-size:12px}
+
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text2);background:#f7f5f0;border-bottom:2px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{background:var(--accent-bg);color:var(--accent)}
+thead th .sort-arrow{margin-left:4px;font-size:9px;opacity:.4}
+thead th.sorted .sort-arrow{opacity:1;color:var(--accent)}
+tbody td{padding:8px 14px;border-bottom:1px solid #f0ede7;font-size:13px}
+tbody tr:hover{background:#fcfbf8}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.src-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-right:4px}
+.src-facebook{background:#e8f0fe;color:#1877F2}
+.src-google,.src-adwords{background:#fef3e0;color:#EA4335}
+.src-linkedin{background:#e8f4f8;color:#0A66C2}
+.src-organic{background:#e8f5e9;color:#388E3C}
+.src-direct{background:#f3f0f0;color:#666}
+.src-other{background:#f0eee8;color:var(--text2)}
+.no-data{text-align:center;padding:40px;color:var(--text3);font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>First-Touch Attribution<span class="vpill">v1.0</span></h1>
+  <div class="header-right">
+    <span id="status-pill"></span>
+    <button class="btn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
+
+<div id="controls">
+  <div>
+    <label>Date Range</label><br>
+    <select id="range-select" onchange="onRangeChange()">
+      <option value="last7">Last 7 Days</option>
+      <option value="last14">Last 14 Days</option>
+      <option value="last30">Last 30 Days</option>
+      <option value="last90">Last 90 Days</option>
+      <option value="last6m" selected>Last 6 Months</option>
+      <option value="last12m">Last 12 Months</option>
+      <option value="thisMonth">This Month</option>
+      <option value="lastMonth">Last Month</option>
+      <option value="thisQuarter">This Quarter</option>
+      <option value="lastQuarter">Last Quarter</option>
+      <option value="thisYear">This Year</option>
+      <option value="lastYear">Last Year</option>
+      <option value="allTime">All Time</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div class="custom-dates" id="custom-dates">
+    <label>From</label> <input type="date" id="date-from">
+    <label>To</label> <input type="date" id="date-to">
+    <button class="btn" onclick="loadData()">Apply</button>
+  </div>
+</div>
+
+<div class="kpi-bar">
+  <div class="kpi-card"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="kpi-leads">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">AI Leads</div><div class="kpi-val" id="kpi-ai">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">Unique Campaigns</div><div class="kpi-val" id="kpi-campaigns">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">URL Attribution Rate</div><div class="kpi-val" id="kpi-rate">—</div></div>
+</div>
+
+<div id="status">Loading…</div>
+<main>
+  <div id="table-wrap"></div>
+</main>
+
+<script>
+const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const HS_DELAY = 120;
+
+async function api(path, body) {
+  await new Promise(r => setTimeout(r, HS_DELAY));
+  const opts = body
+    ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    : {};
+  const r = await fetch(`${WORKER}/hs-api${path}`, opts);
+  if (!r.ok) throw new Error(`API ${r.status}`);
+  return r.json();
+}
+
+function status(msg) { document.getElementById('status').textContent = msg; }
+
+// ── Date range ────────────────────────────────────────────
+function getDateRange() {
+  const sel = document.getElementById('range-select').value;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const ms = (d) => d.getTime();
+
+  const ranges = {
+    last7:    () => [ms(new Date(today - 7 * 864e5)), ms(today)],
+    last14:   () => [ms(new Date(today - 14 * 864e5)), ms(today)],
+    last30:   () => [ms(new Date(today - 30 * 864e5)), ms(today)],
+    last90:   () => [ms(new Date(today - 90 * 864e5)), ms(today)],
+    last6m:   () => [ms(new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())), ms(today)],
+    last12m:  () => [ms(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())), ms(today)],
+    thisMonth:() => [ms(new Date(now.getFullYear(), now.getMonth(), 1)), ms(today)],
+    lastMonth:() => [ms(new Date(now.getFullYear(), now.getMonth()-1, 1)), ms(new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999))],
+    thisQuarter:() => { const q = Math.floor(now.getMonth()/3)*3; return [ms(new Date(now.getFullYear(), q, 1)), ms(today)]; },
+    lastQuarter:() => { const q = Math.floor(now.getMonth()/3)*3-3; return [ms(new Date(now.getFullYear(), q, 1)), ms(new Date(now.getFullYear(), q+3, 0, 23, 59, 59, 999))]; },
+    thisYear: () => [ms(new Date(now.getFullYear(), 0, 1)), ms(today)],
+    lastYear: () => [ms(new Date(now.getFullYear()-1, 0, 1)), ms(new Date(now.getFullYear()-1, 11, 31, 23, 59, 59, 999))],
+    allTime:  () => [ms(new Date(2022, 0, 1)), ms(today)],
+    custom:   () => {
+      const f = document.getElementById('date-from').value;
+      const t = document.getElementById('date-to').value;
+      if (!f || !t) return [ms(new Date(today - 180 * 864e5)), ms(today)];
+      return [ms(new Date(f)), ms(new Date(t + 'T23:59:59.999'))];
+    }
+  };
+  return (ranges[sel] || ranges.last6m)();
+}
+
+function onRangeChange() {
+  const sel = document.getElementById('range-select').value;
+  document.getElementById('custom-dates').classList.toggle('show', sel === 'custom');
+  if (sel !== 'custom') loadData();
+}
+
+// ── Fetch contacts with chunking ──────────────────────────
+async function fetchContactsInRange(from, to) {
+  const props = [
+    'createdate', 'hs_analytics_first_url', 'hs_analytics_source',
+    'hs_analytics_source_data_1', 'hs_analytics_source_data_2',
+    'are_you_accredited_', 'firstname', 'lastname',
+    'first_conversion_event_name'
+  ];
+
+  // Chunk by month to stay under 10K per query
+  const allContacts = [];
+  let chunkStart = new Date(from);
+  const endDate = new Date(to);
+
+  while (chunkStart < endDate) {
+    let chunkEnd = new Date(chunkStart.getFullYear(), chunkStart.getMonth() + 1, 0, 23, 59, 59, 999);
+    if (chunkEnd > endDate) chunkEnd = endDate;
+
+    status(`Fetching contacts ${chunkStart.toLocaleDateString()} – ${chunkEnd.toLocaleDateString()}…`);
+
+    let after = 0;
+    let pages = 0;
+    while (pages < 55) {
+      pages++;
+      const body = {
+        filterGroups: [{ filters: [
+          { propertyName: 'createdate', operator: 'GTE', value: String(chunkStart.getTime()) },
+          { propertyName: 'createdate', operator: 'LTE', value: String(chunkEnd.getTime()) }
+        ]}],
+        properties: props,
+        sorts: [{ propertyName: 'createdate', direction: 'ASCENDING' }],
+        limit: 200,
+        ...(after ? { after: String(after) } : {})
+      };
+
+      const d = await api('/crm/v3/objects/contacts/search', body);
+      allContacts.push(...(d.results || []));
+      if (d.paging?.next?.after) {
+        after = d.paging.next.after;
+      } else break;
+    }
+
+    chunkStart = new Date(chunkEnd.getTime() + 1);
+  }
+
+  return allContacts;
+}
+
+// ── Parse URL for UTMs ────────────────────────────────────
+function parseUtm(urlStr) {
+  if (!urlStr) return null;
+  try {
+    const u = new URL(urlStr);
+    const source = u.searchParams.get('utm_source') || '';
+    const medium = u.searchParams.get('utm_medium') || '';
+    const campaign = u.searchParams.get('utm_campaign') || '';
+    if (!source && !campaign) return null;
+    return {
+      source: source.toLowerCase().trim(),
+      medium: medium.toLowerCase().trim(),
+      campaign: decodeURIComponent(campaign).replace(/\+/g, ' ').trim()
+    };
+  } catch (e) { return null; }
+}
+
+function isAI(contact) {
+  const acc = (contact.properties?.are_you_accredited_ || '').toLowerCase();
+  return acc === 'yes' || acc === 'true' || acc === '1';
+}
+
+// ── Aggregate ─────────────────────────────────────────────
+function aggregate(contacts) {
+  const rows = {};
+  let totalLeads = 0, totalAI = 0, urlParsed = 0;
+
+  contacts.forEach(c => {
+    const p = c.properties || {};
+    const utm = parseUtm(p.hs_analytics_first_url);
+
+    totalLeads++;
+    const ai = isAI(c) ? 1 : 0;
+    totalAI += ai;
+
+    const key = utm
+      ? `${utm.source}||${utm.medium}||${utm.campaign}`
+      : `${(p.hs_analytics_source || 'UNKNOWN').toLowerCase()}||${(p.hs_analytics_source_data_1 || '').toLowerCase()}||__no_url_campaign__`;
+
+    if (utm) urlParsed++;
+
+    if (!rows[key]) {
+      rows[key] = {
+        source: utm ? utm.source : (p.hs_analytics_source || 'UNKNOWN'),
+        medium: utm ? utm.medium : (p.hs_analytics_source_data_1 || '—'),
+        campaign: utm ? utm.campaign : '(no URL campaign)',
+        leads: 0,
+        ai: 0,
+        fromUrl: !!utm
+      };
+    }
+    rows[key].leads++;
+    rows[key].ai += ai;
+  });
+
+  return { rows: Object.values(rows), totalLeads, totalAI, urlParsed };
+}
+
+// ── Sort ──────────────────────────────────────────────────
+let sortCol = 'leads';
+let sortDir = 'desc';
+
+function setSort(col) {
+  if (sortCol === col) { sortDir = sortDir === 'desc' ? 'asc' : 'desc'; }
+  else { sortCol = col; sortDir = 'desc'; }
+  renderTable();
+}
+
+let LAST_ROWS = [];
+
+function renderTable() {
+  const rows = [...LAST_ROWS];
+  rows.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const arrow = (col) => `<span class="sort-arrow">${sortCol === col ? (sortDir === 'desc' ? '▼' : '▲') : '↕'}</span>`;
+  const cls = (col) => sortCol === col ? 'sorted' : '';
+
+  let html = `<table id="attr-table">
+    <thead><tr>
+      <th class="${cls('source')}" onclick="setSort('source')">Source ${arrow('source')}</th>
+      <th class="${cls('medium')}" onclick="setSort('medium')">Medium ${arrow('medium')}</th>
+      <th class="${cls('campaign')}" onclick="setSort('campaign')">Campaign ${arrow('campaign')}</th>
+      <th class="num ${cls('leads')}" onclick="setSort('leads')">Leads ${arrow('leads')}</th>
+      <th class="num ${cls('ai')}" onclick="setSort('ai')">AI Leads ${arrow('ai')}</th>
+      <th class="num ${cls('aiPct')}" onclick="setSort('aiPct')">AI % ${arrow('aiPct')}</th>
+    </tr></thead><tbody>`;
+
+  if (rows.length === 0) {
+    html += '<tr><td colspan="6" class="no-data">No data for this period.</td></tr>';
+  } else {
+    rows.forEach(r => {
+      const srcClass = r.source.includes('facebook') ? 'src-facebook'
+        : r.source.includes('google') || r.source.includes('adwords') ? 'src-google'
+        : r.source.includes('linkedin') ? 'src-linkedin'
+        : r.source.includes('organic') ? 'src-organic'
+        : r.source.includes('direct') ? 'src-direct'
+        : 'src-other';
+      const aiPct = r.leads > 0 ? ((r.ai / r.leads) * 100).toFixed(1) + '%' : '—';
+      r.aiPct = r.leads > 0 ? r.ai / r.leads : 0;
+      const urlTag = r.fromUrl ? '' : ' <span style="font-size:10px;color:var(--text3)" title="Attribution from DD1/DD2, not URL">†</span>';
+      html += `<tr>
+        <td><span class="src-tag ${srcClass}">${r.source || '—'}</span></td>
+        <td>${r.medium || '—'}</td>
+        <td>${r.campaign}${urlTag}</td>
+        <td class="num">${r.leads.toLocaleString()}</td>
+        <td class="num">${r.ai.toLocaleString()}</td>
+        <td class="num">${aiPct}</td>
+      </tr>`;
+    });
+  }
+
+  html += '</tbody></table>';
+  document.getElementById('table-wrap').innerHTML = html;
+}
+
+// ── Load ──────────────────────────────────────────────────
+async function loadData() {
+  const [from, to] = getDateRange();
+  status('Fetching contacts…');
+
+  try {
+    const contacts = await fetchContactsInRange(from, to);
+    status(`Processing ${contacts.length.toLocaleString()} contacts…`);
+
+    const { rows, totalLeads, totalAI, urlParsed } = aggregate(contacts);
+    LAST_ROWS = rows;
+
+    document.getElementById('kpi-leads').textContent = totalLeads.toLocaleString();
+    document.getElementById('kpi-ai').textContent = totalAI.toLocaleString();
+    document.getElementById('kpi-campaigns').textContent = rows.filter(r => r.fromUrl).length.toLocaleString();
+    document.getElementById('kpi-rate').textContent = totalLeads > 0
+      ? ((urlParsed / totalLeads) * 100).toFixed(1) + '%'
+      : '—';
+
+    sortCol = 'leads';
+    sortDir = 'desc';
+    renderTable();
+
+    const rangeLabel = `${new Date(from).toLocaleDateString()} – ${new Date(to).toLocaleDateString()}`;
+    status(`${contacts.length.toLocaleString()} contacts · ${rangeLabel}`);
+    document.getElementById('status-pill').textContent = `${contacts.length.toLocaleString()} contacts`;
+  } catch (e) {
+    status('Error: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
