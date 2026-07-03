@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.2</title>
+<title>Sunrise Capital — UTM Attribution v1.3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -51,6 +51,20 @@ td.drill:hover{text-decoration:underline}
 .src-other{background:#f0eee8;color:var(--text2)}
 .no-data{text-align:center;padding:40px;color:var(--text3);font-size:14px}
 .fallback{font-size:10px;color:var(--text3);cursor:help}
+/* Multi-select filter */
+.filter-wrap{position:relative;display:inline-block}
+.filter-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filter-btn.active-filter{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.filter-btn .count{font-size:9px;background:var(--accent);color:#fff;border-radius:8px;padding:0 5px;margin-left:4px}
+.filter-drop{display:none;position:absolute;top:100%;left:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:50;min-width:200px;max-height:300px;overflow-y:auto;padding:6px 0}
+.filter-drop.open{display:block}
+.filter-drop label{display:flex;align-items:center;gap:8px;padding:5px 14px;font-size:12px;cursor:pointer}
+.filter-drop label:hover{background:var(--accent-bg)}
+.filter-drop input[type="checkbox"]{accent-color:var(--accent)}
+.filter-drop .filter-actions{display:flex;gap:8px;padding:6px 14px;border-top:1px solid var(--border);margin-top:4px}
+.filter-drop .filter-actions button{font-family:'DM Sans',sans-serif;font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+.filter-drop .filter-actions button:hover{color:var(--accent);border-color:var(--accent)}
 /* Drill drawer */
 #drill-drawer{position:fixed;top:0;right:0;bottom:0;width:460px;max-width:100vw;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:998;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
 #drill-drawer.open{transform:translateX(0)}
@@ -81,7 +95,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.2</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.3</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -121,12 +135,25 @@ td.drill:hover{text-decoration:underline}
       <button data-val="last" onclick="setTouch('last')">Last Touch</button>
     </div>
   </div>
+  <div class="toggle-group">
+    <label>Filters</label>
+    <div class="filter-wrap">
+      <button class="filter-btn" id="source-filter-btn" onclick="toggleFilter('source')">Source ▾</button>
+      <div class="filter-drop" id="source-filter-drop"></div>
+    </div>
+    <div class="filter-wrap">
+      <button class="filter-btn" id="medium-filter-btn" onclick="toggleFilter('medium')">Medium ▾</button>
+      <div class="filter-drop" id="medium-filter-drop"></div>
+    </div>
+  </div>
 </div>
 
 <div class="kpi-bar">
   <div class="kpi-card"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="kpi-leads">—</div></div>
   <div class="kpi-card"><div class="kpi-label">AI Leads</div><div class="kpi-val" id="kpi-ai">—</div></div>
   <div class="kpi-card"><div class="kpi-label">Unique Campaigns</div><div class="kpi-val" id="kpi-campaigns">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">Unique Sources</div><div class="kpi-val" id="kpi-sources">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">Unique Mediums</div><div class="kpi-val" id="kpi-mediums">—</div></div>
   <div class="kpi-card"><div class="kpi-label">URL Attribution Rate</div><div class="kpi-val" id="kpi-rate">—</div></div>
   <div class="kpi-card"><div class="kpi-label">Discoveries</div><div class="kpi-val" id="kpi-disc">—</div></div>
   <div class="kpi-card"><div class="kpi-label">Investments</div><div class="kpi-val" id="kpi-inv">—</div></div>
@@ -158,6 +185,8 @@ td.drill:hover{text-decoration:underline}
     <p><strong>Last Touch</strong> parses <em>hs_analytics_last_url</em> — the URL from the contact's most recent session.</p>
     <h3>The † Fallback Indicator</h3>
     <p>Rows marked with † could not be attributed from the URL. These fall back to HubSpot's Original Source and DD1/DD2 fields. The "URL Attribution Rate" KPI shows what percentage of contacts have parseable UTM data.</p>
+    <h3>Filters</h3>
+    <p>Use the <strong>Source</strong> and <strong>Medium</strong> dropdowns to filter the table to specific platforms or channels. Multi-select: check/uncheck individual values. Use "All" or "None" for bulk selection. Active filters show an orange badge with the count of selected values. KPIs update to reflect the filtered view.</p>
     <h3>Funnel Columns</h3>
     <p><strong>Discoveries:</strong> Discovery call meetings associated with contacts in that campaign row. Click the number to see the records.</p>
     <p><strong>Commitments:</strong> Deals that entered the InvestNext commit stage, associated with contacts in that row.</p>
@@ -178,15 +207,130 @@ let ALL_CONTACTS = [];
 let MEETINGS = [], INVESTMENTS = [];
 let CONTACT_FUNNEL = {}; // cid → { meetingRecords:[], investRecords:[], commitRecords:[] }
 let LAST_ROWS = [];
+let ALL_ROWS = []; // pre-filter for building filter options
 let sortCol = 'leads', sortDir = 'desc';
 
 // Row → records mapping for drill-down
 let ROW_RECORDS = {}; // rowKey → { meetings:[], investments:[], commits:[] }
 
+// Filter state: null = all, Set = selected values
+let sourceFilter = null;
+let mediumFilter = null;
+
 function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
 function closeDrill() { document.getElementById('drill-drawer').classList.remove('open'); }
 function hsLink(cid) { return `https://app.hubspot.com/contacts/${HS_PORTAL}/contact/${cid}`; }
 function hsDealLink(did) { return `https://app.hubspot.com/contacts/${HS_PORTAL}/deal/${did}`; }
+
+// ── Filter dropdowns ──────────────────────────────────────
+function toggleFilter(type) {
+  const drop = document.getElementById(type+'-filter-drop');
+  const wasOpen = drop.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.filter-drop').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) drop.classList.add('open');
+}
+
+// Close filters on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.filter-wrap')) {
+    document.querySelectorAll('.filter-drop').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function buildFilterDropdown(type, values) {
+  const drop = document.getElementById(type+'-filter-drop');
+  const filter = type === 'source' ? sourceFilter : mediumFilter;
+  const sorted = [...values].sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  
+  let html = '';
+  sorted.forEach(v => {
+    const checked = !filter || filter.has(v) ? 'checked' : '';
+    const escaped = v.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    html += `<label><input type="checkbox" ${checked} onchange="onFilterCheck('${type}','${escaped}',this.checked)"> ${v}</label>`;
+  });
+  html += `<div class="filter-actions">
+    <button onclick="filterSelectAll('${type}')">All</button>
+    <button onclick="filterSelectNone('${type}')">None</button>
+  </div>`;
+  drop.innerHTML = html;
+  updateFilterBtnState(type);
+}
+
+function onFilterCheck(type, val, checked) {
+  let filter = type === 'source' ? sourceFilter : mediumFilter;
+  const allVals = type === 'source' ? getAllSources() : getAllMediums();
+  
+  if (!filter) {
+    // Was "all" — create a set with everything except unchecked
+    filter = new Set(allVals);
+    if (!checked) filter.delete(val);
+  } else {
+    if (checked) filter.add(val); else filter.delete(val);
+    // If all selected, revert to null
+    if (filter.size === allVals.size) filter = null;
+  }
+  
+  if (type === 'source') sourceFilter = filter; else mediumFilter = filter;
+  updateFilterBtnState(type);
+  applyFiltersAndRender();
+}
+
+function filterSelectAll(type) {
+  if (type === 'source') sourceFilter = null; else mediumFilter = null;
+  buildFilterDropdown(type, type === 'source' ? getAllSources() : getAllMediums());
+  applyFiltersAndRender();
+}
+
+function filterSelectNone(type) {
+  if (type === 'source') sourceFilter = new Set(); else mediumFilter = new Set();
+  buildFilterDropdown(type, type === 'source' ? getAllSources() : getAllMediums());
+  applyFiltersAndRender();
+}
+
+function updateFilterBtnState(type) {
+  const btn = document.getElementById(type+'-filter-btn');
+  const filter = type === 'source' ? sourceFilter : mediumFilter;
+  const allVals = type === 'source' ? getAllSources() : getAllMediums();
+  if (!filter || filter.size === allVals.size) {
+    btn.classList.remove('active-filter');
+    btn.innerHTML = (type === 'source' ? 'Source' : 'Medium') + ' ▾';
+  } else {
+    btn.classList.add('active-filter');
+    btn.innerHTML = (type === 'source' ? 'Source' : 'Medium') + ` <span class="count">${filter.size}</span> ▾`;
+  }
+}
+
+function getAllSources() { return new Set(ALL_ROWS.map(r => r.source)); }
+function getAllMediums() { return new Set(ALL_ROWS.map(r => r.medium)); }
+
+function applyFiltersAndRender() {
+  LAST_ROWS = ALL_ROWS.filter(r => {
+    if (sourceFilter && !sourceFilter.has(r.source)) return false;
+    if (mediumFilter && !mediumFilter.has(r.medium)) return false;
+    return true;
+  });
+  updateKPIs();
+  renderTable();
+}
+
+function updateKPIs() {
+  let leads=0,ai=0,disc=0,inv=0,urlParsed=0;
+  const campaigns = new Set(), sources = new Set(), mediums = new Set();
+  LAST_ROWS.forEach(r => {
+    leads+=r.leads; ai+=r.ai; disc+=r.discoveries; inv+=r.investments;
+    if(r.fromUrl){ urlParsed+=r.leads; campaigns.add(r.campaign); }
+    sources.add(r.source); mediums.add(r.medium);
+  });
+  document.getElementById('kpi-leads').textContent=leads.toLocaleString();
+  document.getElementById('kpi-ai').textContent=ai.toLocaleString();
+  document.getElementById('kpi-campaigns').textContent=campaigns.size.toLocaleString();
+  document.getElementById('kpi-sources').textContent=sources.size.toLocaleString();
+  document.getElementById('kpi-mediums').textContent=mediums.size.toLocaleString();
+  document.getElementById('kpi-rate').textContent=leads>0?((urlParsed/leads)*100).toFixed(1)+'%':'—';
+  document.getElementById('kpi-disc').textContent=disc.toLocaleString();
+  document.getElementById('kpi-inv').textContent=inv.toLocaleString();
+}
 
 function setTouch(val) {
   touchMode = val;
@@ -495,13 +639,14 @@ function renderTable(){
 
 function processAndRender(){
   const{rows,totalLeads,totalAI,urlParsed,totalDisc,totalInv}=aggregate(ALL_CONTACTS);
+  ALL_ROWS=rows;
+  // Reset filters on new data load
+  sourceFilter=null; mediumFilter=null;
   LAST_ROWS=rows;
-  document.getElementById('kpi-leads').textContent=totalLeads.toLocaleString();
-  document.getElementById('kpi-ai').textContent=totalAI.toLocaleString();
-  document.getElementById('kpi-campaigns').textContent=rows.filter(r=>r.fromUrl).length.toLocaleString();
-  document.getElementById('kpi-rate').textContent=totalLeads>0?((urlParsed/totalLeads)*100).toFixed(1)+'%':'—';
-  document.getElementById('kpi-disc').textContent=totalDisc.toLocaleString();
-  document.getElementById('kpi-inv').textContent=totalInv.toLocaleString();
+  // Build filter dropdowns from all rows
+  buildFilterDropdown('source', getAllSources());
+  buildFilterDropdown('medium', getAllMediums());
+  updateKPIs();
   sortCol='leads';sortDir='desc';
   renderTable();
 }
