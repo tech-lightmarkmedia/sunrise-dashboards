@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.5</title>
+<title>Sunrise Capital — UTM Attribution v1.6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -90,7 +90,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.5</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.6</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -202,6 +202,7 @@ let ROW_RECORDS = {};
 let sourceFilter = null, mediumFilter = null;
 let MILESTONE_URLS = {};
 let CAMPAIGN_NAME_BY_ID = {}; // numeric campaign ID → human-readable name
+let CONTACT_NAMES = {}; // contactId → display name (populated from batch reads)
 
 function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
 function closeDrill() { document.getElementById('drill-drawer').classList.remove('open'); }
@@ -368,7 +369,14 @@ let allCommitDeals = [];
 
 async function fetchAssociations() {
   CONTACT_FUNNEL = {};
+  CONTACT_NAMES = {};
   const cidSet = new Set(ALL_CONTACTS.map(c=>String(c.id)));
+  // Pre-populate names from ALL_CONTACTS
+  ALL_CONTACTS.forEach(c => {
+    const p=c.properties||{};
+    const name=((p.firstname||'')+' '+(p.lastname||'')).trim();
+    if(name) CONTACT_NAMES[String(c.id)] = name;
+  });
   cidSet.forEach(id => { CONTACT_FUNNEL[id] = {meetingRecords:[],investRecords:[],commitRecords:[]}; });
 
   // Meeting→Contact
@@ -380,17 +388,6 @@ async function fetchAssociations() {
       (d.results||[]).forEach(r=>{if(r.to?.length) meetToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
     } catch(e){}
   }
-  MEETINGS.forEach(m => {
-    const p=m.properties||{};
-    const out=(p.hs_meeting_outcome||'').toLowerCase();
-    if(out!=='completed'&&out!=='scheduled') return;
-    const title=(p.hs_meeting_title||'').toLowerCase();
-    if(!title.includes('discovery')&&!title.includes('disco')) return;
-    const cid=meetToContact[m.id];
-    if(cid&&CONTACT_FUNNEL[cid]) {
-      CONTACT_FUNNEL[cid].meetingRecords.push({id:m.id,title:p.hs_meeting_title||'',date:p.hs_meeting_start_time||p.hs_createdate||'',contactId:cid,contactName:getContactName(cid)});
-    }
-  });
 
   // Investment→Contact
   invToContact = {};
@@ -401,14 +398,8 @@ async function fetchAssociations() {
       (d.results||[]).forEach(r=>{if(r.to?.length) invToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
     }catch(e){}
   }
-  INVESTMENTS.forEach(inv=>{
-    const cid=invToContact[inv.id];const p=inv.properties||{};
-    if(cid&&CONTACT_FUNNEL[cid]){
-      CONTACT_FUNNEL[cid].investRecords.push({id:inv.id,amount:parseFloat(p.investment_amount||0),fund:p.fund_invested||'',type:p.type_of_investment||'',date:p.funds_received||'',contactId:cid,contactName:getContactName(cid)});
-    }
-  });
 
-  // Commit-stage deals
+  // Commit deals
   allCommitDeals=[]; let after=0,pages=0;
   while(pages<20){pages++;
     const d=await api('/crm/v3/objects/deals/search',{filterGroups:[{filters:[{propertyName:COMMIT_STAGE_PROP,operator:'HAS_PROPERTY'}]}],properties:[COMMIT_STAGE_PROP,'amount','dealname'],sorts:[{propertyName:COMMIT_STAGE_PROP,direction:'DESCENDING'}],limit:200,...(after?{after:String(after)}:{})});
@@ -422,19 +413,65 @@ async function fetchAssociations() {
       (d.results||[]).forEach(r=>{if(r.to?.length) dealToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
     }catch(e){}
   }
+
+  // Fetch names for all associated contacts we don't have names for yet
+  const allAssocCids = new Set([...Object.values(meetToContact),...Object.values(invToContact),...Object.values(dealToContact)]);
+  const needNames = [...allAssocCids].filter(id => !CONTACT_NAMES[id]);
+  if (needNames.length > 0) {
+    status(`Fetching names for ${needNames.length} contacts…`);
+    for (let i=0; i<needNames.length; i+=100) {
+      try {
+        const d = await api('/crm/v3/objects/contacts/batch/read',
+          {inputs:needNames.slice(i,i+100).map(id=>({id:String(id)})),properties:['firstname','lastname','email']});
+        (d.results||[]).forEach(c => {
+          const p=c.properties||{};
+          const name=((p.firstname||'')+' '+(p.lastname||'')).trim();
+          if(name) CONTACT_NAMES[String(c.id)] = name;
+          else if(p.email) CONTACT_NAMES[String(c.id)] = p.email;
+        });
+      } catch(e){}
+    }
+  }
+
+  // Now populate funnel records with names
+  MEETINGS.forEach(m => {
+    const p=m.properties||{};
+    const out=(p.hs_meeting_outcome||'').toLowerCase();
+    if(out!=='completed'&&out!=='scheduled') return;
+    const title=(p.hs_meeting_title||'').toLowerCase();
+    if(!title.includes('discovery')&&!title.includes('disco')) return;
+    const cid=meetToContact[m.id];
+    if(cid&&CONTACT_FUNNEL[cid]) {
+      CONTACT_FUNNEL[cid].meetingRecords.push({id:m.id,title:p.hs_meeting_title||'',date:p.hs_meeting_start_time||p.hs_createdate||'',contactId:cid,contactName:CONTACT_NAMES[cid]||'Contact '+cid});
+    }
+  });
+
+  INVESTMENTS.forEach(inv=>{
+    const cid=invToContact[inv.id];const p=inv.properties||{};
+    if(cid&&CONTACT_FUNNEL[cid]){
+      // Use investment's own email as name fallback if contact name is missing
+      const invEmail = p.email_address||'';
+      const displayName = CONTACT_NAMES[cid] || invEmail || 'Contact '+cid;
+      CONTACT_FUNNEL[cid].investRecords.push({id:inv.id,amount:parseFloat(p.investment_amount||0),fund:p.fund_invested||'',type:p.type_of_investment||'',date:p.funds_received||'',contactId:cid,contactName:displayName});
+    }
+  });
+
   allCommitDeals.forEach(deal=>{
     const cid=dealToContact[deal.id];const p=deal.properties||{};
     if(cid&&CONTACT_FUNNEL[cid]){
-      CONTACT_FUNNEL[cid].commitRecords.push({id:deal.id,name:p.dealname||'Deal '+deal.id,amount:parseFloat(p.amount||0),date:p[COMMIT_STAGE_PROP]||'',contactId:cid,contactName:getContactName(cid)});
+      CONTACT_FUNNEL[cid].commitRecords.push({id:deal.id,name:p.dealname||'Deal '+deal.id,amount:parseFloat(p.amount||0),date:p[COMMIT_STAGE_PROP]||'',contactId:cid,contactName:CONTACT_NAMES[cid]||'Contact '+cid});
     }
   });
 }
 
 function getContactName(cid) {
+  if (CONTACT_NAMES[cid]) return CONTACT_NAMES[cid];
   const c=ALL_CONTACTS.find(x=>String(x.id)===cid);
-  if(!c) return 'Contact '+cid;
+  if(!c) return '';
   const p=c.properties||{};
-  return ((p.firstname||'')+' '+(p.lastname||'')).trim()||'Contact '+cid;
+  const name = ((p.firstname||'')+' '+(p.lastname||'')).trim();
+  if (name) { CONTACT_NAMES[cid] = name; return name; }
+  return '';
 }
 
 // ── Milestone URL fetching ────────────────────────────────
@@ -619,11 +656,18 @@ function aggregate(contacts) {
         displayCampaign = utm.campaign;
       } else {
         // Two-part fallback: "(no URL campaign) · best available"
-        const convEvt = (p.first_conversion_event_name || '').trim();
+        let convEvt = (p.first_conversion_event_name || '').trim();
+        // Truncate long conversion event names (strip timestamps, parentheticals)
+        if (convEvt.length > 80) {
+          convEvt = convEvt.replace(/\s*\(.*?\)\s*/g, '').trim();
+          if (convEvt.length > 80) convEvt = convEvt.substring(0, 77) + '…';
+        }
         let pagePath = '';
         try { pagePath = new URL(getUrlForContact(c)).pathname; } catch(e){}
         const dd2 = (p.hs_analytics_source_data_2 || '').trim();
-        const fallbackDetail = convEvt || (pagePath && pagePath !== '/' ? pagePath : '') || dd2 || (p.hs_analytics_source || 'unknown');
+        // Skip numeric-only DD2 values (malformed owner IDs from defunct integrations)
+        const dd2Clean = /^\d+$/.test(dd2) ? '' : dd2;
+        const fallbackDetail = convEvt || (pagePath && pagePath !== '/' ? pagePath : '') || dd2Clean || (p.hs_analytics_source || 'unknown');
         displayCampaign = '(no URL campaign) · ' + fallbackDetail;
       }
       rows[key]={key,source:utm?utm.source:(p.hs_analytics_source||'UNKNOWN'),medium:utm?utm.medium:(p.hs_analytics_source_data_1||'—'),
