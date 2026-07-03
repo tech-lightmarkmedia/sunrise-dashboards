@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.6</title>
+<title>Sunrise Capital — UTM Attribution v1.7</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -90,7 +90,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.6</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.7</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -203,6 +203,35 @@ let sourceFilter = null, mediumFilter = null;
 let MILESTONE_URLS = {};
 let CAMPAIGN_NAME_BY_ID = {}; // numeric campaign ID → human-readable name
 let CONTACT_NAMES = {}; // contactId → display name (populated from batch reads)
+
+// Source normalization: merge aliases into canonical names
+const SOURCE_NORMALIZE = {
+  'fb':'facebook','ig':'instagram','adwords':'google',
+  'fb.com':'facebook','facebook.com':'facebook','instagram.com':'instagram',
+  'google.com':'google','linkedin.com':'linkedin'
+};
+function normalizeSource(s) {
+  const low = (s||'').toLowerCase().trim();
+  return SOURCE_NORMALIZE[low] || low;
+}
+
+// Medium domain extraction for filter grouping
+function mediumDomain(m) {
+  const v = (m||'').trim();
+  // If it looks like a URL path or domain, extract the hostname
+  if (v.includes('/') || v.includes('.com') || v.includes('.org') || v.includes('.io')) {
+    try {
+      // Try as full URL first
+      const u = new URL(v.startsWith('http') ? v : 'https://' + v);
+      return u.hostname;
+    } catch(e) {
+      // Extract domain-like portion before first /
+      const parts = v.split('/');
+      if (parts[0].includes('.')) return parts[0];
+    }
+  }
+  return v;
+}
 
 function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
 function closeDrill() { document.getElementById('drill-drawer').classList.remove('open'); }
@@ -579,7 +608,7 @@ function parseUtm(urlStr) {
       campaign = CAMPAIGN_NAME_BY_ID[campaign];
       resolved = true;
     }
-    return {source:source.toLowerCase().trim(),medium:medium.toLowerCase().trim(),campaign,resolved};
+    return {source:normalizeSource(source),medium:medium.toLowerCase().trim(),campaign,resolved};
   } catch(e){return null}
 }
 
@@ -648,7 +677,7 @@ function aggregate(contacts) {
     if(utm) urlParsed++;
 
     const key=utm?`${utm.source}||${utm.medium}||${utm.campaign}`
-      :`${(p.hs_analytics_source||'UNKNOWN').toLowerCase()}||${(p.hs_analytics_source_data_1||'').toLowerCase()}||__no_url__`;
+      :`${normalizeSource(p.hs_analytics_source||'UNKNOWN')}||${(p.hs_analytics_source_data_1||'').toLowerCase()}||__no_url__`;
 
     if(!rows[key]){
       let displayCampaign = '';
@@ -670,7 +699,7 @@ function aggregate(contacts) {
         const fallbackDetail = convEvt || (pagePath && pagePath !== '/' ? pagePath : '') || dd2Clean || (p.hs_analytics_source || 'unknown');
         displayCampaign = '(no URL campaign) · ' + fallbackDetail;
       }
-      rows[key]={key,source:utm?utm.source:(p.hs_analytics_source||'UNKNOWN'),medium:utm?utm.medium:(p.hs_analytics_source_data_1||'—'),
+      rows[key]={key,source:utm?utm.source:normalizeSource(p.hs_analytics_source||'UNKNOWN'),medium:utm?utm.medium:(p.hs_analytics_source_data_1||'—'),
         campaign:displayCampaign,leads:0,ai:0,discoveries:0,commits:0,investments:0,fromUrl:!!utm,resolved:utm?.resolved||false,aiPct:0};
       ROW_RECORDS[key]={meetings:[],investments:[],commits:[]};
     }
@@ -704,13 +733,44 @@ document.addEventListener('click',e=>{if(!e.target.closest('.filter-wrap'))docum
 function buildFilterDropdown(type,values) {
   const drop=document.getElementById(type+'-filter-drop');
   const filter=type==='source'?sourceFilter:mediumFilter;
-  const sorted=[...values].sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
   let html=`<div class="filter-actions"><button onclick="filterSelectAll('${type}')">All</button><button onclick="filterSelectNone('${type}')">None</button></div>`;
-  sorted.forEach(v=>{
-    const checked=!filter||filter.has(v)?'checked':'';
-    const esc=v.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    html+=`<label><input type="checkbox" ${checked} onchange="onFilterCheck('${type}','${esc}',this.checked)"> ${v}</label>`;
-  });
+  
+  if (type === 'medium') {
+    // Group by domain for URL-like mediums
+    const groups = {};
+    [...values].forEach(v => {
+      const domain = mediumDomain(v);
+      if (!groups[domain]) groups[domain] = [];
+      groups[domain].push(v);
+    });
+    const sortedDomains = Object.keys(groups).sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    sortedDomains.forEach(domain => {
+      const members = groups[domain].sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      if (members.length === 1) {
+        const v = members[0];
+        const checked = !filter || filter.has(v) ? 'checked' : '';
+        const esc = v.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        html += `<label><input type="checkbox" ${checked} onchange="onFilterCheck('${type}','${esc}',this.checked)"> ${v}</label>`;
+      } else {
+        const allChecked = members.every(v => !filter || filter.has(v));
+        const domEsc = domain.replace(/'/g,"\\'");
+        html += `<label style="font-weight:600;color:var(--text)"><input type="checkbox" ${allChecked?'checked':''} onchange="onMediumGroupCheck('${domEsc}',this.checked)"> ${domain} (${members.length})</label>`;
+        members.forEach(v => {
+          const checked = !filter || filter.has(v) ? 'checked' : '';
+          const esc = v.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+          html += `<label style="padding-left:32px"><input type="checkbox" ${checked} onchange="onFilterCheck('${type}','${esc}',this.checked)"> ${v}</label>`;
+        });
+      }
+    });
+  } else {
+    const sorted=[...values].sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
+    sorted.forEach(v=>{
+      const checked=!filter||filter.has(v)?'checked':'';
+      const esc=v.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      html+=`<label><input type="checkbox" ${checked} onchange="onFilterCheck('${type}','${esc}',this.checked)"> ${v}</label>`;
+    });
+  }
+  
   drop.innerHTML=html;
   updateFilterBtnState(type);
 }
@@ -722,6 +782,20 @@ function onFilterCheck(type,val,checked) {
   else{if(checked)filter.add(val);else filter.delete(val);if(filter.size===allVals.size)filter=null;}
   if(type==='source')sourceFilter=filter;else mediumFilter=filter;
   updateFilterBtnState(type);applyFiltersAndRender();
+}
+
+function onMediumGroupCheck(domain, checked) {
+  const allVals = getAllMediums();
+  if (!mediumFilter) mediumFilter = new Set(allVals);
+  // Find all mediums in this domain group
+  [...allVals].forEach(v => {
+    if (mediumDomain(v) === domain) {
+      if (checked) mediumFilter.add(v); else mediumFilter.delete(v);
+    }
+  });
+  if (mediumFilter.size === allVals.size) mediumFilter = null;
+  buildFilterDropdown('medium', allVals);
+  applyFiltersAndRender();
 }
 function filterSelectAll(type){if(type==='source')sourceFilter=null;else mediumFilter=null;buildFilterDropdown(type,type==='source'?getAllSources():getAllMediums());applyFiltersAndRender();}
 function filterSelectNone(type){if(type==='source')sourceFilter=new Set();else mediumFilter=new Set();buildFilterDropdown(type,type==='source'?getAllSources():getAllMediums());applyFiltersAndRender();}
