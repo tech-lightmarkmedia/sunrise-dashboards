@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — First-Touch Attribution v1.0</title>
+<title>Sunrise Capital — UTM Attribution v1.1</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#faf9f6;--surface:#fff;--text:#2c2a26;--text2:#6b6860;--text3:#9e9789;--accent:#b05a30;--accent-bg:#faf0ea;--border:#e2dfd8;--green:#3a8a5c;--red:#c0392b}
@@ -11,50 +11,63 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 header{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:var(--surface);border-bottom:1px solid var(--border)}
 header h1{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:var(--text)}
-.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+.vpill{font-size:10px;color:#9e9789;border:1px solid var(--border);padding:1px 6px;border-radius:10px;margin-left:8px}
 .header-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3)}
 .btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
-.btn:hover{background:var(--accent-bg)}
-
+.btn:hover{background:var(--accent-bg);color:var(--accent)}
 #controls{display:flex;align-items:center;gap:16px;padding:10px 28px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
 #controls label{font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:10px;color:var(--text2)}
 #controls select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
 #controls input[type="date"]{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}
 .custom-dates{display:none;gap:8px;align-items:center}
 .custom-dates.show{display:flex}
-
-.kpi-bar{display:flex;gap:16px;padding:16px 28px;flex-wrap:wrap}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;min-width:140px}
-.kpi-card .kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
-.kpi-card .kpi-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
-
-main{padding:16px 28px}
-#status{padding:12px 28px;color:var(--text3);font-size:12px}
-
+.pill-group{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.pill-group button{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:4px 12px;border:none;background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s}
+.pill-group button.active{background:var(--text);color:#fff}
+.toggle-group{display:flex;align-items:center;gap:6px}
+.kpi-bar{display:flex;gap:12px;padding:14px 28px;flex-wrap:wrap}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:120px}
+.kpi-card .kpi-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.kpi-card .kpi-val{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+main{padding:0 28px 28px}
+#status{padding:8px 28px;color:var(--text3);font-size:12px}
+#table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text2);background:#f7f5f0;border-bottom:2px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th{position:sticky;top:0;z-index:10;text-align:left;padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--text2);background:#f7f5f0;border-bottom:2px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
 thead th:hover{background:var(--accent-bg);color:var(--accent)}
-thead th .sort-arrow{margin-left:4px;font-size:9px;opacity:.4}
+thead th .sort-arrow{margin-left:3px;font-size:8px;opacity:.4}
 thead th.sorted .sort-arrow{opacity:1;color:var(--accent)}
-tbody td{padding:8px 14px;border-bottom:1px solid #f0ede7;font-size:13px}
+tbody td{padding:7px 12px;border-bottom:1px solid #f0ede7;font-size:13px}
 tbody tr:hover{background:#fcfbf8}
 td.num{text-align:right;font-variant-numeric:tabular-nums}
-.src-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin-right:4px}
+.src-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px}
 .src-facebook{background:#e8f0fe;color:#1877F2}
 .src-google,.src-adwords{background:#fef3e0;color:#EA4335}
 .src-linkedin{background:#e8f4f8;color:#0A66C2}
 .src-organic{background:#e8f5e9;color:#388E3C}
 .src-direct{background:#f3f0f0;color:#666}
+.src-email{background:#fce4ec;color:#c62828}
 .src-other{background:#f0eee8;color:var(--text2)}
 .no-data{text-align:center;padding:40px;color:var(--text3);font-size:14px}
+.fallback{font-size:10px;color:var(--text3);cursor:help}
+/* Guide drawer */
+#guide-overlay{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:100vw;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:999;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
+#guide-overlay.open{transform:translateX(0)}
+#guide-overlay .guide-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+#guide-overlay .guide-header h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin:0}
+#guide-overlay .guide-close{font-size:20px;background:none;border:none;cursor:pointer;color:var(--text2);padding:4px 8px}
+#guide-overlay .guide-body{padding:16px 20px;font-size:13px;line-height:1.6;color:var(--text)}
+#guide-overlay .guide-body h3{font-family:'DM Serif Display',serif;color:var(--accent);font-size:15px;margin:18px 0 6px;font-weight:400}
+#guide-overlay .guide-body p{margin:0 0 10px}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>First-Touch Attribution<span class="vpill">v1.0</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.1</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
+    <button class="btn" onclick="toggleGuide()">Guide</button>
     <button class="btn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
@@ -84,6 +97,13 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
     <label>To</label> <input type="date" id="date-to">
     <button class="btn" onclick="loadData()">Apply</button>
   </div>
+  <div class="toggle-group">
+    <label>Touch</label>
+    <div class="pill-group" id="touch-pills">
+      <button class="active" data-val="first" onclick="setTouch('first')">First Touch</button>
+      <button data-val="last" onclick="setTouch('last')">Last Touch</button>
+    </div>
+  </div>
 </div>
 
 <div class="kpi-bar">
@@ -91,6 +111,8 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="kpi-card"><div class="kpi-label">AI Leads</div><div class="kpi-val" id="kpi-ai">—</div></div>
   <div class="kpi-card"><div class="kpi-label">Unique Campaigns</div><div class="kpi-val" id="kpi-campaigns">—</div></div>
   <div class="kpi-card"><div class="kpi-label">URL Attribution Rate</div><div class="kpi-val" id="kpi-rate">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">Discoveries</div><div class="kpi-val" id="kpi-disc">—</div></div>
+  <div class="kpi-card"><div class="kpi-label">Investments</div><div class="kpi-val" id="kpi-inv">—</div></div>
 </div>
 
 <div id="status">Loading…</div>
@@ -98,9 +120,58 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   <div id="table-wrap"></div>
 </main>
 
+<div id="guide-overlay">
+  <div class="guide-header">
+    <h2>UTM Attribution — Guide</h2>
+    <button class="guide-close" onclick="toggleGuide()">✕</button>
+  </div>
+  <div class="guide-body">
+    <h3>What This Dashboard Shows</h3>
+    <p>Every contact's first (or last) landing URL is stored by HubSpot with all query parameters intact — including utm_source, utm_medium, and utm_campaign. This dashboard parses those URLs directly instead of relying on HubSpot's DD1/DD2 source categorization, which loses information through inconsistent mapping across source categories.</p>
+    <p>Each row is a unique source + medium + campaign combination. The columns show how many contacts (leads and AI leads) arrived through that combination, and what those contacts went on to produce: discovery calls, commitments, and funded investments.</p>
+
+    <h3>First Touch vs. Last Touch</h3>
+    <p><strong>First Touch</strong> parses <em>hs_analytics_first_url</em> — the URL from the contact's very first tracked visit. For contacts imported before HubSpot tracking was active (typically ~March 2023), this represents their first HubSpot-tracked interaction, not necessarily their original acquisition source.</p>
+    <p><strong>Last Touch</strong> parses <em>hs_analytics_last_url</em> — the URL from the contact's most recent session. This shows what brought them back most recently, which may differ from how they originally arrived.</p>
+
+    <h3>The † Fallback Indicator</h3>
+    <p>Rows marked with † could not be attributed from the URL (the field was empty or contained no utm_campaign). These fall back to HubSpot's Original Source and DD1/DD2 fields. The "URL Attribution Rate" KPI shows what percentage of contacts have parseable UTM data in their URL — higher is better.</p>
+
+    <h3>Funnel Columns</h3>
+    <p><strong>Discoveries:</strong> Discovery call meetings (HubSpot meetings with a discovery outcome) associated with contacts in that campaign row. From the R2 meetings cache.</p>
+    <p><strong>Commitments:</strong> Deals that entered the InvestNext commit stage, associated with contacts in that campaign row. Fetched live.</p>
+    <p><strong>Investments:</strong> Funded investment records associated with contacts in that campaign row. From the R2 investments cache.</p>
+    <p>These columns show the full-funnel outcome of each campaign's leads — not just volume, but what that volume produced.</p>
+
+    <h3>Data Source</h3>
+    <p>Contacts are fetched live from HubSpot (chunked by month to handle volume). Meetings and investments are read from the nightly R2 cache. Commitments are fetched live. All data is joined through contact associations.</p>
+  </div>
+</div>
+
 <script>
 const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
 const HS_DELAY = 120;
+const CACHE_BASE = WORKER;
+const COMMIT_STAGE_PROP = 'hs_v2_date_entered_1202837318';
+
+let touchMode = 'first'; // 'first' | 'last'
+let ALL_CONTACTS = [];
+let MEETINGS = [];
+let INVESTMENTS = [];
+let COMMIT_DEALS = [];
+let CONTACT_IDS_SET = new Set();
+// contactId → { meetings, investments, commits } lookup
+let CONTACT_FUNNEL = {};
+
+function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
+
+function setTouch(val) {
+  touchMode = val;
+  document.querySelectorAll('#touch-pills button').forEach(b => b.classList.toggle('active', b.dataset.val === val));
+  if (ALL_CONTACTS.length > 0) {
+    processAndRender();
+  }
+}
 
 async function api(path, body) {
   await new Promise(r => setTimeout(r, HS_DELAY));
@@ -120,14 +191,13 @@ function getDateRange() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const ms = (d) => d.getTime();
-
   const ranges = {
-    last7:    () => [ms(new Date(today - 7 * 864e5)), ms(today)],
-    last14:   () => [ms(new Date(today - 14 * 864e5)), ms(today)],
-    last30:   () => [ms(new Date(today - 30 * 864e5)), ms(today)],
-    last90:   () => [ms(new Date(today - 90 * 864e5)), ms(today)],
-    last6m:   () => [ms(new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())), ms(today)],
-    last12m:  () => [ms(new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())), ms(today)],
+    last7:    () => [ms(new Date(today - 7*864e5)), ms(today)],
+    last14:   () => [ms(new Date(today - 14*864e5)), ms(today)],
+    last30:   () => [ms(new Date(today - 30*864e5)), ms(today)],
+    last90:   () => [ms(new Date(today - 90*864e5)), ms(today)],
+    last6m:   () => [ms(new Date(now.getFullYear(), now.getMonth()-6, now.getDate())), ms(today)],
+    last12m:  () => [ms(new Date(now.getFullYear()-1, now.getMonth(), now.getDate())), ms(today)],
     thisMonth:() => [ms(new Date(now.getFullYear(), now.getMonth(), 1)), ms(today)],
     lastMonth:() => [ms(new Date(now.getFullYear(), now.getMonth()-1, 1)), ms(new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999))],
     thisQuarter:() => { const q = Math.floor(now.getMonth()/3)*3; return [ms(new Date(now.getFullYear(), q, 1)), ms(today)]; },
@@ -138,8 +208,8 @@ function getDateRange() {
     custom:   () => {
       const f = document.getElementById('date-from').value;
       const t = document.getElementById('date-to').value;
-      if (!f || !t) return [ms(new Date(today - 180 * 864e5)), ms(today)];
-      return [ms(new Date(f)), ms(new Date(t + 'T23:59:59.999'))];
+      if (!f || !t) return [ms(new Date(today - 180*864e5)), ms(today)];
+      return [ms(new Date(f)), ms(new Date(t+'T23:59:59.999'))];
     }
   };
   return (ranges[sel] || ranges.last6m)();
@@ -151,28 +221,21 @@ function onRangeChange() {
   if (sel !== 'custom') loadData();
 }
 
-// ── Fetch contacts with chunking ──────────────────────────
+// ── Fetch contacts ────────────────────────────────────────
 async function fetchContactsInRange(from, to) {
   const props = [
-    'createdate', 'hs_analytics_first_url', 'hs_analytics_source',
-    'hs_analytics_source_data_1', 'hs_analytics_source_data_2',
-    'are_you_accredited_', 'firstname', 'lastname',
-    'first_conversion_event_name'
+    'createdate', 'hs_analytics_first_url', 'hs_analytics_last_url',
+    'hs_analytics_source', 'hs_analytics_source_data_1', 'hs_analytics_source_data_2',
+    'are_you_accredited_', 'firstname', 'lastname'
   ];
-
-  // Chunk by month to stay under 10K per query
   const allContacts = [];
   let chunkStart = new Date(from);
   const endDate = new Date(to);
-
   while (chunkStart < endDate) {
-    let chunkEnd = new Date(chunkStart.getFullYear(), chunkStart.getMonth() + 1, 0, 23, 59, 59, 999);
+    let chunkEnd = new Date(chunkStart.getFullYear(), chunkStart.getMonth()+1, 0, 23, 59, 59, 999);
     if (chunkEnd > endDate) chunkEnd = endDate;
-
     status(`Fetching contacts ${chunkStart.toLocaleDateString()} – ${chunkEnd.toLocaleDateString()}…`);
-
-    let after = 0;
-    let pages = 0;
+    let after = 0, pages = 0;
     while (pages < 55) {
       pages++;
       const body = {
@@ -185,21 +248,121 @@ async function fetchContactsInRange(from, to) {
         limit: 200,
         ...(after ? { after: String(after) } : {})
       };
-
       const d = await api('/crm/v3/objects/contacts/search', body);
       allContacts.push(...(d.results || []));
-      if (d.paging?.next?.after) {
-        after = d.paging.next.after;
-      } else break;
+      if (d.paging?.next?.after) after = d.paging.next.after; else break;
     }
-
     chunkStart = new Date(chunkEnd.getTime() + 1);
   }
-
   return allContacts;
 }
 
-// ── Parse URL for UTMs ────────────────────────────────────
+// ── Fetch cached meetings + investments ───────────────────
+async function fetchCachedData() {
+  const [mR, iR] = await Promise.all([
+    fetch(`${CACHE_BASE}/cached-meetings`),
+    fetch(`${CACHE_BASE}/cached-investments`)
+  ]);
+  MEETINGS = mR.ok ? (await mR.json()).results || [] : [];
+  INVESTMENTS = iR.ok ? (await iR.json()).results || [] : [];
+}
+
+// ── Fetch meeting→contact and investment→contact associations
+async function fetchAssociations(contactIds) {
+  CONTACT_FUNNEL = {};
+  contactIds.forEach(id => { CONTACT_FUNNEL[id] = { meetings: 0, investments: 0, commits: 0 }; });
+
+  // Meeting → Contact associations
+  const meetIds = MEETINGS.map(m => m.id);
+  const meetToContact = {};
+  for (let i = 0; i < meetIds.length; i += 100) {
+    const batch = meetIds.slice(i, i+100);
+    try {
+      const d = await api('/crm/v4/associations/meetings/contacts/batch/read',
+        { inputs: batch.map(id => ({ id: String(id) })) });
+      (d.results || []).forEach(r => {
+        if (r.to?.length) meetToContact[String(r.from.id)] = String(r.to[0].toObjectId);
+      });
+    } catch(e) { console.warn('Meeting assoc error', e); }
+  }
+
+  // Count discovery meetings per contact
+  MEETINGS.forEach(m => {
+    const p = m.properties || {};
+    const outcome = (p.hs_meeting_outcome || '').toLowerCase();
+    if (outcome !== 'completed' && outcome !== 'scheduled') return;
+    const title = (p.hs_meeting_title || '').toLowerCase();
+    if (!title.includes('discovery') && !title.includes('disco')) return;
+    const cid = meetToContact[m.id];
+    if (cid && CONTACT_FUNNEL[cid]) CONTACT_FUNNEL[cid].meetings++;
+  });
+
+  // Investment → Contact associations
+  const invIds = INVESTMENTS.map(i => i.id);
+  const invToContact = {};
+  for (let i = 0; i < invIds.length; i += 100) {
+    const batch = invIds.slice(i, i+100);
+    try {
+      const d = await api('/crm/v4/associations/2-59402465/contacts/batch/read',
+        { inputs: batch.map(id => ({ id: String(id) })) });
+      (d.results || []).forEach(r => {
+        if (r.to?.length) invToContact[String(r.from.id)] = String(r.to[0].toObjectId);
+      });
+    } catch(e) { console.warn('Inv assoc error', e); }
+  }
+
+  INVESTMENTS.forEach(inv => {
+    const cid = invToContact[inv.id];
+    if (cid && CONTACT_FUNNEL[cid]) {
+      CONTACT_FUNNEL[cid].investments++;
+    }
+  });
+}
+
+// ── Fetch commit-stage deals ──────────────────────────────
+async function fetchCommitDeals(contactIds) {
+  // Fetch deals in the commit stage, then associate to contacts
+  const now = Date.now();
+  const yearAgo = now - 365*864e5;
+  let allDeals = [], after = 0, pages = 0;
+  while (pages < 20) {
+    pages++;
+    const body = {
+      filterGroups: [{ filters: [
+        { propertyName: COMMIT_STAGE_PROP, operator: 'HAS_PROPERTY' },
+        { propertyName: COMMIT_STAGE_PROP, operator: 'GTE', value: String(yearAgo) }
+      ]}],
+      properties: [COMMIT_STAGE_PROP, 'amount'],
+      sorts: [{ propertyName: COMMIT_STAGE_PROP, direction: 'DESCENDING' }],
+      limit: 200,
+      ...(after ? { after: String(after) } : {})
+    };
+    const d = await api('/crm/v3/objects/deals/search', body);
+    allDeals.push(...(d.results || []));
+    if (d.paging?.next?.after) after = d.paging.next.after; else break;
+  }
+
+  // Deal → Contact associations
+  const dealIds = allDeals.map(d => d.id);
+  const dealToContact = {};
+  for (let i = 0; i < dealIds.length; i += 100) {
+    const batch = dealIds.slice(i, i+100);
+    try {
+      const d = await api('/crm/v4/associations/deals/contacts/batch/read',
+        { inputs: batch.map(id => ({ id: String(id) })) });
+      (d.results || []).forEach(r => {
+        if (r.to?.length) dealToContact[String(r.from.id)] = String(r.to[0].toObjectId);
+      });
+    } catch(e) { console.warn('Deal assoc error', e); }
+  }
+
+  allDeals.forEach(deal => {
+    const cid = dealToContact[deal.id];
+    if (cid && CONTACT_FUNNEL[cid]) CONTACT_FUNNEL[cid].commits++;
+  });
+}
+
+// ── Parse URL ─────────────────────────────────────────────
 function parseUtm(urlStr) {
   if (!urlStr) return null;
   try {
@@ -213,146 +376,158 @@ function parseUtm(urlStr) {
       medium: medium.toLowerCase().trim(),
       campaign: decodeURIComponent(campaign).replace(/\+/g, ' ').trim()
     };
-  } catch (e) { return null; }
+  } catch(e) { return null; }
 }
 
-function isAI(contact) {
-  const acc = (contact.properties?.are_you_accredited_ || '').toLowerCase();
+function isAI(c) {
+  const acc = (c.properties?.are_you_accredited_ || '').toLowerCase();
   return acc === 'yes' || acc === 'true' || acc === '1';
 }
 
-// ── Aggregate ─────────────────────────────────────────────
+// ── Aggregate + render ────────────────────────────────────
+let sortCol = 'leads', sortDir = 'desc', LAST_ROWS = [];
+
 function aggregate(contacts) {
   const rows = {};
-  let totalLeads = 0, totalAI = 0, urlParsed = 0;
+  let totalLeads = 0, totalAI = 0, urlParsed = 0, totalDisc = 0, totalInv = 0;
 
   contacts.forEach(c => {
     const p = c.properties || {};
-    const utm = parseUtm(p.hs_analytics_first_url);
-
+    const urlField = touchMode === 'first' ? p.hs_analytics_first_url : p.hs_analytics_last_url;
+    const utm = parseUtm(urlField);
     totalLeads++;
     const ai = isAI(c) ? 1 : 0;
     totalAI += ai;
+    if (utm) urlParsed++;
 
     const key = utm
       ? `${utm.source}||${utm.medium}||${utm.campaign}`
-      : `${(p.hs_analytics_source || 'UNKNOWN').toLowerCase()}||${(p.hs_analytics_source_data_1 || '').toLowerCase()}||__no_url_campaign__`;
-
-    if (utm) urlParsed++;
+      : `${(p.hs_analytics_source || 'UNKNOWN').toLowerCase()}||${(p.hs_analytics_source_data_1 || '').toLowerCase()}||__no_url__`;
 
     if (!rows[key]) {
       rows[key] = {
         source: utm ? utm.source : (p.hs_analytics_source || 'UNKNOWN'),
         medium: utm ? utm.medium : (p.hs_analytics_source_data_1 || '—'),
         campaign: utm ? utm.campaign : '(no URL campaign)',
-        leads: 0,
-        ai: 0,
-        fromUrl: !!utm
+        leads: 0, ai: 0, discoveries: 0, commits: 0, investments: 0,
+        fromUrl: !!utm, aiPct: 0
       };
     }
-    rows[key].leads++;
-    rows[key].ai += ai;
+    const row = rows[key];
+    row.leads++;
+    row.ai += ai;
+
+    const funnel = CONTACT_FUNNEL[String(c.id)];
+    if (funnel) {
+      row.discoveries += funnel.meetings;
+      row.commits += funnel.commits;
+      row.investments += funnel.investments;
+      totalDisc += funnel.meetings;
+      totalInv += funnel.investments;
+    }
   });
 
-  return { rows: Object.values(rows), totalLeads, totalAI, urlParsed };
+  Object.values(rows).forEach(r => { r.aiPct = r.leads > 0 ? r.ai / r.leads : 0; });
+  return { rows: Object.values(rows), totalLeads, totalAI, urlParsed, totalDisc, totalInv };
 }
 
-// ── Sort ──────────────────────────────────────────────────
-let sortCol = 'leads';
-let sortDir = 'desc';
-
 function setSort(col) {
-  if (sortCol === col) { sortDir = sortDir === 'desc' ? 'asc' : 'desc'; }
+  if (sortCol === col) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
   else { sortCol = col; sortDir = 'desc'; }
   renderTable();
 }
-
-let LAST_ROWS = [];
 
 function renderTable() {
   const rows = [...LAST_ROWS];
   rows.sort((a, b) => {
     let va = a[sortCol], vb = b[sortCol];
-    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
     if (va < vb) return sortDir === 'asc' ? -1 : 1;
     if (va > vb) return sortDir === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const arrow = (col) => `<span class="sort-arrow">${sortCol === col ? (sortDir === 'desc' ? '▼' : '▲') : '↕'}</span>`;
-  const cls = (col) => sortCol === col ? 'sorted' : '';
+  const arrow = c => `<span class="sort-arrow">${sortCol===c?(sortDir==='desc'?'▼':'▲'):'↕'}</span>`;
+  const cls = c => sortCol===c?'sorted':'';
 
-  let html = `<table id="attr-table">
-    <thead><tr>
-      <th class="${cls('source')}" onclick="setSort('source')">Source ${arrow('source')}</th>
-      <th class="${cls('medium')}" onclick="setSort('medium')">Medium ${arrow('medium')}</th>
-      <th class="${cls('campaign')}" onclick="setSort('campaign')">Campaign ${arrow('campaign')}</th>
-      <th class="num ${cls('leads')}" onclick="setSort('leads')">Leads ${arrow('leads')}</th>
-      <th class="num ${cls('ai')}" onclick="setSort('ai')">AI Leads ${arrow('ai')}</th>
-      <th class="num ${cls('aiPct')}" onclick="setSort('aiPct')">AI % ${arrow('aiPct')}</th>
-    </tr></thead><tbody>`;
+  let html = `<table><thead><tr>
+    <th class="${cls('source')}" onclick="setSort('source')">Source ${arrow('source')}</th>
+    <th class="${cls('medium')}" onclick="setSort('medium')">Medium ${arrow('medium')}</th>
+    <th class="${cls('campaign')}" onclick="setSort('campaign')">Campaign ${arrow('campaign')}</th>
+    <th class="num ${cls('leads')}" onclick="setSort('leads')">Leads ${arrow('leads')}</th>
+    <th class="num ${cls('ai')}" onclick="setSort('ai')">AI Leads ${arrow('ai')}</th>
+    <th class="num ${cls('aiPct')}" onclick="setSort('aiPct')">AI % ${arrow('aiPct')}</th>
+    <th class="num ${cls('discoveries')}" onclick="setSort('discoveries')">Discoveries ${arrow('discoveries')}</th>
+    <th class="num ${cls('commits')}" onclick="setSort('commits')">Commits ${arrow('commits')}</th>
+    <th class="num ${cls('investments')}" onclick="setSort('investments')">Investments ${arrow('investments')}</th>
+  </tr></thead><tbody>`;
 
-  if (rows.length === 0) {
-    html += '<tr><td colspan="6" class="no-data">No data for this period.</td></tr>';
+  if (!rows.length) {
+    html += '<tr><td colspan="9" class="no-data">No data for this period.</td></tr>';
   } else {
     rows.forEach(r => {
-      const srcClass = r.source.includes('facebook') ? 'src-facebook'
-        : r.source.includes('google') || r.source.includes('adwords') ? 'src-google'
-        : r.source.includes('linkedin') ? 'src-linkedin'
-        : r.source.includes('organic') ? 'src-organic'
-        : r.source.includes('direct') ? 'src-direct'
-        : 'src-other';
-      const aiPct = r.leads > 0 ? ((r.ai / r.leads) * 100).toFixed(1) + '%' : '—';
-      r.aiPct = r.leads > 0 ? r.ai / r.leads : 0;
-      const urlTag = r.fromUrl ? '' : ' <span style="font-size:10px;color:var(--text3)" title="Attribution from DD1/DD2, not URL">†</span>';
+      const sc = r.source.includes('facebook')?'src-facebook':r.source.includes('google')||r.source.includes('adwords')?'src-google':r.source.includes('linkedin')?'src-linkedin':r.source.includes('organic')?'src-organic':r.source.includes('direct')?'src-direct':r.source.includes('email')?'src-email':'src-other';
+      const pct = r.leads>0?((r.ai/r.leads)*100).toFixed(1)+'%':'—';
+      const fb = r.fromUrl?'':' <span class="fallback" title="Fallback: DD1/DD2 (no URL campaign)">†</span>';
       html += `<tr>
-        <td><span class="src-tag ${srcClass}">${r.source || '—'}</span></td>
-        <td>${r.medium || '—'}</td>
-        <td>${r.campaign}${urlTag}</td>
+        <td><span class="src-tag ${sc}">${r.source||'—'}</span></td>
+        <td>${r.medium||'—'}</td>
+        <td>${r.campaign}${fb}</td>
         <td class="num">${r.leads.toLocaleString()}</td>
         <td class="num">${r.ai.toLocaleString()}</td>
-        <td class="num">${aiPct}</td>
+        <td class="num">${pct}</td>
+        <td class="num">${r.discoveries||''}</td>
+        <td class="num">${r.commits||''}</td>
+        <td class="num">${r.investments||''}</td>
       </tr>`;
     });
   }
-
   html += '</tbody></table>';
   document.getElementById('table-wrap').innerHTML = html;
+}
+
+function processAndRender() {
+  const { rows, totalLeads, totalAI, urlParsed, totalDisc, totalInv } = aggregate(ALL_CONTACTS);
+  LAST_ROWS = rows;
+  document.getElementById('kpi-leads').textContent = totalLeads.toLocaleString();
+  document.getElementById('kpi-ai').textContent = totalAI.toLocaleString();
+  document.getElementById('kpi-campaigns').textContent = rows.filter(r=>r.fromUrl).length.toLocaleString();
+  document.getElementById('kpi-rate').textContent = totalLeads>0?((urlParsed/totalLeads)*100).toFixed(1)+'%':'—';
+  document.getElementById('kpi-disc').textContent = totalDisc.toLocaleString();
+  document.getElementById('kpi-inv').textContent = totalInv.toLocaleString();
+  sortCol = 'leads'; sortDir = 'desc';
+  renderTable();
 }
 
 // ── Load ──────────────────────────────────────────────────
 async function loadData() {
   const [from, to] = getDateRange();
-  status('Fetching contacts…');
-
   try {
-    const contacts = await fetchContactsInRange(from, to);
-    status(`Processing ${contacts.length.toLocaleString()} contacts…`);
+    status('Fetching contacts…');
+    const [contacts] = await Promise.all([
+      fetchContactsInRange(from, to),
+      fetchCachedData()
+    ]);
+    ALL_CONTACTS = contacts;
+    CONTACT_IDS_SET = new Set(contacts.map(c => String(c.id)));
 
-    const { rows, totalLeads, totalAI, urlParsed } = aggregate(contacts);
-    LAST_ROWS = rows;
+    status(`Building associations for ${contacts.length.toLocaleString()} contacts…`);
+    await fetchAssociations([...CONTACT_IDS_SET]);
 
-    document.getElementById('kpi-leads').textContent = totalLeads.toLocaleString();
-    document.getElementById('kpi-ai').textContent = totalAI.toLocaleString();
-    document.getElementById('kpi-campaigns').textContent = rows.filter(r => r.fromUrl).length.toLocaleString();
-    document.getElementById('kpi-rate').textContent = totalLeads > 0
-      ? ((urlParsed / totalLeads) * 100).toFixed(1) + '%'
-      : '—';
+    status('Fetching commitments…');
+    await fetchCommitDeals([...CONTACT_IDS_SET]);
 
-    sortCol = 'leads';
-    sortDir = 'desc';
-    renderTable();
+    processAndRender();
 
     const rangeLabel = `${new Date(from).toLocaleDateString()} – ${new Date(to).toLocaleDateString()}`;
     status(`${contacts.length.toLocaleString()} contacts · ${rangeLabel}`);
     document.getElementById('status-pill').textContent = `${contacts.length.toLocaleString()} contacts`;
-  } catch (e) {
+  } catch(e) {
     status('Error: ' + e.message);
     console.error(e);
   }
 }
 
-// ── Init ──────────────────────────────────────────────────
 loadData();
 </script>
 </body>
