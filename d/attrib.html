@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.4</title>
+<title>Sunrise Capital — UTM Attribution v1.5</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -90,7 +90,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.4</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.5</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -166,11 +166,13 @@ td.drill:hover{text-decoration:underline}
     <h3>Attribution Modes</h3>
     <p><strong>First Touch:</strong> Parses the contact's first tracked landing URL. For contacts imported before HubSpot tracking (~March 2023), this represents their first HubSpot-tracked interaction, not their original acquisition source.</p>
     <p><strong>Last Touch Before Discovery:</strong> For contacts who had a discovery call in the date range, finds the most recent page visit or form submission URL before the discovery date. Shows which campaign was the final influence before booking. The table only shows contacts who reached discovery.</p>
-    <p><strong>Last Touch Before Commitment:</strong> Same logic, but before the InvestNext commit-stage date. Only shows contacts who committed in the date range. Note: commitment tracking (Fund V) began ~December 2024. Earlier periods will have no data.</p>
+    <p><strong>Last Touch Before Commitment:</strong> Same logic, but before the InvestNext commit-stage date. Only shows contacts who committed in the date range. Note: commitment tracking via the InvestNext commit pipeline stage (Fund V) began approximately December 2024. Earlier periods will show no commitment data.</p>
     <p><strong>Last Touch Before Investment:</strong> Same logic, but before the investment's funds_received date. Only shows contacts who funded in the date range.</p>
     <p><strong>Recent Activity:</strong> Parses the contact's most recent landing URL (hs_analytics_last_url). Shows what contacts are engaging with now, regardless of funnel stage.</p>
     <h3>The † Fallback</h3>
-    <p>Rows with † had no parseable URL campaign. They fall back to HubSpot's Original Source / DD1 / DD2. The "URL Attrib Rate" KPI shows what percentage had parseable UTM data.</p>
+    <p>Rows with † had no UTM parameters set on the landing URL, or HubSpot did not capture them. The campaign column shows "(no URL campaign)" followed by the best available alternative: the first conversion event name (e.g. "Facebook Lead Ads: LM[FB]- Tax 2026"), the landing page path, or the HubSpot DD1/DD2 source data.</p>
+    <h3>Campaign ID Resolution</h3>
+    <p>Some ad URLs use the numeric campaign ID instead of a human-readable name for utm_campaign (e.g. "120247034873820439"). The dashboard resolves these to campaign names using data from Meta, Google Ads, and LinkedIn APIs. Resolved names show a green <strong>ID→</strong> badge. Unresolvable IDs display as-is.</p>
     <h3>Filters</h3>
     <p>Use Source and Medium dropdowns to isolate specific platforms or channels. KPIs update with the filter. All/None buttons at the top for bulk selection.</p>
     <h3>Funnel Columns</h3>
@@ -185,6 +187,10 @@ const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
 const HS_DELAY = 120;
 const HS_PORTAL = '23126809';
 const COMMIT_STAGE_PROP = 'hs_v2_date_entered_1202837318';
+const META_API = WORKER + '/cached-meta-spend';
+const GOOGLE_API = WORKER + '/google-ads-api';
+const LINKEDIN_API = WORKER + '/linkedin-api';
+const LINKEDIN_AD_ACCT = '510241073';
 
 let touchMode = 'first'; // first | lastDisco | lastCommit | lastInvest | recent
 let ALL_CONTACTS = [];
@@ -194,9 +200,8 @@ let LAST_ROWS = [], ALL_ROWS = [];
 let sortCol = 'leads', sortDir = 'desc';
 let ROW_RECORDS = {};
 let sourceFilter = null, mediumFilter = null;
-
-// For milestone modes: contactId → URL string from event before milestone
 let MILESTONE_URLS = {};
+let CAMPAIGN_NAME_BY_ID = {}; // numeric campaign ID → human-readable name
 
 function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
 function closeDrill() { document.getElementById('drill-drawer').classList.remove('open'); }
@@ -252,7 +257,7 @@ async function api(path, body) {
 
 // ── Fetch contacts with sub-chunking for high-volume months ──
 async function fetchContactsInRange(from, to) {
-  const props = ['createdate','hs_analytics_first_url','hs_analytics_last_url','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','firstname','lastname'];
+  const props = ['createdate','hs_analytics_first_url','hs_analytics_last_url','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','firstname','lastname','first_conversion_event_name'];
   const all = [];
   let cs = new Date(from);
   const end = new Date(to);
@@ -304,6 +309,50 @@ async function fetchContactsInRange(from, to) {
     cs = new Date(ce.getTime()+1);
   }
   return all;
+}
+
+// ── Campaign name resolution from ad platforms ────────────
+async function fetchCampaignNames() {
+  CAMPAIGN_NAME_BY_ID = {};
+  // Meta: /cached-meta-spend returns {campaigns:{id:{name,spend,...}}}
+  try {
+    const r = await fetch(`${META_API}?from=2022-01-01&to=${new Date().toISOString().slice(0,10)}`);
+    if (r.ok) {
+      const d = await r.json();
+      Object.entries(d.campaigns || {}).forEach(([id, c]) => {
+        if (c.name) CAMPAIGN_NAME_BY_ID[id] = c.name;
+      });
+    }
+  } catch(e) { console.warn('Meta campaign names error', e); }
+
+  // Google Ads
+  try {
+    const fromIso = '2022-01-01', toIso = new Date().toISOString().slice(0,10);
+    const query = `SELECT campaign.id, campaign.name FROM campaign WHERE segments.date BETWEEN '${fromIso}' AND '${toIso}' AND campaign.status != 'REMOVED'`;
+    const r = await fetch(GOOGLE_API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({query}) });
+    if (r.ok) {
+      const d = await r.json();
+      (d.results || []).forEach(row => {
+        const id = String(row.campaign?.id || '');
+        const name = (row.campaign?.name || '').trim();
+        if (id && name) CAMPAIGN_NAME_BY_ID[id] = name;
+      });
+    }
+  } catch(e) { console.warn('Google campaign names error', e); }
+
+  // LinkedIn
+  try {
+    const path = `/rest/adAccounts/${LINKEDIN_AD_ACCT}/adCampaigns?q=search&search=(status:(values:List(ACTIVE,COMPLETED,PAUSED,ARCHIVED,REMOVED)))&start=0&count=1000`;
+    const r = await fetch(`${LINKEDIN_API}${path}`);
+    if (r.ok) {
+      const d = await r.json();
+      (d.elements || []).forEach(c => {
+        if (c.id && c.name) CAMPAIGN_NAME_BY_ID[String(c.id)] = c.name;
+      });
+    }
+  } catch(e) { console.warn('LinkedIn campaign names error', e); }
+
+  console.log(`[attrib] Campaign name lookup: ${Object.keys(CAMPAIGN_NAME_BY_ID).length} campaigns`);
 }
 
 // ── Cached data ───────────────────────────────────────────
@@ -484,9 +533,16 @@ function parseUtm(urlStr) {
   if(!urlStr) return null;
   try {
     const u=new URL(urlStr);
-    const source=u.searchParams.get('utm_source')||'',medium=u.searchParams.get('utm_medium')||'',campaign=u.searchParams.get('utm_campaign')||'';
+    let source=u.searchParams.get('utm_source')||'',medium=u.searchParams.get('utm_medium')||'',campaign=u.searchParams.get('utm_campaign')||'';
     if(!source&&!campaign) return null;
-    return {source:source.toLowerCase().trim(),medium:medium.toLowerCase().trim(),campaign:decodeURIComponent(campaign).replace(/\+/g,' ').trim()};
+    campaign = decodeURIComponent(campaign).replace(/\+/g,' ').trim();
+    // Resolve numeric campaign IDs to names
+    let resolved = false;
+    if (/^\d{8,}$/.test(campaign) && CAMPAIGN_NAME_BY_ID[campaign]) {
+      campaign = CAMPAIGN_NAME_BY_ID[campaign];
+      resolved = true;
+    }
+    return {source:source.toLowerCase().trim(),medium:medium.toLowerCase().trim(),campaign,resolved};
   } catch(e){return null}
 }
 
@@ -558,8 +614,20 @@ function aggregate(contacts) {
       :`${(p.hs_analytics_source||'UNKNOWN').toLowerCase()}||${(p.hs_analytics_source_data_1||'').toLowerCase()}||__no_url__`;
 
     if(!rows[key]){
+      let displayCampaign = '';
+      if (utm) {
+        displayCampaign = utm.campaign;
+      } else {
+        // Two-part fallback: "(no URL campaign) · best available"
+        const convEvt = (p.first_conversion_event_name || '').trim();
+        let pagePath = '';
+        try { pagePath = new URL(getUrlForContact(c)).pathname; } catch(e){}
+        const dd2 = (p.hs_analytics_source_data_2 || '').trim();
+        const fallbackDetail = convEvt || (pagePath && pagePath !== '/' ? pagePath : '') || dd2 || (p.hs_analytics_source || 'unknown');
+        displayCampaign = '(no URL campaign) · ' + fallbackDetail;
+      }
       rows[key]={key,source:utm?utm.source:(p.hs_analytics_source||'UNKNOWN'),medium:utm?utm.medium:(p.hs_analytics_source_data_1||'—'),
-        campaign:utm?utm.campaign:'(no URL campaign)',leads:0,ai:0,discoveries:0,commits:0,investments:0,fromUrl:!!utm,aiPct:0};
+        campaign:displayCampaign,leads:0,ai:0,discoveries:0,commits:0,investments:0,fromUrl:!!utm,resolved:utm?.resolved||false,aiPct:0};
       ROW_RECORDS[key]={meetings:[],investments:[],commits:[]};
     }
     rows[key].leads++;rows[key].ai+=ai;
@@ -681,11 +749,12 @@ function renderTable(){
   else{rows.forEach(r=>{
     const sc=r.source.includes('facebook')?'src-facebook':r.source.includes('google')||r.source.includes('adwords')?'src-google':r.source.includes('linkedin')?'src-linkedin':r.source.includes('organic')?'src-organic':r.source.includes('direct')?'src-direct':r.source.includes('email')||r.source.includes('hs_email')?'src-email':'src-other';
     const pct=r.leads>0?((r.ai/r.leads)*100).toFixed(1)+'%':'—';
-    const fb=r.fromUrl?'':' <span class="fallback" title="Fallback: DD1/DD2">†</span>';
+    const fb=r.fromUrl?'':' <span class="fallback" title="UTM parameters were not set on this contact\'s landing URL or were not captured by HubSpot">†</span>';
+    const resolvedTag=r.resolved?' <span style="font-size:9px;color:var(--green);font-weight:600" title="Campaign name resolved from numeric ID">ID→</span>':'';
     const dc=r.discoveries?`<td class="drill" onclick="openDrill('${r.key}','meetings')">${r.discoveries}</td>`:'<td class="num"></td>';
     const cc=r.commits?`<td class="drill" onclick="openDrill('${r.key}','commits')">${r.commits}</td>`:'<td class="num"></td>';
     const ic=r.investments?`<td class="drill" onclick="openDrill('${r.key}','investments')">${r.investments}</td>`:'<td class="num"></td>';
-    html+=`<tr><td><span class="src-tag ${sc}">${r.source||'—'}</span></td><td>${r.medium||'—'}</td><td>${r.campaign}${fb}</td><td class="num">${r.leads.toLocaleString()}</td><td class="num">${r.ai.toLocaleString()}</td><td class="num">${pct}</td>${dc}${cc}${ic}</tr>`;
+    html+=`<tr><td><span class="src-tag ${sc}">${r.source||'—'}</span></td><td>${r.medium||'—'}</td><td>${r.campaign}${resolvedTag}${fb}</td><td class="num">${r.leads.toLocaleString()}</td><td class="num">${r.ai.toLocaleString()}</td><td class="num">${pct}</td>${dc}${cc}${ic}</tr>`;
   });}
   html+='</tbody></table>';
   document.getElementById('table-wrap').innerHTML=html;
@@ -708,8 +777,8 @@ function processAndRender(){
 async function loadData(){
   const[from,to]=getDateRange();
   try{
-    status('Fetching contacts + cached data…');
-    const[contacts]=await Promise.all([fetchContactsInRange(from,to),fetchCachedData()]);
+    status('Fetching contacts + cached data + campaign names…');
+    const[contacts]=await Promise.all([fetchContactsInRange(from,to),fetchCachedData(),fetchCampaignNames()]);
     ALL_CONTACTS=contacts;
     status(`Building associations for ${contacts.length.toLocaleString()} contacts…`);
     await fetchAssociations();
