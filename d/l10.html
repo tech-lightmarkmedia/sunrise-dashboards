@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunrise Capital — L10 Dashboard v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--text);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:14px}
+header h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;flex:1}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+.header-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3)}
+.hbtn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid #555;background:transparent;color:#bbb;cursor:pointer}
+.hbtn:hover{background:rgba(255,255,255,.1);color:#fff}
+#status{padding:8px 28px;color:var(--text3);font-size:12px}
+main{padding:20px 28px;max-width:900px}
+
+/* Section headers */
+.section-head{font-family:'DM Serif Display',serif;font-size:16px;color:var(--accent);margin:28px 0 14px;padding-bottom:6px;border-bottom:2px solid var(--accent);display:flex;align-items:baseline;gap:12px}
+.section-head:first-child{margin-top:0}
+.section-head select{font-family:'DM Sans',sans-serif;font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);margin-left:auto}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.kpi-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);line-height:1.1}
+.kpi-delta{font-size:12px;font-weight:600;margin-top:6px}
+.kpi-delta.up{color:var(--green)}
+.kpi-delta.down{color:var(--red)}
+.kpi-delta.flat{color:var(--text3)}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Activity cards */
+.activity-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.activity-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.activity-val{font-family:'DM Serif Display',serif;font-size:32px;color:var(--text);line-height:1.1}
+.activity-detail{font-size:13px;color:var(--text2);margin-top:8px}
+.activity-detail strong{color:var(--text)}
+
+/* Guide */
+#guide-overlay{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:999;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
+#guide-overlay.open{transform:translateX(0)}
+#guide-overlay .guide-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+#guide-overlay .guide-header h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin:0}
+#guide-overlay .guide-close{font-size:20px;background:none;border:none;cursor:pointer;color:var(--text2);padding:4px 8px}
+#guide-overlay .guide-body{padding:16px 20px;font-size:13px;line-height:1.6;color:var(--text)}
+#guide-overlay .guide-body h3{font-family:'DM Serif Display',serif;color:var(--accent);font-size:15px;margin:18px 0 6px;font-weight:400}
+#guide-overlay .guide-body p{margin:0 0 10px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>IR Team — L10<span class="vpill">v1.0</span></h1>
+  <div class="header-right">
+    <span id="status-pill"></span>
+    <button class="hbtn" onclick="toggleGuide()">Guide</button>
+    <button class="hbtn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
+
+<div id="status">Loading…</div>
+
+<main>
+  <div class="section-head" id="quarter-head">Quarter vs. Quarter</div>
+  <div class="kpi-grid" id="quarter-cards">
+    <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val" id="q-total">—</div><div class="kpi-delta" id="q-total-delta"></div><div class="kpi-sub" id="q-total-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val" id="q-new">—</div><div class="kpi-delta" id="q-new-delta"></div><div class="kpi-sub" id="q-new-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Repeat Money</div><div class="kpi-val" id="q-repeat">—</div><div class="kpi-delta" id="q-repeat-delta"></div><div class="kpi-sub" id="q-repeat-sub"></div></div>
+  </div>
+
+  <div class="section-head">
+    Recent Activity
+    <select id="window-select" onchange="renderActivity()">
+      <option value="7" selected>Last 7 Days</option>
+      <option value="14">Last 14 Days</option>
+      <option value="30">Last 30 Days</option>
+    </select>
+  </div>
+  <div class="activity-grid" id="activity-cards">
+    <div class="activity-card"><div class="kpi-label">Discovery Calls Set</div><div class="activity-val" id="a-disco">—</div></div>
+    <div class="activity-card"><div class="kpi-label">Commitments Made</div><div class="activity-val" id="a-commit-count">—</div><div class="activity-detail" id="a-commit-detail"></div></div>
+    <div class="activity-card"><div class="kpi-label">Investments Funded</div><div class="activity-val" id="a-invest-count">—</div><div class="activity-detail" id="a-invest-detail"></div></div>
+  </div>
+</main>
+
+<div id="guide-overlay">
+  <div class="guide-header"><h2>L10 Dashboard — Guide</h2><button class="guide-close" onclick="toggleGuide()">✕</button></div>
+  <div class="guide-body">
+    <h3>Purpose</h3>
+    <p>A quick-glance dashboard for the IR team's L10 meeting. Shows quarterly capital raise performance with a comparison indicator, plus recent activity in a configurable rolling window.</p>
+
+    <h3>Quarter vs. Quarter</h3>
+    <p><strong>Total Raise:</strong> Total funded capital (from HubSpot Investment records, anchored on funds_received date) for the current quarter. The delta shows the change vs. the previous quarter's same-point-in-quarter figure.</p>
+    <p><strong>New Money:</strong> Capital from investments classified as "New" (type_of_investment = New).</p>
+    <p><strong>Repeat Money:</strong> Capital from Repeat and Bolt-On investments.</p>
+    <p>The comparison indicator (↑/↓/—) and percentage show how the current quarter compares to the previous quarter at the same elapsed point. For example, if today is Day 35 of Q3, the comparison is against the first 35 days of Q2.</p>
+
+    <h3>Recent Activity</h3>
+    <p><strong>Discovery Calls Set:</strong> Meetings with call_and_meeting_type = "Discovery Call - Main" or "Discovery Call - Setters" created in the window. Uses meeting creation date (when booked).</p>
+    <p><strong>Commitments Made:</strong> Deals entering the InvestNext commit pipeline stage in the window. Shows count and total dollar amount.</p>
+    <p><strong>Investments Funded:</strong> Investment records with funds_received in the window. Shows count and total dollar amount.</p>
+
+    <h3>Data Sources</h3>
+    <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments fetched live from HubSpot. Use ↻ Refresh to reload.</p>
+  </div>
+</div>
+
+<script>
+const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const HS_DELAY = 120;
+const COMMIT_STAGE_PROP = 'hs_v2_date_entered_1202837318';
+const DISCOVERY_TYPES = new Set(['Discovery Call - Main', 'Discovery Call - Setters']);
+
+let INVESTMENTS = [], MEETINGS = [], COMMIT_DEALS = [];
+
+function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
+function status(msg) { document.getElementById('status').textContent = msg; }
+
+async function api(path, body) {
+  await new Promise(r => setTimeout(r, HS_DELAY));
+  const opts = body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : {};
+  const r = await fetch(`${WORKER}/hs-api${path}`, opts);
+  if (!r.ok) throw new Error(`API ${r.status}`);
+  return r.json();
+}
+
+function $(v) {
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
+  return '$' + v.toFixed(0);
+}
+
+// ── Quarter helpers ───────────────────────────────────────
+function getQuarterBounds(date) {
+  const y = date.getFullYear();
+  const q = Math.floor(date.getMonth() / 3);
+  const start = new Date(y, q * 3, 1, 0, 0, 0, 0);
+  const end = new Date(y, q * 3 + 3, 0, 23, 59, 59, 999);
+  return { start, end, label: `Q${q+1} ${y}` };
+}
+
+function getPrevQuarterBounds(date) {
+  const y = date.getFullYear();
+  const q = Math.floor(date.getMonth() / 3);
+  const pq = q === 0 ? 3 : q - 1;
+  const py = q === 0 ? y - 1 : y;
+  const start = new Date(py, pq * 3, 1, 0, 0, 0, 0);
+  const end = new Date(py, pq * 3 + 3, 0, 23, 59, 59, 999);
+  return { start, end, label: `Q${pq+1} ${py}` };
+}
+
+function daysIntoQuarter(date, qStart) {
+  return Math.floor((date - qStart) / 864e5) + 1;
+}
+
+// ── Fetch data ────────────────────────────────────────────
+async function fetchCachedData() {
+  const [mR, iR] = await Promise.all([
+    fetch(`${WORKER}/cached-meetings`),
+    fetch(`${WORKER}/cached-investments`)
+  ]);
+  MEETINGS = mR.ok ? (await mR.json()).results || [] : [];
+  INVESTMENTS = iR.ok ? (await iR.json()).results || [] : [];
+}
+
+async function fetchCommitDeals() {
+  COMMIT_DEALS = [];
+  let after = 0, pages = 0;
+  while (pages < 20) {
+    pages++;
+    const d = await api('/crm/v3/objects/deals/search', {
+      filterGroups: [{filters: [{propertyName: COMMIT_STAGE_PROP, operator: 'HAS_PROPERTY'}]}],
+      properties: [COMMIT_STAGE_PROP, 'amount', 'dealname'],
+      sorts: [{propertyName: COMMIT_STAGE_PROP, direction: 'DESCENDING'}],
+      limit: 200,
+      ...(after ? {after: String(after)} : {})
+    });
+    COMMIT_DEALS.push(...(d.results || []));
+    if (d.paging?.next?.after) after = d.paging.next.after; else break;
+  }
+}
+
+// ── Render quarter comparison ─────────────────────────────
+function renderQuarter() {
+  const now = new Date();
+  const cq = getQuarterBounds(now);
+  const pq = getPrevQuarterBounds(now);
+  const elapsed = daysIntoQuarter(now, cq.start);
+
+  // Same-point comparison: first N days of previous quarter
+  const pqSamePoint = new Date(pq.start.getTime() + (elapsed - 1) * 864e5);
+  pqSamePoint.setHours(23, 59, 59, 999);
+
+  document.getElementById('quarter-head').textContent = `${cq.label} vs. ${pq.label}`;
+
+  // Filter investments
+  const cqInvs = INVESTMENTS.filter(i => {
+    const d = new Date(i.properties?.funds_received || 0).getTime();
+    return d >= cq.start.getTime() && d <= now.getTime();
+  });
+  const pqInvs = INVESTMENTS.filter(i => {
+    const d = new Date(i.properties?.funds_received || 0).getTime();
+    return d >= pq.start.getTime() && d <= pqSamePoint.getTime();
+  });
+
+  const sumAmt = (invs) => invs.reduce((s, i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
+  const filterType = (invs, type) => invs.filter(i => (i.properties?.type_of_investment || '') === type);
+  const filterRepeat = (invs) => invs.filter(i => {
+    const t = i.properties?.type_of_investment || '';
+    return t === 'Repeat' || t === 'Bolt-On';
+  });
+
+  const cqTotal = sumAmt(cqInvs), pqTotal = sumAmt(pqInvs);
+  const cqNew = sumAmt(filterType(cqInvs, 'New')), pqNew = sumAmt(filterType(pqInvs, 'New'));
+  const cqRepeat = sumAmt(filterRepeat(cqInvs)), pqRepeat = sumAmt(filterRepeat(pqInvs));
+
+  function setCard(prefix, current, previous, prevLabel) {
+    document.getElementById(prefix).textContent = $(current);
+    const delta = previous > 0 ? ((current - previous) / previous * 100) : (current > 0 ? 100 : 0);
+    const el = document.getElementById(prefix + '-delta');
+    if (Math.abs(delta) < 0.5) {
+      el.textContent = '— flat vs. ' + prevLabel;
+      el.className = 'kpi-delta flat';
+    } else if (delta > 0) {
+      el.textContent = `↑ ${delta.toFixed(1)}% vs. ${prevLabel}`;
+      el.className = 'kpi-delta up';
+    } else {
+      el.textContent = `↓ ${Math.abs(delta).toFixed(1)}% vs. ${prevLabel}`;
+      el.className = 'kpi-delta down';
+    }
+    document.getElementById(prefix + '-sub').textContent = `${prevLabel}: ${$(previous)} (day ${elapsed} of quarter)`;
+  }
+
+  setCard('q-total', cqTotal, pqTotal, pq.label);
+  setCard('q-new', cqNew, pqNew, pq.label);
+  setCard('q-repeat', cqRepeat, pqRepeat, pq.label);
+}
+
+// ── Render activity ───────────────────────────────────────
+function renderActivity() {
+  const days = parseInt(document.getElementById('window-select').value) || 7;
+  const now = Date.now();
+  const from = now - days * 864e5;
+
+  // Discovery calls set
+  const discos = MEETINGS.filter(m => {
+    const p = m.properties || {};
+    const rawType = p.call_and_meeting_type || p.hs_activity_type || '';
+    if (!DISCOVERY_TYPES.has(rawType)) return false;
+    const created = new Date(p.hs_createdate || 0).getTime();
+    return created >= from && created <= now;
+  });
+  document.getElementById('a-disco').textContent = discos.length;
+
+  // Commitments
+  const commits = COMMIT_DEALS.filter(d => {
+    const dt = new Date(d.properties?.[COMMIT_STAGE_PROP] || 0).getTime();
+    return dt >= from && dt <= now;
+  });
+  const commitDollars = commits.reduce((s, d) => s + parseFloat(d.properties?.amount || 0), 0);
+  document.getElementById('a-commit-count').textContent = commits.length;
+  document.getElementById('a-commit-detail').innerHTML = commitDollars > 0
+    ? `<strong>${$(commitDollars)}</strong> committed` : '';
+
+  // Investments funded
+  const funded = INVESTMENTS.filter(i => {
+    const dt = new Date(i.properties?.funds_received || 0).getTime();
+    return dt >= from && dt <= now;
+  });
+  const fundedDollars = funded.reduce((s, i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
+  document.getElementById('a-invest-count').textContent = funded.length;
+  document.getElementById('a-invest-detail').innerHTML = fundedDollars > 0
+    ? `<strong>${$(fundedDollars)}</strong> funded` : '';
+}
+
+// ── Load ──────────────────────────────────────────────────
+async function loadData() {
+  try {
+    status('Loading…');
+    await Promise.all([fetchCachedData(), fetchCommitDeals()]);
+    renderQuarter();
+    renderActivity();
+    status('Updated ' + new Date().toLocaleTimeString());
+    document.getElementById('status-pill').textContent = `${INVESTMENTS.length} investments`;
+  } catch(e) {
+    status('Error: ' + e.message);
+    console.error(e);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
