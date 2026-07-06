@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.9</title>
+<title>Sunrise Capital — UTM Attribution v1.11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -80,6 +80,11 @@ td.drill:hover{text-decoration:underline}
 .dd-row .dd-meta{color:var(--text3);font-size:11px;white-space:nowrap}
 .dd-row .dd-amount{font-weight:600;white-space:nowrap}
 .dd-empty{padding:24px 18px;color:var(--text3);text-align:center;font-size:13px}
+.dd-pager{display:flex;justify-content:space-between;align-items:center;padding:8px 18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)}
+.dd-pager button{font-family:'DM Sans',sans-serif;font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text2);cursor:pointer}
+.dd-pager button:hover{border-color:var(--accent);color:var(--accent)}
+.dd-pager button:disabled{opacity:.3;cursor:default}
+.dd-pager .dd-page-info{font-size:11px;color:var(--text3)}
 #guide-overlay{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:100vw;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:999;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
 #guide-overlay.open{transform:translateX(0)}
 #guide-overlay .guide-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
@@ -93,7 +98,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.9</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.11</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -142,6 +147,7 @@ td.drill:hover{text-decoration:underline}
   <div class="toggle-group">
     <label>Search</label>
     <input type="text" class="search-input" id="campaign-search" placeholder="Campaign (3+ chars)" oninput="onCampaignSearch()">
+    <input type="text" class="search-input" id="url-search" placeholder="URL (3+ chars)" oninput="onUrlSearch()">
   </div>
 </div>
 
@@ -182,7 +188,12 @@ td.drill:hover{text-decoration:underline}
     <p>Some ad URLs use the numeric campaign ID instead of a human-readable name for utm_campaign (e.g. "120247034873820439"). The dashboard resolves these to campaign names using data from Meta, Google Ads, and LinkedIn APIs. Resolved names show a green <strong>ID→</strong> badge. Unresolvable IDs display as-is.</p>
     <h3>Filters</h3>
     <p>Use Source and Medium dropdowns to isolate specific platforms or channels. KPIs update with the filter. All/None buttons at the top for bulk selection.</p>
-    <p><strong>Campaign Search:</strong> Type 3 or more characters to filter the table to rows where the campaign name contains your search term. Useful for finding specific campaigns across all sources.</p>
+    <p><strong>Campaign Search:</strong> Type 3 or more characters to filter the table to rows where the campaign name contains your search term.</p>
+    <p><strong>URL Search:</strong> Type 3 or more characters to filter to rows where any contact's raw landing URL contains the search term. Useful for finding specific pages, UTM values, or link parameters regardless of how they were parsed into source/medium/campaign.</p>
+    <h3>Date Range Behavior by Mode</h3>
+    <p><strong>First Touch:</strong> Filters contacts by creation date (createdate). Shows contacts created in the selected window.</p>
+    <p><strong>Recent Activity:</strong> Filters contacts by last visit date (hs_analytics_last_visit_timestamp). Shows contacts who visited recently, regardless of when they were originally created — so an investor from 2022 who clicked a link yesterday will appear.</p>
+    <p><strong>Milestone modes:</strong> Finds contacts who reached the milestone (discovery/commitment/investment) within the date range, regardless of when the contact was created. Reads directly from cached meetings, deals, and investments to identify qualifying contacts, then batch-reads their properties.</p>
     <h3>Milestone Touch Logic</h3>
     <p>For "Last Touch Before Discovery/Commitment/Investment" modes, the dashboard finds the marketing touch that brought the contact to the conversion action — not the conversion action itself. It fetches recent page visits and form submissions before the milestone date, skips the conversion page (booking form, commitment page, etc.) and non-marketing URLs (HubSpot meeting links, InvestNext), and returns the first event with a different URL — preferring events with UTM parameters.</p>
     <h3>Funnel Columns</h3>
@@ -221,6 +232,7 @@ let sortCol = 'leads', sortDir = 'desc';
 let ROW_RECORDS = {};
 let sourceFilter = null, mediumFilter = null;
 let campaignSearch = '';
+let urlSearch = '';
 let MILESTONE_URLS = {};
 let CAMPAIGN_NAME_BY_ID = {}; // numeric campaign ID → human-readable name
 let CONTACT_NAMES = {}; // contactId → display name (populated from batch reads)
@@ -307,7 +319,8 @@ async function api(path, body) {
 }
 
 // ── Fetch contacts with sub-chunking for high-volume months ──
-async function fetchContactsInRange(from, to) {
+async function fetchContactsInRange(from, to, dateProp) {
+  dateProp = dateProp || 'createdate';
   const props = ['createdate','hs_analytics_first_url','hs_analytics_last_url','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','firstname','lastname','first_conversion_event_name'];
   const all = [];
   let cs = new Date(from);
@@ -317,49 +330,65 @@ async function fetchContactsInRange(from, to) {
     if (ce > end) ce = end;
     status(`Fetching contacts ${cs.toLocaleDateString()} – ${ce.toLocaleDateString()}…`);
 
-    let monthContacts = [];
-    let after = 0, pages = 0, hitCap = false;
-    while (pages < 55) {
-      pages++;
-      const d = await api('/crm/v3/objects/contacts/search', {
-        filterGroups:[{filters:[{propertyName:'createdate',operator:'GTE',value:String(cs.getTime())},{propertyName:'createdate',operator:'LTE',value:String(ce.getTime())}]}],
-        properties:props, sorts:[{propertyName:'createdate',direction:'ASCENDING'}], limit:200, ...(after?{after:String(after)}:{})
-      });
-      monthContacts.push(...(d.results||[]));
-      if (d.paging?.next?.after) { after = d.paging.next.after; } 
-      else break;
-      if (pages >= 50) { hitCap = true; break; }
-    }
-
-    if (hitCap) {
+    const monthResult = await fetchChunk(cs, ce, dateProp, props);
+    if (monthResult.hitCap) {
       // Sub-chunk by week
-      console.log(`[attrib] Month ${cs.toLocaleDateString()} hit 10K cap, sub-chunking by week`);
-      monthContacts = [];
+      console.log(`[attrib] Month hit 10K cap, sub-chunking by week`);
       let wStart = new Date(cs);
       while (wStart <= ce) {
         let wEnd = new Date(wStart.getTime() + 6*864e5);
         if (wEnd > ce) wEnd = new Date(ce);
         wEnd.setHours(23,59,59,999);
-        status(`Sub-chunk ${wStart.toLocaleDateString()} – ${wEnd.toLocaleDateString()}…`);
-        let wAfter = 0, wPages = 0;
-        while (wPages < 55) {
-          wPages++;
-          const d = await api('/crm/v3/objects/contacts/search', {
-            filterGroups:[{filters:[{propertyName:'createdate',operator:'GTE',value:String(wStart.getTime())},{propertyName:'createdate',operator:'LTE',value:String(wEnd.getTime())}]}],
-            properties:props, sorts:[{propertyName:'createdate',direction:'ASCENDING'}], limit:200, ...(wAfter?{after:String(wAfter)}:{})
-          });
-          monthContacts.push(...(d.results||[]));
-          if (d.paging?.next?.after) wAfter = d.paging.next.after; else break;
+        status(`Week chunk ${wStart.toLocaleDateString()} – ${wEnd.toLocaleDateString()}…`);
+
+        const weekResult = await fetchChunk(wStart, wEnd, dateProp, props);
+        if (weekResult.hitCap) {
+          // Sub-chunk by day
+          console.log(`[attrib] Week hit 10K cap, sub-chunking by day`);
+          let dStart = new Date(wStart);
+          while (dStart <= wEnd) {
+            let dEnd = new Date(dStart);
+            dEnd.setHours(23,59,59,999);
+            status(`Day chunk ${dStart.toLocaleDateString()}…`);
+            const dayResult = await fetchChunk(dStart, dEnd, dateProp, props);
+            all.push(...dayResult.contacts);
+            if (dayResult.hitCap) console.warn(`[attrib] Day ${dStart.toLocaleDateString()} still hit cap — some contacts may be missing`);
+            dStart = new Date(dEnd.getTime()+1);
+            dStart.setHours(0,0,0,0);
+          }
+        } else {
+          all.push(...weekResult.contacts);
         }
         wStart = new Date(wEnd.getTime()+1);
         wStart.setHours(0,0,0,0);
       }
+    } else {
+      all.push(...monthResult.contacts);
     }
-
-    all.push(...monthContacts);
     cs = new Date(ce.getTime()+1);
   }
   return all;
+}
+
+async function fetchChunk(from, to, dateProp, props) {
+  const contacts = [];
+  let after = 0, pages = 0, hitCap = false;
+  while (pages < 55) {
+    pages++;
+    const d = await api('/crm/v3/objects/contacts/search', {
+      filterGroups:[{filters:[
+        {propertyName:dateProp,operator:'GTE',value:String(from.getTime())},
+        {propertyName:dateProp,operator:'LTE',value:String(to.getTime())}
+      ]}],
+      properties:props, sorts:[{propertyName:dateProp,direction:'ASCENDING'}], limit:200,
+      ...(after?{after:String(after)}:{})
+    });
+    contacts.push(...(d.results||[]));
+    if (d.paging?.next?.after) { after = d.paging.next.after; }
+    else break;
+    if (pages >= 50) { hitCap = true; break; }
+  }
+  return { contacts, hitCap };
 }
 
 // ── Campaign name resolution from ad platforms ────────────
@@ -754,10 +783,16 @@ function aggregate(contacts) {
         displayCampaign = '(no URL campaign) · ' + fallbackDetail;
       }
       rows[key]={key,source:utm?utm.source:normalizeSource(p.hs_analytics_source||'UNKNOWN'),medium:utm?utm.medium:(p.hs_analytics_source_data_1||'—'),
-        campaign:displayCampaign,leads:0,ai:0,discoveries:0,commits:0,investments:0,fromUrl:!!utm,resolved:utm?.resolved||false,aiPct:0};
-      ROW_RECORDS[key]={meetings:[],investments:[],commits:[]};
+        campaign:displayCampaign,leads:0,ai:0,discoveries:0,commits:0,investments:0,fromUrl:!!utm,resolved:utm?.resolved||false,aiPct:0,_urls:[]};
+      ROW_RECORDS[key]={meetings:[],investments:[],commits:[],contacts:[],aiContacts:[]};
     }
     rows[key].leads++;rows[key].ai+=ai;
+    // Track raw URLs for URL search
+    if(urlField) rows[key]._urls.push(urlField);
+    // Track contacts for Leads/AI drill-downs
+    const contactRec = {id:c.id, contactId:String(c.id), contactName:((p.firstname||'')+' '+(p.lastname||'')).trim()||p.email||'Contact '+c.id, email:p.email||'', created:p.createdate||'', accredited:isAI(c)};
+    ROW_RECORDS[key].contacts.push(contactRec);
+    if(ai) ROW_RECORDS[key].aiContacts.push(contactRec);
 
     const f=CONTACT_FUNNEL[String(c.id)];
     if(f){
@@ -869,11 +904,18 @@ function onCampaignSearch() {
   applyFiltersAndRender();
 }
 
+function onUrlSearch() {
+  const val = (document.getElementById('url-search').value || '').trim().toLowerCase();
+  urlSearch = val.length >= 3 ? val : '';
+  applyFiltersAndRender();
+}
+
 function applyFiltersAndRender(){
   LAST_ROWS=ALL_ROWS.filter(r=>{
     if(sourceFilter&&!sourceFilter.has(r.source))return false;
     if(mediumFilter&&!mediumFilter.has(r.medium))return false;
     if(campaignSearch&&!r.campaign.toLowerCase().includes(campaignSearch))return false;
+    if(urlSearch&&!r._urls.some(u=>u.toLowerCase().includes(urlSearch)))return false;
     return true;
   });
   updateKPIs();renderTable();
@@ -894,19 +936,71 @@ function updateKPIs(){
 }
 
 // ── Drill drawer ──────────────────────────────────────────
+const DRILL_PAGE_SIZE = 100;
+let drillRecords = [], drillType = '', drillPage = 0, drillTitle = '';
+
 function openDrill(rowKey,type){
   const rr=ROW_RECORDS[rowKey];if(!rr)return;
-  const records=rr[type]||[];
-  const titles={meetings:'Discoveries',commits:'Commitments',investments:'Investments'};
-  document.getElementById('dd-title').textContent=titles[type]||type;
-  document.getElementById('dd-count').textContent=`${records.length} record${records.length!==1?'s':''}`;
-  let html='';
-  if(!records.length){html='<div class="dd-empty">No records.</div>';}
-  else if(type==='meetings'){records.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsLink(r.contactId)}" target="_blank">${r.contactName}</a></div><div class="dd-meta">${dt}</div></div>`;});}
-  else if(type==='commits'){records.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';const amt=r.amount?'$'+(r.amount/1000).toFixed(0)+'K':'';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsDealLink(r.id)}" target="_blank">${r.name}</a></div><div class="dd-amount">${amt}</div><div class="dd-meta">${dt}</div></div>`;});}
-  else if(type==='investments'){records.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';const amt='$'+(r.amount/1000).toFixed(0)+'K';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsLink(r.contactId)}" target="_blank">${r.contactName}</a></div><div class="dd-amount">${amt}</div><div class="dd-meta">${r.fund} · ${r.type} · ${dt}</div></div>`;});}
-  document.getElementById('dd-body').innerHTML=html;
+  drillType = type;
+  drillPage = 0;
+  
+  if (type === 'contacts' || type === 'aiContacts') {
+    drillRecords = rr[type] || [];
+    drillTitle = type === 'contacts' ? 'Leads' : 'AI Leads';
+  } else {
+    drillRecords = rr[type] || [];
+    const titles={meetings:'Discoveries',commits:'Commitments',investments:'Investments'};
+    drillTitle = titles[type]||type;
+  }
+  
+  renderDrillPage();
   document.getElementById('drill-drawer').classList.add('open');
+}
+
+function renderDrillPage() {
+  const total = drillRecords.length;
+  const totalPages = Math.max(1, Math.ceil(total / DRILL_PAGE_SIZE));
+  const start = drillPage * DRILL_PAGE_SIZE;
+  const end = Math.min(start + DRILL_PAGE_SIZE, total);
+  const pageRecords = drillRecords.slice(start, end);
+  
+  document.getElementById('dd-title').textContent = drillTitle;
+  document.getElementById('dd-count').textContent = `${total.toLocaleString()} record${total!==1?'s':''}`;
+  
+  let html = '';
+  
+  if (totalPages > 1) {
+    html += `<div class="dd-pager"><button onclick="drillPageNav(-1)" ${drillPage===0?'disabled':''}>← Prev</button><span class="dd-page-info">Page ${drillPage+1} of ${totalPages} · ${start+1}–${end} of ${total.toLocaleString()}</span><button onclick="drillPageNav(1)" ${drillPage>=totalPages-1?'disabled':''}>Next →</button></div>`;
+  }
+  
+  if(!pageRecords.length){
+    html+='<div class="dd-empty">No records.</div>';
+  } else if(drillType==='contacts'||drillType==='aiContacts'){
+    pageRecords.forEach(r=>{
+      const dt=r.created?new Date(r.created).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+      const accTag=r.accredited?'<span style="color:var(--green);font-size:10px;font-weight:600;margin-left:4px">AI</span>':'';
+      html+=`<div class="dd-row"><div class="dd-name"><a href="${hsLink(r.contactId)}" target="_blank">${r.contactName}</a>${accTag}</div><div class="dd-meta">${r.email} · ${dt}</div></div>`;
+    });
+  } else if(drillType==='meetings'){
+    pageRecords.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsLink(r.contactId)}" target="_blank">${r.contactName}</a></div><div class="dd-meta">${dt}</div></div>`;});
+  } else if(drillType==='commits'){
+    pageRecords.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';const amt=r.amount?'$'+(r.amount/1000).toFixed(0)+'K':'';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsDealLink(r.id)}" target="_blank">${r.name}</a></div><div class="dd-amount">${amt}</div><div class="dd-meta">${dt}</div></div>`;});
+  } else if(drillType==='investments'){
+    pageRecords.forEach(r=>{const dt=r.date?new Date(r.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';const amt='$'+(r.amount/1000).toFixed(0)+'K';html+=`<div class="dd-row"><div class="dd-name"><a href="${hsLink(r.contactId)}" target="_blank">${r.contactName}</a></div><div class="dd-amount">${amt}</div><div class="dd-meta">${r.fund} · ${r.type} · ${dt}</div></div>`;});
+  }
+  
+  if (totalPages > 1) {
+    html += `<div class="dd-pager"><button onclick="drillPageNav(-1)" ${drillPage===0?'disabled':''}>← Prev</button><span class="dd-page-info">Page ${drillPage+1} of ${totalPages}</span><button onclick="drillPageNav(1)" ${drillPage>=totalPages-1?'disabled':''}>Next →</button></div>`;
+  }
+  
+  document.getElementById('dd-body').innerHTML=html;
+}
+
+function drillPageNav(dir) {
+  const totalPages = Math.ceil(drillRecords.length / DRILL_PAGE_SIZE);
+  drillPage = Math.max(0, Math.min(totalPages - 1, drillPage + dir));
+  renderDrillPage();
+  document.getElementById('drill-drawer').scrollTop = 0;
 }
 
 // ── Sort + render table ───────────────────────────────────
@@ -937,7 +1031,9 @@ function renderTable(){
     const dc=r.discoveries?`<td class="drill" onclick="openDrill('${r.key}','meetings')">${r.discoveries}</td>`:'<td class="num"></td>';
     const cc=r.commits?`<td class="drill" onclick="openDrill('${r.key}','commits')">${r.commits}</td>`:'<td class="num"></td>';
     const ic=r.investments?`<td class="drill" onclick="openDrill('${r.key}','investments')">${r.investments}</td>`:'<td class="num"></td>';
-    html+=`<tr><td><span class="src-tag ${sc}">${r.source||'—'}</span></td><td>${r.medium||'—'}</td><td>${r.campaign}${resolvedTag}${fb}</td><td class="num">${r.leads.toLocaleString()}</td><td class="num">${r.ai.toLocaleString()}</td><td class="num">${pct}</td>${dc}${cc}${ic}</tr>`;
+    const leadsCell=`<td class="drill" onclick="openDrill('${r.key}','contacts')">${r.leads.toLocaleString()}</td>`;
+    const aiCell=r.ai?`<td class="drill" onclick="openDrill('${r.key}','aiContacts')">${r.ai.toLocaleString()}</td>`:`<td class="num">0</td>`;
+    html+=`<tr><td><span class="src-tag ${sc}">${r.source||'—'}</span></td><td>${r.medium||'—'}</td><td>${r.campaign}${resolvedTag}${fb}</td>${leadsCell}${aiCell}<td class="num">${pct}</td>${dc}${cc}${ic}</tr>`;
   });}
   html+='</tbody></table>';
   document.getElementById('table-wrap').innerHTML=html;
@@ -947,8 +1043,9 @@ function processAndRender(){
   const contacts = getContactsForMode();
   const{rows}=aggregate(contacts);
   ALL_ROWS=rows;
-  sourceFilter=null;mediumFilter=null;campaignSearch='';
+  sourceFilter=null;mediumFilter=null;campaignSearch='';urlSearch='';
   document.getElementById('campaign-search').value='';
+  document.getElementById('url-search').value='';
   LAST_ROWS=rows;
   buildFilterDropdown('source',getAllSources());
   buildFilterDropdown('medium',getAllMediums());
@@ -961,19 +1058,125 @@ function processAndRender(){
 async function loadData(){
   const[from,to]=getDateRange();
   try{
-    status('Fetching contacts + cached data + campaign names…');
-    const[contacts]=await Promise.all([fetchContactsInRange(from,to),fetchCachedData(),fetchCampaignNames()]);
-    ALL_CONTACTS=contacts;
-    status(`Building associations for ${contacts.length.toLocaleString()} contacts…`);
-    await fetchAssociations();
-    if(touchMode==='lastDisco'||touchMode==='lastCommit'||touchMode==='lastInvest'){
+    // Determine which date property to use based on touch mode
+    let dateProp = 'createdate';
+    if (touchMode === 'recent') dateProp = 'hs_analytics_last_visit_timestamp';
+
+    // For milestone modes, we still need all contacts for associations,
+    // but we scope by milestone date — so fetch contacts by createdate (broad)
+    // then filter by milestone date in getContactsForMode.
+    // However, for milestone modes, the contacts we need are those who have
+    // the milestone in the date range — not necessarily created in the range.
+    // So we fetch cached data first, find the qualifying contact IDs from
+    // milestones, then batch-read just those contacts.
+    
+    status('Fetching cached data + campaign names…');
+    await Promise.all([fetchCachedData(), fetchCampaignNames()]);
+
+    if (touchMode === 'lastDisco' || touchMode === 'lastCommit' || touchMode === 'lastInvest') {
+      // Milestone mode: find qualifying contacts from cached meetings/investments/deals
+      status('Identifying milestone contacts…');
+      
+      // We need meetToContact/invToContact/dealToContact first
+      // Build lightweight associations for milestone identification
+      await buildMilestoneAssociations();
+      
+      const qualifiedCids = getMilestoneContactIds(from, to);
+      status(`Fetching ${qualifiedCids.size} milestone contacts…`);
+      
+      // Batch-read the qualified contacts
+      ALL_CONTACTS = await batchReadContacts([...qualifiedCids]);
+      
+      // Now build full associations with ALL_CONTACTS populated
+      await fetchAssociations();
       await fetchMilestoneUrls();
+    } else {
+      // First Touch or Recent Activity: fetch contacts by date property
+      status(`Fetching contacts (${dateProp})…`);
+      const contacts = await fetchContactsInRange(from, to, dateProp);
+      ALL_CONTACTS = contacts;
+      status(`Building associations for ${contacts.length.toLocaleString()} contacts…`);
+      await fetchAssociations();
     }
+
     processAndRender();
     const rangeLabel=`${new Date(from).toLocaleDateString()} – ${new Date(to).toLocaleDateString()}`;
-    status(`${contacts.length.toLocaleString()} contacts · ${rangeLabel}`);
-    document.getElementById('status-pill').textContent=`${contacts.length.toLocaleString()} contacts`;
+    status(`${ALL_CONTACTS.length.toLocaleString()} contacts · ${rangeLabel}`);
+    document.getElementById('status-pill').textContent=`${ALL_CONTACTS.length.toLocaleString()} contacts`;
   }catch(e){status('Error: '+e.message);console.error(e)}
+}
+
+// Lightweight association build for milestone identification (before ALL_CONTACTS is populated)
+async function buildMilestoneAssociations() {
+  meetToContact = {};
+  const meetIds = MEETINGS.map(m=>m.id);
+  for (let i=0;i<meetIds.length;i+=100) {
+    try {
+      const d = await api('/crm/v4/associations/meetings/contacts/batch/read',{inputs:meetIds.slice(i,i+100).map(id=>({id:String(id)}))});
+      (d.results||[]).forEach(r=>{if(r.to?.length) meetToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
+    } catch(e){}
+  }
+  invToContact = {};
+  const invIds=INVESTMENTS.map(i=>i.id);
+  for(let i=0;i<invIds.length;i+=100){
+    try{
+      const d=await api('/crm/v4/associations/2-59402465/contacts/batch/read',{inputs:invIds.slice(i,i+100).map(id=>({id:String(id)}))});
+      (d.results||[]).forEach(r=>{if(r.to?.length) invToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
+    }catch(e){}
+  }
+  // Commit deals — fetch and associate
+  allCommitDeals=[]; let after=0,pages=0;
+  while(pages<20){pages++;
+    const d=await api('/crm/v3/objects/deals/search',{filterGroups:[{filters:[{propertyName:COMMIT_STAGE_PROP,operator:'HAS_PROPERTY'}]}],properties:[COMMIT_STAGE_PROP,'amount','dealname'],sorts:[{propertyName:COMMIT_STAGE_PROP,direction:'DESCENDING'}],limit:200,...(after?{after:String(after)}:{})});
+    allCommitDeals.push(...(d.results||[]));
+    if(d.paging?.next?.after) after=d.paging.next.after; else break;
+  }
+  dealToContact={};
+  const dealIds=allCommitDeals.map(d=>d.id);
+  for(let i=0;i<dealIds.length;i+=100){
+    try{const d=await api('/crm/v4/associations/deals/contacts/batch/read',{inputs:dealIds.slice(i,i+100).map(id=>({id:String(id)}))});
+      (d.results||[]).forEach(r=>{if(r.to?.length) dealToContact[String(r.from.id)]=String(r.to[0].toObjectId)});
+    }catch(e){}
+  }
+}
+
+function getMilestoneContactIds(from, to) {
+  const cids = new Set();
+  if (touchMode === 'lastDisco') {
+    MEETINGS.forEach(m => {
+      const p=m.properties||{};
+      const out=(p.hs_meeting_outcome||'').toLowerCase();
+      if(out!=='completed'&&out!=='scheduled') return;
+      if(!isDiscoveryMeeting(m)) return;
+      const dt=new Date(p.hs_meeting_start_time||p.hs_createdate||0).getTime();
+      if(dt>=from&&dt<=to) { const cid=meetToContact[m.id]; if(cid) cids.add(cid); }
+    });
+  } else if (touchMode === 'lastCommit') {
+    allCommitDeals.forEach(deal => {
+      const dt=new Date(deal.properties?.[COMMIT_STAGE_PROP]||0).getTime();
+      if(dt>=from&&dt<=to) { const cid=dealToContact[deal.id]; if(cid) cids.add(cid); }
+    });
+  } else if (touchMode === 'lastInvest') {
+    INVESTMENTS.forEach(inv => {
+      const dt=new Date(inv.properties?.funds_received||0).getTime();
+      if(dt>=from&&dt<=to) { const cid=invToContact[inv.id]; if(cid) cids.add(cid); }
+    });
+  }
+  return cids;
+}
+
+async function batchReadContacts(cids) {
+  const props = ['createdate','hs_analytics_first_url','hs_analytics_last_url','hs_analytics_source','hs_analytics_source_data_1','hs_analytics_source_data_2','are_you_accredited_','firstname','lastname','first_conversion_event_name'];
+  const all = [];
+  for (let i = 0; i < cids.length; i += 100) {
+    status(`Reading contacts ${i+1}–${Math.min(i+100, cids.length)} of ${cids.length}…`);
+    try {
+      const d = await api('/crm/v3/objects/contacts/batch/read',
+        {inputs: cids.slice(i,i+100).map(id=>({id:String(id)})), properties: props});
+      all.push(...(d.results||[]));
+    } catch(e) { console.warn('Batch read error', e); }
+  }
+  return all;
 }
 
 loadData();
