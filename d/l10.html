@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.4</title>
+<title>Sunrise Capital — L10 Dashboard v1.5</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -78,7 +78,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.4</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.5</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -149,7 +149,10 @@ let INVESTMENTS = [], MEETINGS = [], COMMIT_DEALS = [];
 let INV_TO_CONTACT = {}, MEET_TO_CONTACT = {}, DEAL_TO_CONTACT = {};
 let CONTACT_NAMES = {};
 const HS_PORTAL = '23126809';
-let associationsLoaded = false;
+
+// Filtered subsets for associations (only what the dashboard needs)
+let RELEVANT_MEETINGS = []; // last 30 days
+let RELEVANT_INVESTMENTS = []; // current + previous quarter
 
 // Drill state
 const DRILL_PAGE_SIZE = 100;
@@ -327,8 +330,7 @@ function renderActivity() {
 }
 
 // ── Drill-down handlers ───────────────────────────────────
-async function drillQuarter(type) {
-  await ensureAssociations();
+function drillQuarter(type) {
   const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
   const titles = {total: 'Total Raise — This Quarter', 'new': 'New Money — This Quarter', repeat: 'Repeat Money — This Quarter'};
   drillTitle = titles[type] || 'Investments';
@@ -344,8 +346,7 @@ async function drillQuarter(type) {
   document.getElementById('drill-drawer').classList.add('open');
 }
 
-async function drillActivity(type) {
-  await ensureAssociations();
+function drillActivity(type) {
   drillPage = 0;
   if (type === 'disco') {
     drillTitle = 'Discovery Calls Set';
@@ -438,8 +439,28 @@ function drillPageNav(dir) {
 async function loadData() {
   try {
     status('Loading…');
-    associationsLoaded = false;
     await Promise.all([fetchCachedData(), fetchCommitDeals()]);
+    
+    // Filter to only what the dashboard needs BEFORE associating
+    const thirtyDaysAgo = Date.now() - 30 * 864e5;
+    RELEVANT_MEETINGS = MEETINGS.filter(m => {
+      const dt = new Date(m.properties?.hs_createdate || 0).getTime();
+      return dt >= thirtyDaysAgo;
+    });
+    
+    const now = new Date();
+    const cq = getQuarterBounds(now);
+    const pq = getPrevQuarterBounds(now);
+    RELEVANT_INVESTMENTS = INVESTMENTS.filter(i => {
+      const dt = new Date(i.properties?.funds_received || 0).getTime();
+      return dt >= pq.start.getTime();
+    });
+    
+    console.log(`[l10] Filtered: ${RELEVANT_MEETINGS.length} meetings (30d), ${RELEVANT_INVESTMENTS.length} investments (2 qtrs), ${COMMIT_DEALS.length} commits`);
+    
+    status('Loading details…');
+    await fetchAssociations();
+    
     renderQuarter();
     renderActivity();
     status('Updated ' + new Date().toLocaleTimeString());
@@ -450,18 +471,10 @@ async function loadData() {
   }
 }
 
-async function ensureAssociations() {
-  if (associationsLoaded) return;
-  status('Loading details…');
-  await fetchAssociations();
-  associationsLoaded = true;
-  status('Updated ' + new Date().toLocaleTimeString());
-}
-
 async function fetchAssociations() {
-  // Investment→Contact
+  // Only associate the filtered subsets, not all 13K meetings
   INV_TO_CONTACT = {};
-  const invIds = INVESTMENTS.map(i => i.id);
+  const invIds = RELEVANT_INVESTMENTS.map(i => i.id);
   for (let i = 0; i < invIds.length; i += 100) {
     try {
       const d = await api('/crm/v4/associations/2-59402465/contacts/batch/read',
@@ -472,9 +485,8 @@ async function fetchAssociations() {
     } catch(e) {}
   }
 
-  // Meeting→Contact
   MEET_TO_CONTACT = {};
-  const meetIds = MEETINGS.map(m => m.id);
+  const meetIds = RELEVANT_MEETINGS.map(m => m.id);
   for (let i = 0; i < meetIds.length; i += 100) {
     try {
       const d = await api('/crm/v4/associations/meetings/contacts/batch/read',
@@ -485,7 +497,6 @@ async function fetchAssociations() {
     } catch(e) {}
   }
 
-  // Deal→Contact
   DEAL_TO_CONTACT = {};
   const dealIds = COMMIT_DEALS.map(d => d.id);
   for (let i = 0; i < dealIds.length; i += 100) {
@@ -500,12 +511,11 @@ async function fetchAssociations() {
 
   // Fetch names for all associated contacts
   CONTACT_NAMES = {};
-  const allCids = new Set([...Object.values(INV_TO_CONTACT), ...Object.values(MEET_TO_CONTACT), ...Object.values(DEAL_TO_CONTACT)]);
-  const needNames = [...allCids];
-  for (let i = 0; i < needNames.length; i += 100) {
+  const allCids = [...new Set([...Object.values(INV_TO_CONTACT), ...Object.values(MEET_TO_CONTACT), ...Object.values(DEAL_TO_CONTACT)])];
+  for (let i = 0; i < allCids.length; i += 100) {
     try {
       const d = await api('/crm/v3/objects/contacts/batch/read',
-        {inputs: needNames.slice(i, i+100).map(id => ({id: String(id)})), properties: ['firstname', 'lastname', 'email']});
+        {inputs: allCids.slice(i, i+100).map(id => ({id: String(id)})), properties: ['firstname', 'lastname', 'email']});
       (d.results || []).forEach(c => {
         const p = c.properties || {};
         const name = ((p.firstname || '') + ' ' + (p.lastname || '')).trim();
