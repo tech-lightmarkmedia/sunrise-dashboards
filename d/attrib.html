@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.7</title>
+<title>Sunrise Capital — UTM Attribution v1.8</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -48,6 +48,9 @@ td.drill:hover{text-decoration:underline}
 .src-other{background:#f0eee8;color:var(--text2)}
 .no-data{text-align:center;padding:40px;color:var(--text3);font-size:14px}
 .fallback{font-size:10px;color:var(--text3);cursor:help}
+.search-input{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);width:180px}
+.search-input::placeholder{color:var(--text3)}
+.search-input:focus{outline:none;border-color:var(--accent)}
 /* Filter */
 .filter-wrap{position:relative;display:inline-block}
 .filter-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;white-space:nowrap}
@@ -90,7 +93,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.7</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.8</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -136,6 +139,10 @@ td.drill:hover{text-decoration:underline}
       <div class="filter-drop" id="medium-filter-drop"></div>
     </div>
   </div>
+  <div class="toggle-group">
+    <label>Search</label>
+    <input type="text" class="search-input" id="campaign-search" placeholder="Campaign (3+ chars)" oninput="onCampaignSearch()">
+  </div>
 </div>
 
 <div class="kpi-bar">
@@ -175,6 +182,9 @@ td.drill:hover{text-decoration:underline}
     <p>Some ad URLs use the numeric campaign ID instead of a human-readable name for utm_campaign (e.g. "120247034873820439"). The dashboard resolves these to campaign names using data from Meta, Google Ads, and LinkedIn APIs. Resolved names show a green <strong>ID→</strong> badge. Unresolvable IDs display as-is.</p>
     <h3>Filters</h3>
     <p>Use Source and Medium dropdowns to isolate specific platforms or channels. KPIs update with the filter. All/None buttons at the top for bulk selection.</p>
+    <p><strong>Campaign Search:</strong> Type 3 or more characters to filter the table to rows where the campaign name contains your search term. Useful for finding specific campaigns across all sources.</p>
+    <h3>Milestone Touch Logic</h3>
+    <p>For "Last Touch Before Discovery/Commitment/Investment" modes, the dashboard finds the marketing touch that brought the contact to the conversion action — not the conversion action itself. It fetches recent page visits and form submissions before the milestone date, skips the conversion page (booking form, commitment page, etc.) and non-marketing URLs (HubSpot meeting links, InvestNext), and returns the first event with a different URL — preferring events with UTM parameters.</p>
     <h3>Funnel Columns</h3>
     <p>Discoveries, Commitments, and Investments show what each campaign's contacts produced. Click any number to see the records.</p>
     <h3>Data Source</h3>
@@ -200,6 +210,7 @@ let LAST_ROWS = [], ALL_ROWS = [];
 let sortCol = 'leads', sortDir = 'desc';
 let ROW_RECORDS = {};
 let sourceFilter = null, mediumFilter = null;
+let campaignSearch = '';
 let MILESTONE_URLS = {};
 let CAMPAIGN_NAME_BY_ID = {}; // numeric campaign ID → human-readable name
 let CONTACT_NAMES = {}; // contactId → display name (populated from batch reads)
@@ -556,13 +567,18 @@ async function fetchMilestoneUrls() {
   const contacts = Object.entries(byContact);
   status(`Fetching last touch for ${contacts.length} contacts…`);
 
-  // For each contact, fetch their page visits + form submissions before milestone
+  // For each contact, fetch page visits + form submissions before milestone.
+  // Skip the conversion event itself (the form/page that IS the milestone action)
+  // and find the prior marketing touch — the event that brought them there.
+  // Non-marketing URLs (HubSpot meeting links, InvestNext, etc.) are also skipped.
+  const SKIP_DOMAINS = ['meetings.hubspot.com', 'app.investnext.com', 'investnext.com'];
+  
   for (let i = 0; i < contacts.length; i++) {
     const [cid, milestoneDate] = contacts[i];
     if (i % 10 === 0) status(`Fetching events ${i+1}/${contacts.length}…`);
 
-    // Try page visits first (richer data), then form submissions
-    let bestUrl = null, bestTime = 0;
+    // Collect all events before the milestone, sorted newest first
+    let allEvents = [];
 
     for (const eventType of ['e_visited_page', 'e_submitted_form']) {
       try {
@@ -571,21 +587,52 @@ async function fetchMilestoneUrls() {
           objectType: 'contact',
           objectId: cid,
           occurredBefore: milestoneDate,
-          limit: '5',
+          limit: '10',
           sort: '-occurredAt'
         });
         const r = await fetch(`${WORKER}/hs-api/events/v3/events?${params}`);
         if (!r.ok) continue;
         const data = await r.json();
         for (const evt of (data.results || [])) {
-          const evtTime = new Date(evt.occurredAt).getTime();
-          if (evtTime > bestTime) {
-            const url = evt.properties?.hs_url || '';
-            if (url) { bestUrl = url; bestTime = evtTime; }
-          }
+          const url = evt.properties?.hs_url || '';
+          if (url) allEvents.push({ url, time: new Date(evt.occurredAt).getTime(), type: eventType });
         }
       } catch(e) {}
       await new Promise(r => setTimeout(r, HS_DELAY));
+    }
+
+    // Sort all events newest first
+    allEvents.sort((a, b) => b.time - a.time);
+
+    // Find the first event that is NOT the conversion action:
+    // - Not a meeting booking page
+    // - Not InvestNext
+    // - Differs in URL from the most recent event (which is typically the conversion itself)
+    // - OR has UTM parameters (definitively a marketing touch)
+    const convUrl = allEvents[0]?.url || '';
+    let convDomain = '';
+    try { convDomain = new URL(convUrl).hostname; } catch(e){}
+
+    let bestUrl = null;
+    for (const evt of allEvents) {
+      let domain = '';
+      try { domain = new URL(evt.url).hostname; } catch(e){}
+      
+      // Skip known non-marketing domains
+      if (SKIP_DOMAINS.some(d => domain.includes(d))) continue;
+      
+      // Skip if this is the same URL as the conversion event (the action itself)
+      if (evt.url === convUrl && evt === allEvents[0]) continue;
+      
+      // Check if this URL has UTM params (strong signal it's a marketing touch)
+      let hasUtm = false;
+      try { const u = new URL(evt.url); hasUtm = !!(u.searchParams.get('utm_source') || u.searchParams.get('utm_campaign')); } catch(e){}
+      
+      // Accept if: has UTM params, OR is a different URL from the conversion event
+      if (hasUtm || evt.url !== convUrl) {
+        bestUrl = evt.url;
+        break;
+      }
     }
 
     if (bestUrl) MILESTONE_URLS[cid] = bestUrl;
@@ -809,8 +856,19 @@ function updateFilterBtnState(type){
 function getAllSources(){return new Set(ALL_ROWS.map(r=>r.source))}
 function getAllMediums(){return new Set(ALL_ROWS.map(r=>r.medium))}
 
+function onCampaignSearch() {
+  const val = (document.getElementById('campaign-search').value || '').trim().toLowerCase();
+  campaignSearch = val.length >= 3 ? val : '';
+  applyFiltersAndRender();
+}
+
 function applyFiltersAndRender(){
-  LAST_ROWS=ALL_ROWS.filter(r=>{if(sourceFilter&&!sourceFilter.has(r.source))return false;if(mediumFilter&&!mediumFilter.has(r.medium))return false;return true});
+  LAST_ROWS=ALL_ROWS.filter(r=>{
+    if(sourceFilter&&!sourceFilter.has(r.source))return false;
+    if(mediumFilter&&!mediumFilter.has(r.medium))return false;
+    if(campaignSearch&&!r.campaign.toLowerCase().includes(campaignSearch))return false;
+    return true;
+  });
   updateKPIs();renderTable();
 }
 
@@ -882,7 +940,8 @@ function processAndRender(){
   const contacts = getContactsForMode();
   const{rows}=aggregate(contacts);
   ALL_ROWS=rows;
-  sourceFilter=null;mediumFilter=null;
+  sourceFilter=null;mediumFilter=null;campaignSearch='';
+  document.getElementById('campaign-search').value='';
   LAST_ROWS=rows;
   buildFilterDropdown('source',getAllSources());
   buildFilterDropdown('medium',getAllMediums());
