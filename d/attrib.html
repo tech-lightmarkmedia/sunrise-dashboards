@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — UTM Attribution v1.8</title>
+<title>Sunrise Capital — UTM Attribution v1.9</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -93,7 +93,7 @@ td.drill:hover{text-decoration:underline}
 <body>
 
 <header>
-  <h1>UTM Attribution<span class="vpill">v1.8</span></h1>
+  <h1>UTM Attribution<span class="vpill">v1.9</span></h1>
   <div class="header-right">
     <span id="status-pill" style="color:#9e9789"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -197,6 +197,16 @@ const WORKER = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
 const HS_DELAY = 120;
 const HS_PORTAL = '23126809';
 const COMMIT_STAGE_PROP = 'hs_v2_date_entered_1202837318';
+const DISCOVERY_TYPES = new Set(['Discovery Call - Main', 'Discovery Call - Setters']);
+
+function isDiscoveryMeeting(m) {
+  const p = m.properties || {};
+  const rawType = p.call_and_meeting_type || p.hs_activity_type || '';
+  if (DISCOVERY_TYPES.has(rawType)) return true;
+  // Fallback: title check for older meetings without typed fields
+  const title = (p.hs_meeting_title || '').toLowerCase();
+  return title.includes('discovery call') || title.includes('discovery');
+}
 const META_API = WORKER + '/cached-meta-spend';
 const GOOGLE_API = WORKER + '/google-ads-api';
 const LINKEDIN_API = WORKER + '/linkedin-api';
@@ -478,8 +488,7 @@ async function fetchAssociations() {
     const p=m.properties||{};
     const out=(p.hs_meeting_outcome||'').toLowerCase();
     if(out!=='completed'&&out!=='scheduled') return;
-    const title=(p.hs_meeting_title||'').toLowerCase();
-    if(!title.includes('discovery')&&!title.includes('disco')) return;
+    if(!isDiscoveryMeeting(m)) return;
     const cid=meetToContact[m.id];
     if(cid&&CONTACT_FUNNEL[cid]) {
       CONTACT_FUNNEL[cid].meetingRecords.push({id:m.id,title:p.hs_meeting_title||'',date:p.hs_meeting_start_time||p.hs_createdate||'',contactId:cid,contactName:CONTACT_NAMES[cid]||'Contact '+cid});
@@ -529,8 +538,7 @@ async function fetchMilestoneUrls() {
       const p=m.properties||{};
       const out=(p.hs_meeting_outcome||'').toLowerCase();
       if(out!=='completed'&&out!=='scheduled') return;
-      const title=(p.hs_meeting_title||'').toLowerCase();
-      if(!title.includes('discovery')&&!title.includes('disco')) return;
+      if(!isDiscoveryMeeting(m)) return;
       const dt=new Date(p.hs_meeting_start_time||p.hs_createdate||0).getTime();
       if(dt>=from&&dt<=to) {
         const cid=meetToContact[m.id];
@@ -688,8 +696,7 @@ function getContactsForMode() {
       const p=m.properties||{};
       const out=(p.hs_meeting_outcome||'').toLowerCase();
       if(out!=='completed'&&out!=='scheduled') return;
-      const title=(p.hs_meeting_title||'').toLowerCase();
-      if(!title.includes('discovery')&&!title.includes('disco')) return;
+      if(!isDiscoveryMeeting(m)) return;
       const dt=new Date(p.hs_meeting_start_time||p.hs_createdate||0).getTime();
       if(dt>=from&&dt<=to) { const cid=meetToContact[m.id]; if(cid) qualifiedIds.add(cid); }
     });
