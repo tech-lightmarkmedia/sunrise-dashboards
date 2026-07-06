@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.5 </title>
+<title>Sunrise Capital — L10 Dashboard v1.6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -78,7 +78,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.5</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.6</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -153,6 +153,7 @@ const HS_PORTAL = '23126809';
 // Filtered subsets for associations (only what the dashboard needs)
 let RELEVANT_MEETINGS = []; // last 30 days
 let RELEVANT_INVESTMENTS = []; // current + previous quarter
+let associationsReady = false;
 
 // Drill state
 const DRILL_PAGE_SIZE = 100;
@@ -330,7 +331,8 @@ function renderActivity() {
 }
 
 // ── Drill-down handlers ───────────────────────────────────
-function drillQuarter(type) {
+async function drillQuarter(type) {
+  if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
   const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
   const titles = {total: 'Total Raise — This Quarter', 'new': 'New Money — This Quarter', repeat: 'Repeat Money — This Quarter'};
   drillTitle = titles[type] || 'Investments';
@@ -346,7 +348,8 @@ function drillQuarter(type) {
   document.getElementById('drill-drawer').classList.add('open');
 }
 
-function drillActivity(type) {
+async function drillActivity(type) {
+  if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
   drillPage = 0;
   if (type === 'disco') {
     drillTitle = 'Discovery Calls Set';
@@ -439,15 +442,15 @@ function drillPageNav(dir) {
 async function loadData() {
   try {
     status('Loading…');
+    associationsReady = false;
     await Promise.all([fetchCachedData(), fetchCommitDeals()]);
     
-    // Filter to only what the dashboard needs BEFORE associating
+    // Filter to relevant subsets
     const thirtyDaysAgo = Date.now() - 30 * 864e5;
     RELEVANT_MEETINGS = MEETINGS.filter(m => {
       const dt = new Date(m.properties?.hs_createdate || 0).getTime();
       return dt >= thirtyDaysAgo;
     });
-    
     const now = new Date();
     const cq = getQuarterBounds(now);
     const pq = getPrevQuarterBounds(now);
@@ -456,15 +459,18 @@ async function loadData() {
       return dt >= pq.start.getTime();
     });
     
-    console.log(`[l10] Filtered: ${RELEVANT_MEETINGS.length} meetings (30d), ${RELEVANT_INVESTMENTS.length} investments (2 qtrs), ${COMMIT_DEALS.length} commits`);
-    
-    status('Loading details…');
-    await fetchAssociations();
-    
+    // Render numbers immediately
     renderQuarter();
     renderActivity();
     status('Updated ' + new Date().toLocaleTimeString());
     document.getElementById('status-pill').textContent = `${INVESTMENTS.length} investments`;
+    
+    // Load associations in the background
+    console.log(`[l10] Rendering complete. Loading associations in background (${RELEVANT_MEETINGS.length} meetings, ${RELEVANT_INVESTMENTS.length} investments, ${COMMIT_DEALS.length} commits)…`);
+    fetchAssociations().then(() => {
+      associationsReady = true;
+      console.log('[l10] Associations ready.');
+    });
   } catch(e) {
     status('Error: ' + e.message);
     console.error(e);
