@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.1</title>
+<title>Sunrise Capital — L10 Dashboard v1.2</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -78,7 +78,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.1</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.2</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -149,6 +149,7 @@ let INVESTMENTS = [], MEETINGS = [], COMMIT_DEALS = [];
 let INV_TO_CONTACT = {}, MEET_TO_CONTACT = {}, DEAL_TO_CONTACT = {};
 let CONTACT_NAMES = {};
 const HS_PORTAL = '23126809';
+let associationsLoaded = false;
 
 // Drill state
 const DRILL_PAGE_SIZE = 100;
@@ -328,7 +329,8 @@ function renderActivity() {
 }
 
 // ── Drill-down handlers ───────────────────────────────────
-function drillQuarter(type) {
+async function drillQuarter(type) {
+  await ensureAssociations();
   const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
   const titles = {total: 'Total Raise — This Quarter', 'new': 'New Money — This Quarter', repeat: 'Repeat Money — This Quarter'};
   drillTitle = titles[type] || 'Investments';
@@ -344,7 +346,8 @@ function drillQuarter(type) {
   document.getElementById('drill-drawer').classList.add('open');
 }
 
-function drillActivity(type) {
+async function drillActivity(type) {
+  await ensureAssociations();
   drillPage = 0;
   if (type === 'disco') {
     drillTitle = 'Discovery Calls Set';
@@ -437,11 +440,8 @@ function drillPageNav(dir) {
 async function loadData() {
   try {
     status('Loading…');
+    associationsLoaded = false;
     await Promise.all([fetchCachedData(), fetchCommitDeals()]);
-    
-    status('Building associations…');
-    await fetchAssociations();
-    
     renderQuarter();
     renderActivity();
     status('Updated ' + new Date().toLocaleTimeString());
@@ -450,6 +450,14 @@ async function loadData() {
     status('Error: ' + e.message);
     console.error(e);
   }
+}
+
+async function ensureAssociations() {
+  if (associationsLoaded) return;
+  status('Loading details…');
+  await fetchAssociations();
+  associationsLoaded = true;
+  status('Updated ' + new Date().toLocaleTimeString());
 }
 
 async function fetchAssociations() {
