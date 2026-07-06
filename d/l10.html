@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.2</title>
+<title>Sunrise Capital — L10 Dashboard v1.3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -78,7 +78,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.2</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.3</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -214,11 +214,15 @@ async function fetchCachedData() {
 
 async function fetchCommitDeals() {
   COMMIT_DEALS = [];
+  const thirtyDaysAgo = Date.now() - 30 * 864e5;
   let after = 0, pages = 0;
   while (pages < 20) {
     pages++;
     const d = await api('/crm/v3/objects/deals/search', {
-      filterGroups: [{filters: [{propertyName: COMMIT_STAGE_PROP, operator: 'HAS_PROPERTY'}]}],
+      filterGroups: [{filters: [
+        {propertyName: COMMIT_STAGE_PROP, operator: 'HAS_PROPERTY'},
+        {propertyName: COMMIT_STAGE_PROP, operator: 'GTE', value: String(thirtyDaysAgo)}
+      ]}],
       properties: [COMMIT_STAGE_PROP, 'amount', 'dealname'],
       sorts: [{propertyName: COMMIT_STAGE_PROP, direction: 'DESCENDING'}],
       limit: 200,
