@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.6</title>
+<title>Sunrise Capital — L10 Dashboard v1.7</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -21,7 +21,8 @@ main{padding:20px 28px;max-width:900px}
 /* Section headers */
 .section-head{font-family:'DM Serif Display',serif;font-size:16px;color:var(--accent);margin:28px 0 14px;padding-bottom:6px;border-bottom:2px solid var(--accent);display:flex;align-items:baseline;gap:12px}
 .section-head:first-child{margin-top:0}
-.section-head select{font-family:'DM Sans',sans-serif;font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);margin-left:auto}
+.section-head select{font-family:'DM Sans',sans-serif;font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
+.section-head .sh-spacer{flex:1}
 
 /* KPI cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px}
@@ -78,7 +79,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.6</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.7</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -89,7 +90,13 @@ main{padding:20px 28px;max-width:900px}
 <div id="status">Loading…</div>
 
 <main>
-  <div class="section-head" id="quarter-head">Quarter vs. Quarter</div>
+  <div class="section-head" id="quarter-head">
+    <span id="quarter-title">Quarter vs. Quarter</span>
+    <span class="sh-spacer"></span>
+    <select id="q-period" onchange="onQuarterSelectionChange()"></select>
+    <span style="font-size:12px;color:var(--text3)">vs.</span>
+    <select id="q-compare" onchange="onQuarterSelectionChange()"></select>
+  </div>
   <div class="kpi-grid" id="quarter-cards">
     <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val clickable-val" id="q-total" onclick="drillQuarter('total')">—</div><div class="kpi-delta" id="q-total-delta"></div><div class="kpi-sub" id="q-total-sub"></div></div>
     <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val clickable-val" id="q-new" onclick="drillQuarter('new')">—</div><div class="kpi-delta" id="q-new-delta"></div><div class="kpi-sub" id="q-new-sub"></div></div>
@@ -98,6 +105,7 @@ main{padding:20px 28px;max-width:900px}
 
   <div class="section-head">
     Recent Activity
+    <span class="sh-spacer"></span>
     <select id="window-select" onchange="renderActivity()">
       <option value="7" selected>Last 7 Days</option>
       <option value="14">Last 14 Days</option>
@@ -124,10 +132,11 @@ main{padding:20px 28px;max-width:900px}
     <p>A quick-glance dashboard for the IR team's L10 meeting. Shows quarterly capital raise performance with a comparison indicator, plus recent activity in a configurable rolling window.</p>
 
     <h3>Quarter vs. Quarter</h3>
-    <p><strong>Total Raise:</strong> Total funded capital (from HubSpot Investment records, anchored on funds_received date) for the current quarter. The delta shows the change vs. the previous quarter's same-point-in-quarter figure.</p>
+    <p>Use the two dropdowns to select any period and comparison from the trailing 12 quarters. Defaults to the current quarter vs. the previous quarter.</p>
+    <p><strong>Total Raise:</strong> Total funded capital (from HubSpot Investment records, anchored on funds_received date) for the selected period. The delta shows the change vs. the comparison period at the same elapsed point.</p>
     <p><strong>New Money:</strong> Capital from investments classified as "New" (type_of_investment = New).</p>
     <p><strong>Repeat Money:</strong> Capital from Repeat and Bolt-On investments.</p>
-    <p>The comparison indicator (↑/↓/—) and percentage show how the current quarter compares to the previous quarter at the same elapsed point. For example, if today is Day 35 of Q3, the comparison is against the first 35 days of Q2.</p>
+    <p>The comparison uses same-point-in-quarter logic: if the selected period is the current quarter and today is Day 35, the comparison uses the first 35 days of the comparison quarter. For completed quarters, the full quarter is compared against the same number of days in the comparison quarter.</p>
 
     <h3>Recent Activity</h3>
     <p><strong>Discovery Calls Set:</strong> Meetings with call_and_meeting_type = "Discovery Call - Main" or "Discovery Call - Setters" created in the window. Uses meeting creation date (when booked).</p>
@@ -189,7 +198,7 @@ function getQuarterBounds(date) {
   const q = Math.floor(date.getMonth() / 3);
   const start = new Date(y, q * 3, 1, 0, 0, 0, 0);
   const end = new Date(y, q * 3 + 3, 0, 23, 59, 59, 999);
-  return { start, end, label: `Q${q+1} ${y}` };
+  return { start, end, label: `Q${q+1} ${y}`, q, y };
 }
 
 function getPrevQuarterBounds(date) {
@@ -199,11 +208,51 @@ function getPrevQuarterBounds(date) {
   const py = q === 0 ? y - 1 : y;
   const start = new Date(py, pq * 3, 1, 0, 0, 0, 0);
   const end = new Date(py, pq * 3 + 3, 0, 23, 59, 59, 999);
-  return { start, end, label: `Q${pq+1} ${py}` };
+  return { start, end, label: `Q${pq+1} ${py}`, q: pq, y: py };
 }
 
 function daysIntoQuarter(date, qStart) {
   return Math.floor((date - qStart) / 864e5) + 1;
+}
+
+// Build trailing 12 quarters for dropdowns
+function buildQuarterOptions() {
+  const now = new Date();
+  const quarters = [];
+  let y = now.getFullYear(), q = Math.floor(now.getMonth() / 3);
+  for (let i = 0; i < 12; i++) {
+    const start = new Date(y, q * 3, 1, 0, 0, 0, 0);
+    const end = new Date(y, q * 3 + 3, 0, 23, 59, 59, 999);
+    quarters.push({ start, end, label: `Q${q+1} ${y}`, key: `${y}-Q${q+1}` });
+    q--;
+    if (q < 0) { q = 3; y--; }
+  }
+  return quarters;
+}
+
+function populateQuarterDropdowns() {
+  const quarters = buildQuarterOptions();
+  const periodEl = document.getElementById('q-period');
+  const compareEl = document.getElementById('q-compare');
+  periodEl.innerHTML = '';
+  compareEl.innerHTML = '';
+  quarters.forEach((qtr, i) => {
+    periodEl.innerHTML += `<option value="${qtr.key}" ${i === 0 ? 'selected' : ''}>${qtr.label}</option>`;
+    compareEl.innerHTML += `<option value="${qtr.key}" ${i === 1 ? 'selected' : ''}>${qtr.label}</option>`;
+  });
+}
+
+function parseQuarterKey(key) {
+  // key = "2026-Q3"
+  const [y, qStr] = key.split('-Q');
+  const q = parseInt(qStr) - 1; // 0-indexed
+  const start = new Date(parseInt(y), q * 3, 1, 0, 0, 0, 0);
+  const end = new Date(parseInt(y), q * 3 + 3, 0, 23, 59, 59, 999);
+  return { start, end, label: `Q${q+1} ${y}` };
+}
+
+function onQuarterSelectionChange() {
+  renderQuarter();
 }
 
 // ── Fetch data ────────────────────────────────────────────
@@ -233,28 +282,39 @@ async function fetchCommitDeals() {
 
 // ── Render quarter comparison ─────────────────────────────
 function renderQuarter() {
+  const periodKey = document.getElementById('q-period').value;
+  const compareKey = document.getElementById('q-compare').value;
+  const period = parseQuarterKey(periodKey);
+  const compare = parseQuarterKey(compareKey);
+
   const now = new Date();
-  const cq = getQuarterBounds(now);
-  const pq = getPrevQuarterBounds(now);
-  const elapsed = daysIntoQuarter(now, cq.start);
+  const currentQtr = getQuarterBounds(now);
 
-  // Same-point comparison: first N days of previous quarter
-  const pqSamePoint = new Date(pq.start.getTime() + (elapsed - 1) * 864e5);
-  pqSamePoint.setHours(23, 59, 59, 999);
+  // For the period: if it's the current quarter, cap at today; otherwise use full quarter
+  const periodIsCurrentQ = (period.start.getTime() === currentQtr.start.getTime());
+  const periodEnd = periodIsCurrentQ ? now : period.end;
+  const elapsed = periodIsCurrentQ ? daysIntoQuarter(now, period.start) : daysIntoQuarter(period.end, period.start);
 
-  document.getElementById('quarter-head').textContent = `${cq.label} vs. ${pq.label}`;
+  // For comparison: use same elapsed days into that quarter
+  const compareSamePoint = new Date(compare.start.getTime() + (elapsed - 1) * 864e5);
+  compareSamePoint.setHours(23, 59, 59, 999);
+  // Cap at quarter end if elapsed extends beyond it
+  const compareEnd = compareSamePoint > compare.end ? compare.end : compareSamePoint;
+
+  document.getElementById('quarter-title').textContent = `${period.label} vs. ${compare.label}`;
 
   // Filter investments
-  const cqInvs = INVESTMENTS.filter(i => {
+  const pInvs = INVESTMENTS.filter(i => {
     const d = new Date(i.properties?.funds_received || 0).getTime();
-    return d >= cq.start.getTime() && d <= now.getTime();
+    return d >= period.start.getTime() && d <= periodEnd.getTime();
   });
-  QTR_INVS = cqInvs;
-  QTR_NEW = cqInvs.filter(i => (i.properties?.type_of_investment || '') === 'New');
-  QTR_REPEAT = cqInvs.filter(i => { const t = i.properties?.type_of_investment || ''; return t === 'Repeat' || t === 'Bolt-On'; });
-  const pqInvs = INVESTMENTS.filter(i => {
+  QTR_INVS = pInvs;
+  QTR_NEW = pInvs.filter(i => (i.properties?.type_of_investment || '') === 'New');
+  QTR_REPEAT = pInvs.filter(i => { const t = i.properties?.type_of_investment || ''; return t === 'Repeat' || t === 'Bolt-On'; });
+
+  const cInvs = INVESTMENTS.filter(i => {
     const d = new Date(i.properties?.funds_received || 0).getTime();
-    return d >= pq.start.getTime() && d <= pqSamePoint.getTime();
+    return d >= compare.start.getTime() && d <= compareEnd.getTime();
   });
 
   const sumAmt = (invs) => invs.reduce((s, i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
@@ -264,9 +324,9 @@ function renderQuarter() {
     return t === 'Repeat' || t === 'Bolt-On';
   });
 
-  const cqTotal = sumAmt(cqInvs), pqTotal = sumAmt(pqInvs);
-  const cqNew = sumAmt(filterType(cqInvs, 'New')), pqNew = sumAmt(filterType(pqInvs, 'New'));
-  const cqRepeat = sumAmt(filterRepeat(cqInvs)), pqRepeat = sumAmt(filterRepeat(pqInvs));
+  const pTotal = sumAmt(pInvs), cTotal = sumAmt(cInvs);
+  const pNew = sumAmt(filterType(pInvs, 'New')), cNew = sumAmt(filterType(cInvs, 'New'));
+  const pRepeat = sumAmt(filterRepeat(pInvs)), cRepeat = sumAmt(filterRepeat(cInvs));
 
   function setCard(prefix, current, previous, prevLabel) {
     document.getElementById(prefix).textContent = $(current);
@@ -282,12 +342,15 @@ function renderQuarter() {
       el.textContent = `↓ ${Math.abs(delta).toFixed(1)}% vs. ${prevLabel}`;
       el.className = 'kpi-delta down';
     }
-    document.getElementById(prefix + '-sub').textContent = `${prevLabel}: ${$(previous)} (day ${elapsed} of quarter)`;
+    const subText = periodIsCurrentQ
+      ? `${prevLabel}: ${$(previous)} (day ${elapsed} of quarter)`
+      : `${prevLabel}: ${$(previous)} (${elapsed} days)`;
+    document.getElementById(prefix + '-sub').textContent = subText;
   }
 
-  setCard('q-total', cqTotal, pqTotal, pq.label);
-  setCard('q-new', cqNew, pqNew, pq.label);
-  setCard('q-repeat', cqRepeat, pqRepeat, pq.label);
+  setCard('q-total', pTotal, cTotal, compare.label);
+  setCard('q-new', pNew, cNew, compare.label);
+  setCard('q-repeat', pRepeat, cRepeat, compare.label);
 }
 
 // ── Render activity ───────────────────────────────────────
@@ -334,7 +397,8 @@ function renderActivity() {
 async function drillQuarter(type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
   const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
-  const titles = {total: 'Total Raise — This Quarter', 'new': 'New Money — This Quarter', repeat: 'Repeat Money — This Quarter'};
+  const periodLabel = parseQuarterKey(document.getElementById('q-period').value).label;
+  const titles = {total: `Total Raise — ${periodLabel}`, 'new': `New Money — ${periodLabel}`, repeat: `Repeat Money — ${periodLabel}`};
   drillTitle = titles[type] || 'Investments';
   drillType = 'investment';
   drillRecords = invs.map(i => {
@@ -453,11 +517,15 @@ async function loadData() {
     });
     const now = new Date();
     const cq = getQuarterBounds(now);
-    const pq = getPrevQuarterBounds(now);
+    const allQtrs = buildQuarterOptions();
+    const oldestQtr = allQtrs[allQtrs.length - 1];
     RELEVANT_INVESTMENTS = INVESTMENTS.filter(i => {
       const dt = new Date(i.properties?.funds_received || 0).getTime();
-      return dt >= pq.start.getTime();
+      return dt >= oldestQtr.start.getTime();
     });
+    
+    // Populate quarter dropdowns (once)
+    populateQuarterDropdowns();
     
     // Render numbers immediately
     renderQuarter();
