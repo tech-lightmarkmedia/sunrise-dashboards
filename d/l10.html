@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.7</title>
+<title>Sunrise Capital — L10 Dashboard v1.8</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -43,6 +43,15 @@ main{padding:20px 28px;max-width:900px}
 .activity-detail strong{color:var(--text)}
 .clickable-val{cursor:pointer;transition:color .15s}
 .clickable-val:hover{color:var(--accent)}
+
+/* Fund 5 investment-type breakdown cards */
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.type-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.type-label{font-size:11px;color:var(--text3);line-height:1.3;margin-bottom:6px;min-height:28px}
+.type-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--text);line-height:1.1}
+.type-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.type-unknown{border-color:var(--accent)}
+.type-unknown .type-val{color:var(--accent)}
 /* Drill drawer */
 #drill-drawer{position:fixed;top:0;right:0;bottom:0;width:460px;max-width:100vw;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,.12);z-index:998;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease}
 #drill-drawer.open{transform:translateX(0)}
@@ -79,7 +88,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.7</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.8</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -117,6 +126,12 @@ main{padding:20px 28px;max-width:900px}
     <div class="activity-card"><div class="kpi-label">Commitments Made</div><div class="activity-val clickable-val" id="a-commit-count" onclick="drillActivity('commits')">—</div><div class="activity-detail" id="a-commit-detail"></div></div>
     <div class="activity-card"><div class="kpi-label">Investments Funded</div><div class="activity-val clickable-val" id="a-invest-count" onclick="drillActivity('invests')">—</div><div class="activity-detail" id="a-invest-detail"></div></div>
   </div>
+
+  <div class="section-head">
+    Fund 5 — Investment Type
+    <span class="sh-spacer"></span>
+  </div>
+  <div class="type-grid" id="fund5-type-cards"></div>
 </main>
 
 <div id="drill-drawer">
@@ -143,8 +158,13 @@ main{padding:20px 28px;max-width:900px}
     <p><strong>Commitments Made:</strong> Deals entering the InvestNext commit pipeline stage in the window. Shows count and total dollar amount.</p>
     <p><strong>Investments Funded:</strong> Investment records with funds_received in the window. Shows count and total dollar amount.</p>
 
+    <h3>Fund 5 — Investment Type</h3>
+    <p>Breaks down all Fund 5 investment records (all-time, not date-windowed) by the <code>investment_type</code> property — the legal/account structure the money came through (Individual, Joint, Entity, Trust & Solo 401k, A Self-Directed IRA, Individual (Joint Tenants), An Entity or a Trust).</p>
+    <p><strong>Unknown</strong> means the record has no investment_type value set yet — either it was created after the property was added and never filled in, or it's one of the records flagged during backfill as needing manual review because the linked contact's deals disagreed on which value was correct. Click into Unknown to see which records still need attention.</p>
+    <p>This section fetches live from HubSpot on every load/refresh rather than reading the nightly cache, since investment_type is a newly added property not yet included in the cache's property list.</p>
+
     <h3>Data Sources</h3>
-    <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments fetched live from HubSpot. Use ↻ Refresh to reload.</p>
+    <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments and the Fund 5 investment-type breakdown fetched live from HubSpot. Use ↻ Refresh to reload.</p>
   </div>
 </div>
 
@@ -171,6 +191,12 @@ let drillRecords = [], drillType = '', drillPage = 0, drillTitle = '';
 // Store filtered sets for drill-downs
 let QTR_INVS = [], QTR_NEW = [], QTR_REPEAT = [];
 let ACT_DISCOS = [], ACT_COMMITS = [], ACT_INVESTS = [];
+
+// Fund 5 investment-type breakdown (live-fetched, not cached — investment_type
+// is a newly added property not yet in the R2 cache's property list)
+const FUND5_TYPE_OPTIONS = ['Individual', 'Joint', 'Entity', 'Trust & Solo 401k', 'A Self-Directed IRA', 'Individual (Joint Tenants)', 'An Entity or a Trust'];
+let FUND5_INVESTMENTS = [];
+let FUND5_BUCKETS = {};
 
 function toggleGuide() { document.getElementById('guide-overlay').classList.toggle('open'); }
 function closeDrill() { document.getElementById('drill-drawer').classList.remove('open'); }
@@ -278,6 +304,22 @@ async function fetchCommitDeals() {
     limit: 200
   });
   COMMIT_DEALS = d.results || [];
+}
+
+async function fetchFund5Types() {
+  FUND5_INVESTMENTS = [];
+  let after;
+  do {
+    const body = {
+      filterGroups: [{filters: [{propertyName: 'fund_invested', operator: 'EQ', value: 'Fund 5'}]}],
+      properties: ['investment_type', 'investment_amount', 'email_address', 'funds_received'],
+      limit: 100,
+      ...(after ? {after} : {})
+    };
+    const d = await api('/crm/v3/objects/2-59402465/search', body);
+    FUND5_INVESTMENTS.push(...(d.results || []));
+    after = d.paging?.next?.after;
+  } while (after);
 }
 
 // ── Render quarter comparison ─────────────────────────────
@@ -393,6 +435,33 @@ function renderActivity() {
     ? `<strong>${$(fundedDollars)}</strong> funded` : '';
 }
 
+// ── Render Fund 5 investment-type breakdown ───────────────
+function renderFund5Types() {
+  const buckets = {};
+  FUND5_TYPE_OPTIONS.forEach(t => buckets[t] = {count: 0, amount: 0, records: []});
+  buckets['Unknown'] = {count: 0, amount: 0, records: []};
+
+  FUND5_INVESTMENTS.forEach(i => {
+    const p = i.properties || {};
+    const raw = p.investment_type || '';
+    const t = FUND5_TYPE_OPTIONS.includes(raw) ? raw : 'Unknown';
+    buckets[t].count++;
+    buckets[t].amount += parseFloat(p.investment_amount || 0);
+    buckets[t].records.push(i);
+  });
+  FUND5_BUCKETS = buckets;
+
+  const order = [...FUND5_TYPE_OPTIONS, 'Unknown'];
+  let html = '';
+  order.forEach(t => {
+    const b = buckets[t];
+    const cardCls = t === 'Unknown' ? 'type-card type-unknown' : 'type-card';
+    const safeT = t.replace(/'/g, "\\'");
+    html += `<div class="${cardCls}"><div class="type-label">${t}</div><div class="type-val clickable-val" onclick="drillFund5Type('${safeT}')">${b.count}</div><div class="type-sub">${b.amount > 0 ? $(b.amount) : ''}</div></div>`;
+  });
+  document.getElementById('fund5-type-cards').innerHTML = html;
+}
+
 // ── Drill-down handlers ───────────────────────────────────
 async function drillQuarter(type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
@@ -443,6 +512,22 @@ async function drillActivity(type) {
         amount: parseFloat(p.investment_amount || 0), fund: p.fund_invested || '', type: p.type_of_investment || '', date: p.funds_received || ''};
     });
   }
+  renderDrillPage();
+  document.getElementById('drill-drawer').classList.add('open');
+}
+
+async function drillFund5Type(type) {
+  if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
+  const bucket = FUND5_BUCKETS[type];
+  drillTitle = `Fund 5 — ${type}`;
+  drillType = 'investment';
+  drillPage = 0;
+  drillRecords = (bucket ? bucket.records : []).map(i => {
+    const p = i.properties || {};
+    const cid = INV_TO_CONTACT[i.id];
+    return {id: i.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : (p.email_address || 'Unknown'),
+      amount: parseFloat(p.investment_amount || 0), fund: 'Fund 5', type: p.investment_type || 'Unknown', date: p.funds_received || ''};
+  });
   renderDrillPage();
   document.getElementById('drill-drawer').classList.add('open');
 }
@@ -507,7 +592,7 @@ async function loadData() {
   try {
     status('Loading…');
     associationsReady = false;
-    await Promise.all([fetchCachedData(), fetchCommitDeals()]);
+    await Promise.all([fetchCachedData(), fetchCommitDeals(), fetchFund5Types()]);
     
     // Filter to relevant subsets
     const thirtyDaysAgo = Date.now() - 30 * 864e5;
@@ -530,11 +615,12 @@ async function loadData() {
     // Render numbers immediately
     renderQuarter();
     renderActivity();
+    renderFund5Types();
     status('Updated ' + new Date().toLocaleTimeString());
     document.getElementById('status-pill').textContent = `${INVESTMENTS.length} investments`;
     
     // Load associations in the background
-    console.log(`[l10] Rendering complete. Loading associations in background (${RELEVANT_MEETINGS.length} meetings, ${RELEVANT_INVESTMENTS.length} investments, ${COMMIT_DEALS.length} commits)…`);
+    console.log(`[l10] Rendering complete. Loading associations in background (${RELEVANT_MEETINGS.length} meetings, ${RELEVANT_INVESTMENTS.length} investments, ${COMMIT_DEALS.length} commits, ${FUND5_INVESTMENTS.length} Fund 5 investments)…`);
     fetchAssociations().then(() => {
       associationsReady = true;
       console.log('[l10] Associations ready.');
@@ -546,9 +632,11 @@ async function loadData() {
 }
 
 async function fetchAssociations() {
-  // Only associate the filtered subsets, not all 13K meetings
+  // Only associate the filtered subsets, not all 13K meetings.
+  // Union RELEVANT_INVESTMENTS with FUND5_INVESTMENTS since the Fund 5 breakdown
+  // spans all-time, not just the current/previous quarter.
   INV_TO_CONTACT = {};
-  const invIds = RELEVANT_INVESTMENTS.map(i => i.id);
+  const invIds = [...new Set([...RELEVANT_INVESTMENTS.map(i => i.id), ...FUND5_INVESTMENTS.map(i => i.id)])];
   for (let i = 0; i < invIds.length; i += 100) {
     try {
       const d = await api('/crm/v4/associations/2-59402465/contacts/batch/read',
