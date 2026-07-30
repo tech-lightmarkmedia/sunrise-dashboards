@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Referral Activity Dashboard (v1.0)</title>
+<title>Sunrise Capital — Referral Activity Dashboard (v1.1)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -96,7 +96,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 
 <header>
   <a href="/">&larr; Hub</a>
-  <h1>Referral Activity<span class="vpill">v1.0</span></h1>
+  <h1>Referral Activity<span class="vpill">v1.1</span></h1>
   <span class="ts" id="ts"></span>
   <button class="guide-btn" onclick="event.stopPropagation();document.getElementById('guide').classList.add('on')">Guide</button>
 </header>
@@ -140,6 +140,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
     <div style="display:flex;gap:3px">
       <button class="bt-pill active" data-filt="all" onclick="setFilt('all')">All</button>
       <button class="bt-pill" data-filt="funded" onclick="setFilt('funded')">With Capital</button>
+      <button class="bt-pill" data-filt="investors" onclick="setFilt('investors')">Are Investors</button>
     </div>
   </div>
   <div class="fg">
@@ -179,7 +180,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
   <h2>Referral Activity — Guide</h2>
 
   <h3>What this dashboard shows</h3>
-  <p>Every contact who has referred at least one other contact in HubSpot, and the investment capital that flowed from those referrals. One row per referrer. Click any row to see the referral chain and the individual investments behind the number.</p>
+  <p>Every contact who has referred at least one other contact in HubSpot, their own investment capital, and the capital of the people they referred. The <strong>Combined</strong> column is the two added together — the basis a referrer's benefits are calculated from. One row per referrer; click any row for the full breakdown.</p>
 
   <h3>Where the referral links come from</h3>
   <p>HubSpot contact-to-contact associations carrying the custom labels <strong>Referral</strong> and <strong>Referrer</strong>. Read from a given contact, an association labelled <em>Referral</em> (<code>typeId 1</code>) points at someone that contact referred; <em>Referrer</em> (<code>typeId 2</code>) points at the person who referred them. The pair is reciprocal, so the graph can be walked from either end.</p>
@@ -190,17 +191,34 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
   <p><strong>Contacts</strong> — <code>/cached-contacts</code>, for names and emails.</p>
   <p><strong>Investments</strong> — <code>/cached-investments</code>, joined to contacts association-first with an email fallback (the same resolver the Campaign ROI dashboard uses), so an investment whose <code>email_address</code> doesn't match the contact's primary email still counts as long as the records are associated.</p>
 
+  <h3>Combined Capital — the benefit basis</h3>
+  <p><strong>Combined</strong> is the headline number: the referrer's <strong>own</strong> investments plus the investments of everyone in their referral network. It exists because a referrer's benefits are based on their own capital accumulated together with the capital of the people they referred.</p>
+  <p>The definition is recursive — a referrer gets credit for their own capital plus the <em>combined</em> figure of each person they referred. Written out:</p>
+  <p><code>Combined(A) = Own(A) + Σ Combined(direct referrals of A)</code></p>
+  <p>Expanding that collapses to: A's own capital, plus the own-capital of every contact reachable down A's referral chain, at any depth. So depth isn't a separate setting — it falls out of the definition. "Direct referrals, counting their combined total" and "everyone down the chain, counting own totals" are the same number.</p>
+  <p><strong>Two consequences, both intended:</strong></p>
+  <p>1. <strong>The same capital counts toward several people.</strong> If A refers B and B refers C, then C's investment lifts C's own figure, B's combined, and A's combined. That is what the definition asks for — but it means the Combined column deliberately does not sum to a portfolio total, and the cost of any benefit tied to it compounds as chains get deeper.</p>
+  <p>2. <strong>Mutual referrals credit both parties fully.</strong> If A and B are labelled as referring each other, A's combined includes B's own capital and B's includes A's. The chain walk counts each contact once, so this resolves rather than looping — but it is a resolution this dashboard chose, not something the formula settles.</p>
+
   <h3>Rolled Up vs Direct Only</h3>
-  <p><strong>Rolled Up</strong> (default) credits a referrer with capital from their direct referrals <em>and</em> from anyone those people went on to refer, to any depth. If A refers B and B refers C, then C's investments count toward A as well as toward B — so the same capital deliberately appears under more than one referrer, and the column does not sum to a portfolio total.</p>
-  <p><strong>Direct Only</strong> restricts every figure to first-degree referrals. Each investment is then credited to at most one referrer.</p>
-  <p>The chain walk carries a visited-set guard, so a self-referral or a loop (A refers B, B refers A) is counted once and cannot spin.</p>
+  <p><strong>Rolled Up</strong> (default) is the benefit basis described above — the full chain to any depth.</p>
+  <p><strong>Direct Only</strong> restricts referred capital to first-degree referrals, counting only those contacts' own investments. Useful for seeing the immediate effect of one person's referrals, and for comparison if the benefit basis is ever narrowed to direct referrals.</p>
+  <p>The chain walk carries a visited-set guard, so a self-referral or a loop is counted once and cannot spin.</p>
 
   <h3>Columns</h3>
   <p><strong>Direct Referrals</strong> — contacts this person referred first-hand.</p>
   <p><strong>All Referrals</strong> — every contact reachable down the chain, excluding the referrer themselves. Equals Direct Referrals in Direct Only mode.</p>
-  <p><strong>Investors</strong> — how many of those referred contacts have at least one investment inside the selected date range.</p>
-  <p><strong>Capital</strong> — total investment amount from those referred contacts in range. The referrer's own investments are never counted here.</p>
-  <p><strong>Conversion</strong> — Investors ÷ All Referrals, to one decimal place.</p>
+  <p><strong>Investors</strong> — how many referred contacts have at least one investment in range. Does not include the referrer.</p>
+  <p><strong>Own Capital</strong> — the referrer's own investments in range.</p>
+  <p><strong>Referred Capital</strong> — investments from their referral network in range, excluding their own.</p>
+  <p><strong>Combined</strong> — Own + Referred. The benefit basis.</p>
+  <p><strong>Conversion</strong> — Investors ÷ All Referrals, to one decimal. Deliberately a referral metric: the referrer's own investment is in neither the numerator nor the denominator, since this measures how well their referrals convert, not whether they invested.</p>
+
+  <h3>Reading the totals row</h3>
+  <p>Counts sum. Money does not. <strong>Referred Capital</strong> in the footer is deduplicated per contact, because under rollup one referred contact can appear under several referrers. The footer's <strong>Combined</strong> is the union of referrers and referred contacts, each counted once — it is <em>not</em> the sum of the Combined column, which double-credits by design. Treat the footer as "how much capital exists in the referral network," not as a sum of the rows above it.</p>
+
+  <h3>Benefit tiers</h3>
+  <p>Not implemented. Thresholds haven't been defined yet. When they are, they bolt on as a tier column plus distance-to-next-tier without changing any of the capital math above.</p>
 
   <h3>Date range</h3>
   <p>The picker filters <strong>investments</strong> by <code>funds_received</code> — the date money actually arrived, not the record's create date. Referral links themselves are not date-filtered, because HubSpot associations carry no timestamp. So a referral made in 2024 whose investment funded in 2026 shows up in a 2026 range.</p>
@@ -229,7 +247,7 @@ let ROWS = [];
 let UNATTRIB_INV = 0, UNATTRIB_CAP = 0;
 let SCOPE = 'all';              // 'all' = rolled up | 'direct'
 let FILT  = 'all';              // 'all' | 'funded'
-let SORT  = { key: 'capital', dir: -1 };
+let SORT  = { key: 'combined', dir: -1 };
 
 // ── Formatters ───────────────────────────────────────────────────────────────
 function fmt(n){ return n == null || isNaN(n) ? '—' : Math.round(n).toLocaleString(); }
@@ -345,6 +363,26 @@ function invsInRange(contactId, from, to){
   return all.filter(i => i.fundsTs != null && i.fundsTs >= from && i.fundsTs <= to);
 }
 
+// Combined capital = the referrer's own investments + the own-investments of
+// every contact reachable down their referral chain.
+//
+// This follows from the definition John specified (2026-07-29): a referrer's
+// benefit basis is their own capital plus the *combined* figure of each person
+// they referred. Expanding that recursion —
+//   Combined(A) = Own(A) + Σ Combined(direct referrals of A)
+// — collapses to Own(A) plus the own-capital of every descendant at any depth.
+// So recursion is implied by the definition rather than being a separate
+// toggle; "direct referrals, counting their combined figure" and "recursive
+// rollup of own capital" are arithmetically the same number.
+//
+// Two consequences, both inherent to that definition rather than bugs:
+//   1. The same capital drives several people's benefit basis — C's investment
+//      counts toward C, toward B who referred C, and toward A who referred B.
+//   2. Mutual referrals (A↔B) are circular. The visited-set guard in
+//      descendants() resolves this by counting each contact once, so A's
+//      combined includes B's own capital and vice versa.
+// Both are called out in the Guide so nobody reads the column as a portfolio
+// total.
 function computeRows(){
   const { from, to } = getDateRange();
   const fromMs = from.getTime(), toMs = to.getTime();
@@ -357,6 +395,11 @@ function computeRows(){
     const desc = SCOPE === 'direct'
       ? direct.map(id => ({ id, degree: 1 }))
       : descendants(refId);
+
+    // The referrer's own investments — excluded from referred capital, added
+    // back in the combined figure.
+    const ownInvs = invsInRange(refId, fromMs, toMs);
+    const ownCap = ownInvs.reduce((s,i) => s + i.amount, 0);
 
     let investors = 0, capital = 0, invCount = 0;
     let directCap = 0, downstreamCap = 0;
@@ -383,9 +426,15 @@ function computeRows(){
       allCount: desc.length,
       investors,
       invCount,
-      capital,
+      ownInvs,
+      ownCap,
+      capital,                     // referred capital only
+      combined: ownCap + capital,  // benefit basis
       directCap,
       downstreamCap,
+      // Conversion stays a referral metric — it measures how many people this
+      // referrer brought in who went on to fund, so the referrer's own
+      // investment is deliberately not in the numerator or denominator.
       conv: desc.length ? (investors / desc.length) * 100 : null,
       maxDegree: desc.reduce((mx,d) => Math.max(mx, d.degree), 0),
       byDegree,
@@ -398,7 +447,8 @@ function computeRows(){
 function visibleRows(){
   const q = (document.getElementById('refSearch').value || '').trim().toLowerCase();
   let rows = ROWS;
-  if(FILT === 'funded') rows = rows.filter(r => r.capital > 0);
+  if(FILT === 'funded') rows = rows.filter(r => r.combined > 0);
+  if(FILT === 'investors') rows = rows.filter(r => r.ownCap > 0);
   if(q) rows = rows.filter(r => r.name.toLowerCase().includes(q));
   const dir = SORT.dir;
   return rows.slice().sort((a,b) => {
@@ -414,7 +464,9 @@ const COLS = [
   { key:'directCount', label:'Direct Referrals' },
   { key:'allCount',    label:'All Referrals' },
   { key:'investors',   label:'Investors' },
-  { key:'capital',     label:'Capital' },
+  { key:'ownCap',      label:'Own Capital' },
+  { key:'capital',     label:'Referred Capital' },
+  { key:'combined',    label:'Combined' },
   { key:'conv',        label:'Conversion' },
 ];
 
@@ -438,11 +490,25 @@ function renderKpis(){
   }));
   const conv = referredSet.size ? (investorSet.size / referredSet.size) * 100 : null;
 
+  // Union of referrers and referred contacts, each counted once. Not the sum of
+  // the Combined column — that column double-credits by design.
+  const unionCounted = new Set();
+  let unionCap = 0;
+  ROWS.forEach(r => {
+    if(!unionCounted.has(r.id)){ unionCounted.add(r.id); unionCap += r.ownCap; }
+    r.members.forEach(m => {
+      if(unionCounted.has(m.id)) return;
+      unionCounted.add(m.id); unionCap += m.amt;
+    });
+  });
+  const investingReferrers = ROWS.filter(r => r.ownCap > 0).length;
+
   document.getElementById('kpis').innerHTML = `
-    <div class="kpi"><div class="label">Referrers</div><div class="value">${fmt(referrers)}</div><div class="sub">contacts who referred someone</div></div>
+    <div class="kpi"><div class="label">Referrers</div><div class="value">${fmt(referrers)}</div><div class="sub">${fmt(investingReferrers)} invested themselves</div></div>
     <div class="kpi"><div class="label">Referred Contacts</div><div class="value">${fmt(referredSet.size)}</div><div class="sub">unique, ${SCOPE === 'direct' ? 'first degree only' : 'all degrees'}</div></div>
     <div class="kpi"><div class="label">Referred Investors</div><div class="value">${fmt(investorSet.size)}</div><div class="sub">funded in range</div></div>
     <div class="kpi"><div class="label">Referred Capital</div><div class="value">${fmtMoney(uniqueCap)}</div><div class="sub">deduplicated across referrers</div></div>
+    <div class="kpi"><div class="label">Referral Network Capital</div><div class="value">${fmtMoney(unionCap)}</div><div class="sub">referrers + referred, counted once</div></div>
     <div class="kpi"><div class="label">Referral Conversion</div><div class="value">${fmtPct(conv)}</div><div class="sub">investors ÷ referred contacts</div></div>`;
 }
 
@@ -468,22 +534,41 @@ function renderTable(){
       <td>${fmt(r.directCount)}</td>
       <td>${fmt(r.allCount)}</td>
       <td>${fmt(r.investors)}</td>
+      <td>${r.ownCap > 0 ? fmtMoney(r.ownCap) : '—'}</td>
       <td>${r.capital > 0 ? fmtMoney(r.capital) : '—'}</td>
+      <td style="font-weight:600">${r.combined > 0 ? fmtMoney(r.combined) : '—'}</td>
       <td>${fmtPct(r.conv)}</td>
     </tr>`).join('');
 
-  // Totals: counts sum, capital is deduplicated (a referred contact can sit
-  // under several referrers once the rollup is on, so a raw sum would inflate).
-  const counted = new Set();
-  let dedupCap = 0, dedupInvestors = 0;
+  // Totals. Counts sum; capital does NOT — under rollup a referred contact can
+  // sit under several referrers, and a referrer's own capital can also appear
+  // inside another referrer's referred figure. So both money columns are
+  // deduplicated per contact, and Combined is the union of (referrers ∪
+  // referred) counted once each, NOT the sum of the Combined column.
   const referredSet = new Set();
+  const countedReferred = new Set();
+  let dedupReferredCap = 0, dedupInvestors = 0;
   rows.forEach(r => r.members.forEach(m => {
     referredSet.add(m.id);
-    if(counted.has(m.id)) return;
-    counted.add(m.id);
-    dedupCap += m.amt;
+    if(countedReferred.has(m.id)) return;
+    countedReferred.add(m.id);
+    dedupReferredCap += m.amt;
     if(m.invs.length) dedupInvestors++;
   }));
+
+  let ownCapSum = 0;
+  rows.forEach(r => { ownCapSum += r.ownCap; }); // referrers are distinct rows, no dedup needed
+
+  const unionCounted = new Set();
+  let unionCap = 0;
+  rows.forEach(r => {
+    if(!unionCounted.has(r.id)){ unionCounted.add(r.id); unionCap += r.ownCap; }
+    r.members.forEach(m => {
+      if(unionCounted.has(m.id)) return;
+      unionCounted.add(m.id); unionCap += m.amt;
+    });
+  });
+
   const totalConv = referredSet.size ? (dedupInvestors / referredSet.size) * 100 : null;
 
   document.getElementById('totalsRow').innerHTML = `<tr>
@@ -491,7 +576,9 @@ function renderTable(){
     <td>${fmt(rows.reduce((s,r) => s + r.directCount, 0))}</td>
     <td>${fmt(referredSet.size)}</td>
     <td>${fmt(dedupInvestors)}</td>
-    <td>${fmtMoney(dedupCap)}</td>
+    <td>${fmtMoney(ownCapSum)}</td>
+    <td>${fmtMoney(dedupReferredCap)}</td>
+    <td style="font-weight:700" title="Union of referrers and referred contacts, each counted once — not the sum of the Combined column, which double-credits capital by design.">${fmtMoney(unionCap)}</td>
     <td>${fmtPct(totalConv)}</td>
   </tr>`;
 
@@ -526,12 +613,35 @@ function openDrill(refId){
   document.getElementById('drill-title').innerHTML =
     `<a href="${contactUrl(r.id)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(r.name)} ↗</a>`;
   document.getElementById('drill-subtitle').textContent =
-    `${fmt(r.directCount)} direct referral${r.directCount === 1 ? '' : 's'} · ${fmt(r.allCount)} total · ${rng.label} · ${SCOPE === 'direct' ? 'Direct Only' : 'Rolled Up'}`;
+    `Combined ${fmtMoney(r.combined)} · ${fmt(r.directCount)} direct referral${r.directCount === 1 ? '' : 's'} · ${fmt(r.allCount)} total · ${rng.label} · ${SCOPE === 'direct' ? 'Direct Only' : 'Rolled Up'}`;
 
-  let html = `<div class="dsplit">
-    <div><div class="l">Direct Capital</div><div class="v">${r.directCap > 0 ? fmtMoney(r.directCap) : '—'}</div></div>
+  // Benefit basis breakdown: own + referred = combined, shown as the arithmetic
+  // so the headline number is auditable at a glance.
+  let html = `<div class="dsplit" style="grid-template-columns:repeat(3,1fr)">
+    <div><div class="l">Own Capital</div><div class="v">${r.ownCap > 0 ? fmtMoney(r.ownCap) : '—'}</div></div>
+    <div><div class="l">Referred Capital</div><div class="v">${r.capital > 0 ? fmtMoney(r.capital) : '—'}</div></div>
+    <div style="background:var(--accent-bg);border-color:#f0c9b8">
+      <div class="l" style="color:var(--accent)">Combined</div>
+      <div class="v" style="color:var(--accent)">${r.combined > 0 ? fmtMoney(r.combined) : '—'}</div>
+    </div>
+  </div>
+  <div class="dsplit">
+    <div><div class="l">Direct Referral Capital</div><div class="v">${r.directCap > 0 ? fmtMoney(r.directCap) : '—'}</div></div>
     <div><div class="l">Downstream Capital</div><div class="v">${r.downstreamCap > 0 ? fmtMoney(r.downstreamCap) : '—'}</div></div>
   </div>`;
+
+  if(r.ownInvs.length){
+    const own = r.ownInvs.slice().sort((a,b) => (b.fundsTs || 0) - (a.fundsTs || 0));
+    html += `<div class="dsub">Own investments (${fmt(own.length)})</div><table class="dtbl">
+      <thead><tr><th>Funded</th><th>Fund</th><th>Class</th><th>Type</th><th class="r">Amount</th></tr></thead><tbody>`;
+    for(const i of own){
+      const d = i.fundsTs ? new Date(i.fundsTs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      html += `<tr><td>${d}</td><td>${esc(i.fund || '—')}</td><td>${esc(i.cls || '—')}</td><td>${esc(i.type || '—')}</td><td class="r">${fmtMoney(i.amount)}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += `<p style="font-size:12px;color:var(--text3);margin-bottom:8px">This referrer has no investments of their own in the selected range.</p>`;
+  }
 
   if(SCOPE === 'all' && r.maxDegree > 1){
     html += `<div class="dsub">By degree</div><table class="dtbl">
