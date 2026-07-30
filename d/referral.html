@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Referral Activity Dashboard (v1.0)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#c44a1e;--accent-bg:#fdf3ee;
+  --green:#059669;--red:#c44a1e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--text);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:14px}
+header h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;flex:1}
+header a{color:#fff;text-decoration:none;font-size:12px;opacity:.7}
+header a:hover{opacity:1}
+.vpill{font-size:10px;color:#9e9789;border:1px solid #555;padding:1px 6px;border-radius:10px;margin-left:8px}
+.ts{font-size:11px;color:#9e9789}
+#bar{display:flex;align-items:center;gap:14px;padding:14px 28px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+#bar .fg{display:flex;align-items:center;gap:6px}
+#bar label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+#bar select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+.cdates input[type="date"]{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+#bar #btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 16px;border-radius:6px;background:var(--text);color:#fff;border:none;cursor:pointer}
+.bt-pill{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;transition:all 0.15s}
+.bt-pill:hover{border-color:var(--text3);background:var(--surface2)}
+.bt-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi .label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px}
+.kpi .value{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text)}
+.kpi .sub{font-size:11px;color:var(--text3);margin-top:2px}
+.section-head{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.note{font-size:11px;color:var(--text3);margin-bottom:12px}
+.note.warn{color:var(--accent)}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.tbl-scroll{max-height:640px;overflow-y:auto}
+#refTable{width:100%;border-collapse:collapse;font-size:12px}
+#refTable thead th{background:var(--surface2);padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:1}
+#refTable thead th:first-child{text-align:left}
+#refTable tbody td{padding:8px 10px;text-align:right;border-bottom:1px solid #f0ede7}
+#refTable tbody td:first-child{text-align:left;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#refTable tbody tr:hover{background:#fcfbf8}
+#refTable tbody tr{cursor:pointer}
+#refTable tfoot td{padding:8px 10px;text-align:right;font-weight:700;background:var(--surface2);border-top:2px solid var(--border);position:sticky;bottom:0;z-index:1}
+#refTable tfoot td:first-child{text-align:left}
+/* Drill drawer */
+#drill-drawer{position:fixed;top:0;right:0;width:fit-content;max-width:85vw;min-width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:24px 28px;overflow-y:auto;overflow-x:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:200;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#drill-drawer.on{transform:translateX(0)}
+#drill-drawer h2{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;margin-bottom:6px}
+#drill-subtitle{font-size:11px;color:var(--text3);margin-bottom:18px}
+.drill-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+.drill-close:hover{color:var(--text)}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px}
+.dtbl th{text-align:left;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.dtbl th.r,.dtbl td.r{text-align:right}
+.dtbl td{padding:6px 8px;border-bottom:1px solid #f0ede7;vertical-align:top}
+.dtbl a{color:var(--accent);text-decoration:none}
+.dtbl a:hover{text-decoration:underline}
+.dsub{font-family:'DM Serif Display',serif;font-size:14px;margin:16px 0 6px}
+.dsplit{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.dsplit div{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.dsplit .l{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.dsplit .v{font-family:'DM Serif Display',serif;font-size:17px}
+.deg{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.deg.d1{background:var(--accent-bg);color:var(--accent);border-color:#f0c9b8}
+.chain{font-size:11px;color:var(--text3)}
+/* Guide drawer */
+#guide{position:fixed;top:0;right:0;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);padding:28px 28px;overflow-y:auto;transform:translateX(100%);transition:transform 0.25s ease;z-index:210;box-shadow:-4px 0 20px rgba(0,0,0,0.06)}
+#guide.on{transform:translateX(0)}
+#guide h2{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:14px}
+#guide h3{font-family:'DM Serif Display',serif;font-size:15px;margin-top:18px;margin-bottom:6px}
+#guide p{font-size:12px;line-height:1.55;color:var(--text);margin-bottom:8px}
+#guide code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:11px}
+.drawer-close{position:absolute;top:14px;right:14px;background:transparent;border:none;font-size:20px;color:var(--text3);cursor:pointer;line-height:1}
+.drawer-close:hover{color:var(--text)}
+/* Loading */
+.loading{text-align:center;padding:80px 0;color:var(--text3)}
+.loading .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error{color:var(--accent);font-size:13px;padding:20px 0;display:none;white-space:pre-wrap}
+.guide-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/">&larr; Hub</a>
+  <h1>Referral Activity<span class="vpill">v1.0</span></h1>
+  <span class="ts" id="ts"></span>
+  <button class="guide-btn" onclick="event.stopPropagation();document.getElementById('guide').classList.add('on')">Guide</button>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label>Investment Date</label>
+    <select id="range">
+      <option value="today">Today</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="last_7">Last 7 Days</option>
+      <option value="last_14">Last 14 Days</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+      <option value="last_30">Last 30 Days</option>
+      <option value="last_90">Last 90 Days</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12m">Last 12 Months</option>
+      <option value="all_time" selected>All Time</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="cdates" id="cd">
+      <input type="date" id="cf">
+      <span>&rarr;</span>
+      <input type="date" id="ct">
+    </div>
+  </div>
+  <div class="fg">
+    <label>Credit</label>
+    <div style="display:flex;gap:3px">
+      <button class="bt-pill active" data-scope="all" onclick="setScope('all')">Rolled Up</button>
+      <button class="bt-pill" data-scope="direct" onclick="setScope('direct')">Direct Only</button>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Referrers</label>
+    <div style="display:flex;gap:3px">
+      <button class="bt-pill active" data-filt="all" onclick="setFilt('all')">All</button>
+      <button class="bt-pill" data-filt="funded" onclick="setFilt('funded')">With Capital</button>
+    </div>
+  </div>
+  <div class="fg">
+    <input id="refSearch" type="text" placeholder="Search referrers…" style="width:220px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none" oninput="renderTable()">
+  </div>
+  <button id="btn" onclick="load()">Refresh</button>
+</div>
+
+<main>
+  <div id="error" class="error"></div>
+  <div id="loading" class="loading" style="display:none">
+    <div class="spinner"></div>
+    <div id="loadMsg">Loading…</div>
+  </div>
+  <div id="content" style="display:none">
+    <div class="kpi-row" id="kpis"></div>
+    <div class="section-head"><span id="tableTitle">Referrers</span></div>
+    <div id="graphNote" class="note"></div>
+    <div id="unattrNote" class="note"></div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll"><table id="refTable"><thead></thead><tbody></tbody><tfoot id="totalsRow"></tfoot></table></div>
+    </div>
+  </div>
+</main>
+
+<!-- Drill drawer -->
+<div id="drill-drawer">
+  <button class="drill-close" onclick="closeDrill()">&times;</button>
+  <h2 id="drill-title">—</h2>
+  <p id="drill-subtitle">—</p>
+  <div id="drill-body"></div>
+</div>
+
+<!-- Guide drawer -->
+<div id="guide">
+  <button class="drawer-close" onclick="document.getElementById('guide').classList.remove('on')">&times;</button>
+  <h2>Referral Activity — Guide</h2>
+
+  <h3>What this dashboard shows</h3>
+  <p>Every contact who has referred at least one other contact in HubSpot, and the investment capital that flowed from those referrals. One row per referrer. Click any row to see the referral chain and the individual investments behind the number.</p>
+
+  <h3>Where the referral links come from</h3>
+  <p>HubSpot contact-to-contact associations carrying the custom labels <strong>Referral</strong> and <strong>Referrer</strong>. Read from a given contact, an association labelled <em>Referral</em> (<code>typeId 1</code>) points at someone that contact referred; <em>Referrer</em> (<code>typeId 2</code>) points at the person who referred them. The pair is reciprocal, so the graph can be walked from either end.</p>
+  <p>Unlabelled contact-to-contact associations (HubSpot's generic <code>typeId 449</code>) are ignored — a contact whose only link is unlabelled does not appear here.</p>
+
+  <h3>Data sources</h3>
+  <p><strong>Referral graph</strong> — <code>/cached-referrals</code>, built nightly by the worker. It reads the cached contact base and batch-reads contact associations, keeping only the two labelled types. If the number here looks stale after someone adds associations in HubSpot, the graph refreshes on the next nightly rebuild.</p>
+  <p><strong>Contacts</strong> — <code>/cached-contacts</code>, for names and emails.</p>
+  <p><strong>Investments</strong> — <code>/cached-investments</code>, joined to contacts association-first with an email fallback (the same resolver the Campaign ROI dashboard uses), so an investment whose <code>email_address</code> doesn't match the contact's primary email still counts as long as the records are associated.</p>
+
+  <h3>Rolled Up vs Direct Only</h3>
+  <p><strong>Rolled Up</strong> (default) credits a referrer with capital from their direct referrals <em>and</em> from anyone those people went on to refer, to any depth. If A refers B and B refers C, then C's investments count toward A as well as toward B — so the same capital deliberately appears under more than one referrer, and the column does not sum to a portfolio total.</p>
+  <p><strong>Direct Only</strong> restricts every figure to first-degree referrals. Each investment is then credited to at most one referrer.</p>
+  <p>The chain walk carries a visited-set guard, so a self-referral or a loop (A refers B, B refers A) is counted once and cannot spin.</p>
+
+  <h3>Columns</h3>
+  <p><strong>Direct Referrals</strong> — contacts this person referred first-hand.</p>
+  <p><strong>All Referrals</strong> — every contact reachable down the chain, excluding the referrer themselves. Equals Direct Referrals in Direct Only mode.</p>
+  <p><strong>Investors</strong> — how many of those referred contacts have at least one investment inside the selected date range.</p>
+  <p><strong>Capital</strong> — total investment amount from those referred contacts in range. The referrer's own investments are never counted here.</p>
+  <p><strong>Conversion</strong> — Investors ÷ All Referrals, to one decimal place.</p>
+
+  <h3>Date range</h3>
+  <p>The picker filters <strong>investments</strong> by <code>funds_received</code> — the date money actually arrived, not the record's create date. Referral links themselves are not date-filtered, because HubSpot associations carry no timestamp. So a referral made in 2024 whose investment funded in 2026 shows up in a 2026 range.</p>
+  <p>Referral counts (Direct, All) are therefore constant across ranges; only Investors, Capital, and Conversion move.</p>
+
+  <h3>Known gaps</h3>
+  <p>Investments that resolve to no cached contact are counted in the note above the table. They're the same population the Campaign ROI dashboard reports as "not attributed" — investors funding under a secondary email, duplicate contacts, or records not yet linked. Fixed in HubSpot by merging or adding the secondary email, after which the next cache rebuild picks them up with no code change.</p>
+  <p>Referral relationships tracked anywhere other than these association labels — in a deal property, a note, or a spreadsheet — are invisible here.</p>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────────
+const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const PORTAL_ID  = '23126809';
+const INV_OBJ    = '2-59402465';
+const MAX_DEPTH  = 50; // hard ceiling on chain walk depth (cycle guard is separate)
+
+// ── State ────────────────────────────────────────────────────────────────────
+let CONTACTS = [];
+let INVESTMENTS = [];
+let GRAPH = {};                 // contactId → {referred:[], referredBy:[]}
+let CONTACT_BY_ID = {};         // contactId → contact
+let INV_BY_CONTACT = {};        // contactId → [investment]
+let DESC_CACHE = {};            // referrerId → [{id, degree}]  (range-independent)
+let ROWS = [];
+let UNATTRIB_INV = 0, UNATTRIB_CAP = 0;
+let SCOPE = 'all';              // 'all' = rolled up | 'direct'
+let FILT  = 'all';              // 'all' | 'funded'
+let SORT  = { key: 'capital', dir: -1 };
+
+// ── Formatters ───────────────────────────────────────────────────────────────
+function fmt(n){ return n == null || isNaN(n) ? '—' : Math.round(n).toLocaleString(); }
+function fmtMoney(n){ return n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString(); }
+function fmtPct(n){ return n == null || isNaN(n) ? '—' : n.toFixed(1) + '%'; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function contactUrl(id){ return `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-1/${id}`; }
+function nameOf(id){ const c = CONTACT_BY_ID[id]; return c ? c.name : `(not in contact cache · ${id})`; }
+
+// ── Date range (same 16 options + Custom as ad / adweekly / roi) ──────────────
+function getDateRange(){
+  const key = document.getElementById('range').value;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const startOfWeek = d => { const x = new Date(d); x.setHours(0,0,0,0); const day = x.getDay(); x.setDate(x.getDate()-((day+6)%7)); return x; };
+  const endOfDay = d => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
+  const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  switch(key){
+    case 'today': return { from: new Date(y,m,now.getDate()), to: now, label: 'Today' };
+    case 'this_week': return { from: startOfWeek(now), to: now, label: 'This Week' };
+    case 'last_week': { const sow = startOfWeek(now); return { from: addDays(sow,-7), to: endOfDay(addDays(sow,-1)), label: 'Last Week' }; }
+    case 'last_7': return { from: addDays(now,-7), to: now, label: 'Last 7 Days' };
+    case 'last_14': return { from: addDays(now,-14), to: now, label: 'Last 14 Days' };
+    case 'this_month': return { from: new Date(y,m,1), to: now, label: 'This Month' };
+    case 'last_month': return { from: new Date(y,m-1,1), to: new Date(y,m,0,23,59,59,999), label: 'Last Month' };
+    case 'last_30': return { from: addDays(now,-30), to: now, label: 'Last 30 Days' };
+    case 'last_90': return { from: addDays(now,-90), to: now, label: 'Last 90 Days' };
+    case 'this_quarter': { const qm = Math.floor(m/3)*3; return { from: new Date(y,qm,1), to: now, label: 'This Quarter' }; }
+    case 'last_quarter': { const qm = Math.floor(m/3)*3; return { from: new Date(y,qm-3,1), to: new Date(y,qm,0,23,59,59,999), label: 'Last Quarter' }; }
+    case 'this_year': return { from: new Date(y,0,1), to: now, label: 'This Year' };
+    case 'last_year': return { from: new Date(y-1,0,1), to: new Date(y-1,11,31,23,59,59,999), label: 'Last Year' };
+    case 'last_12m': { const d = new Date(now); d.setMonth(d.getMonth()-12); return { from: d, to: now, label: 'Last 12 Months' }; }
+    case 'all_time': return { from: new Date('2000-01-01'), to: now, label: 'All Time' };
+    case 'custom': {
+      const f = document.getElementById('cf').value;
+      const t = document.getElementById('ct').value;
+      const from = f ? new Date(new Date(f).setHours(0,0,0,0)) : addDays(now,-30);
+      const to = t ? endOfDay(new Date(t)) : now;
+      return { from, to, label: 'Custom' };
+    }
+    default: return { from: new Date('2000-01-01'), to: now, label: 'All Time' };
+  }
+}
+
+// ── Toggles ──────────────────────────────────────────────────────────────────
+function setScope(s){
+  SCOPE = s;
+  document.querySelectorAll('[data-scope]').forEach(el => el.classList.toggle('active', el.dataset.scope === s));
+  computeRows(); renderAll();
+}
+function setFilt(f){
+  FILT = f;
+  document.querySelectorAll('[data-filt]').forEach(el => el.classList.toggle('active', el.dataset.filt === f));
+  renderTable();
+}
+
+// ── Cache fetch ──────────────────────────────────────────────────────────────
+async function fetchCache(key){
+  const r = await fetch(`${WORKER_URL}/${key}`);
+  if(!r.ok) throw new Error(`Cache ${key}: ${r.status}`);
+  const d = await r.json();
+  return d.results || [];
+}
+
+// ── Chain walk ───────────────────────────────────────────────────────────────
+// Breadth-first from a referrer, returning every reachable referred contact with
+// its degree. A visited set guards self-referrals and loops (A→B→A), so each
+// contact is counted exactly once at its shallowest depth.
+function descendants(rootId){
+  if(DESC_CACHE[rootId]) return DESC_CACHE[rootId];
+  const out = [];
+  const seen = new Set([rootId]);
+  let frontier = [rootId], degree = 0;
+  while(frontier.length && degree < MAX_DEPTH){
+    degree++;
+    const next = [];
+    for(const id of frontier){
+      for(const kid of ((GRAPH[id] && GRAPH[id].referred) || [])){
+        if(seen.has(kid)) continue;
+        seen.add(kid);
+        next.push(kid);
+        out.push({ id: kid, degree });
+      }
+    }
+    frontier = next;
+  }
+  DESC_CACHE[rootId] = out;
+  return out;
+}
+
+// Path from a referrer down to one of its descendants, for the drill display.
+function chainTo(rootId, targetId){
+  const prev = { [rootId]: null };
+  const q = [rootId];
+  const seen = new Set([rootId]);
+  while(q.length){
+    const id = q.shift();
+    if(id === targetId) break;
+    for(const kid of ((GRAPH[id] && GRAPH[id].referred) || [])){
+      if(seen.has(kid)) continue;
+      seen.add(kid); prev[kid] = id; q.push(kid);
+    }
+  }
+  if(!(targetId in prev)) return [];
+  const path = [];
+  for(let cur = targetId; cur != null; cur = prev[cur]) path.unshift(cur);
+  return path;
+}
+
+// ── Row computation ──────────────────────────────────────────────────────────
+function invsInRange(contactId, from, to){
+  const all = INV_BY_CONTACT[contactId] || [];
+  return all.filter(i => i.fundsTs != null && i.fundsTs >= from && i.fundsTs <= to);
+}
+
+function computeRows(){
+  const { from, to } = getDateRange();
+  const fromMs = from.getTime(), toMs = to.getTime();
+  ROWS = [];
+
+  for(const refId in GRAPH){
+    const direct = (GRAPH[refId].referred || []).slice();
+    if(direct.length === 0) continue; // only referrers get a row
+
+    const desc = SCOPE === 'direct'
+      ? direct.map(id => ({ id, degree: 1 }))
+      : descendants(refId);
+
+    let investors = 0, capital = 0, invCount = 0;
+    let directCap = 0, downstreamCap = 0;
+    const byDegree = {};
+    const members = [];
+
+    for(const d of desc){
+      const invs = invsInRange(d.id, fromMs, toMs);
+      const amt = invs.reduce((s,i) => s + i.amount, 0);
+      if(invs.length){ investors++; invCount += invs.length; }
+      capital += amt;
+      if(d.degree === 1) directCap += amt; else downstreamCap += amt;
+      if(!byDegree[d.degree]) byDegree[d.degree] = { count: 0, investors: 0, capital: 0 };
+      byDegree[d.degree].count++;
+      if(invs.length) byDegree[d.degree].investors++;
+      byDegree[d.degree].capital += amt;
+      members.push({ id: d.id, degree: d.degree, invs, amt });
+    }
+
+    ROWS.push({
+      id: refId,
+      name: nameOf(refId),
+      directCount: direct.length,
+      allCount: desc.length,
+      investors,
+      invCount,
+      capital,
+      directCap,
+      downstreamCap,
+      conv: desc.length ? (investors / desc.length) * 100 : null,
+      maxDegree: desc.reduce((mx,d) => Math.max(mx, d.degree), 0),
+      byDegree,
+      members,
+    });
+  }
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function visibleRows(){
+  const q = (document.getElementById('refSearch').value || '').trim().toLowerCase();
+  let rows = ROWS;
+  if(FILT === 'funded') rows = rows.filter(r => r.capital > 0);
+  if(q) rows = rows.filter(r => r.name.toLowerCase().includes(q));
+  const dir = SORT.dir;
+  return rows.slice().sort((a,b) => {
+    const av = a[SORT.key], bv = b[SORT.key];
+    if(SORT.key === 'name') return dir * String(av).localeCompare(String(bv));
+    const an = av == null ? -1 : av, bn = bv == null ? -1 : bv;
+    return dir * (an - bn) || String(a.name).localeCompare(String(b.name));
+  });
+}
+
+const COLS = [
+  { key:'name',        label:'Referrer' },
+  { key:'directCount', label:'Direct Referrals' },
+  { key:'allCount',    label:'All Referrals' },
+  { key:'investors',   label:'Investors' },
+  { key:'capital',     label:'Capital' },
+  { key:'conv',        label:'Conversion' },
+];
+
+function setSort(key){
+  if(SORT.key === key) SORT.dir = -SORT.dir;
+  else SORT = { key, dir: key === 'name' ? 1 : -1 };
+  renderTable();
+}
+
+function renderKpis(){
+  const referrers = ROWS.length;
+  const referredSet = new Set();
+  ROWS.forEach(r => r.members.forEach(m => referredSet.add(m.id)));
+  const investorSet = new Set();
+  ROWS.forEach(r => r.members.forEach(m => { if(m.invs.length) investorSet.add(m.id); }));
+  let uniqueCap = 0;
+  const counted = new Set();
+  ROWS.forEach(r => r.members.forEach(m => {
+    if(counted.has(m.id)) return;
+    counted.add(m.id); uniqueCap += m.amt;
+  }));
+  const conv = referredSet.size ? (investorSet.size / referredSet.size) * 100 : null;
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="label">Referrers</div><div class="value">${fmt(referrers)}</div><div class="sub">contacts who referred someone</div></div>
+    <div class="kpi"><div class="label">Referred Contacts</div><div class="value">${fmt(referredSet.size)}</div><div class="sub">unique, ${SCOPE === 'direct' ? 'first degree only' : 'all degrees'}</div></div>
+    <div class="kpi"><div class="label">Referred Investors</div><div class="value">${fmt(investorSet.size)}</div><div class="sub">funded in range</div></div>
+    <div class="kpi"><div class="label">Referred Capital</div><div class="value">${fmtMoney(uniqueCap)}</div><div class="sub">deduplicated across referrers</div></div>
+    <div class="kpi"><div class="label">Referral Conversion</div><div class="value">${fmtPct(conv)}</div><div class="sub">investors ÷ referred contacts</div></div>`;
+}
+
+function renderTable(){
+  const rows = visibleRows();
+  const thead = document.querySelector('#refTable thead');
+  const tbody = document.querySelector('#refTable tbody');
+
+  thead.innerHTML = '<tr>' + COLS.map(c => {
+    const arrow = SORT.key === c.key ? (SORT.dir === -1 ? ' ▾' : ' ▴') : '';
+    return `<th onclick="setSort('${c.key}')">${esc(c.label)}${arrow}</th>`;
+  }).join('') + '</tr>';
+
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="${COLS.length}" style="text-align:center;color:var(--text3);padding:28px 0">No referrers match the current filters.</td></tr>`;
+    document.getElementById('totalsRow').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr onclick="openDrill('${r.id}')">
+      <td title="${esc(r.name)}">${esc(r.name)}${r.maxDegree > 1 && SCOPE === 'all' ? ` <span class="deg">${r.maxDegree} deep</span>` : ''}</td>
+      <td>${fmt(r.directCount)}</td>
+      <td>${fmt(r.allCount)}</td>
+      <td>${fmt(r.investors)}</td>
+      <td>${r.capital > 0 ? fmtMoney(r.capital) : '—'}</td>
+      <td>${fmtPct(r.conv)}</td>
+    </tr>`).join('');
+
+  // Totals: counts sum, capital is deduplicated (a referred contact can sit
+  // under several referrers once the rollup is on, so a raw sum would inflate).
+  const counted = new Set();
+  let dedupCap = 0, dedupInvestors = 0;
+  const referredSet = new Set();
+  rows.forEach(r => r.members.forEach(m => {
+    referredSet.add(m.id);
+    if(counted.has(m.id)) return;
+    counted.add(m.id);
+    dedupCap += m.amt;
+    if(m.invs.length) dedupInvestors++;
+  }));
+  const totalConv = referredSet.size ? (dedupInvestors / referredSet.size) * 100 : null;
+
+  document.getElementById('totalsRow').innerHTML = `<tr>
+    <td>${rows.length} referrer${rows.length === 1 ? '' : 's'}</td>
+    <td>${fmt(rows.reduce((s,r) => s + r.directCount, 0))}</td>
+    <td>${fmt(referredSet.size)}</td>
+    <td>${fmt(dedupInvestors)}</td>
+    <td>${fmtMoney(dedupCap)}</td>
+    <td>${fmtPct(totalConv)}</td>
+  </tr>`;
+
+  document.getElementById('tableTitle').textContent =
+    `Referrers — ${getDateRange().label} · ${SCOPE === 'direct' ? 'Direct Only' : 'Rolled Up'}`;
+}
+
+function renderNotes(){
+  const graphSize = Object.keys(GRAPH).length;
+  const referrers = Object.values(GRAPH).filter(g => (g.referred || []).length > 0).length;
+  const orphanIds = Object.keys(GRAPH).filter(id => !CONTACT_BY_ID[id]).length;
+  document.getElementById('graphNote').innerHTML =
+    `Referral graph: ${fmt(graphSize)} contacts carry a labelled Referral/Referrer association, of which ${fmt(referrers)} referred at least one person. ` +
+    (orphanIds ? `${fmt(orphanIds)} appear in the graph but not in the contact cache (shown by ID). ` : '') +
+    `Referral links carry no timestamp in HubSpot, so counts don't change with the date range — only the funded columns do.`;
+
+  const el = document.getElementById('unattrNote');
+  if(UNATTRIB_INV > 0){
+    el.className = 'note';
+    el.textContent = `${fmt(UNATTRIB_INV)} investments totalling ${fmtMoney(UNATTRIB_CAP)} resolve to no cached contact and can't be credited to any referrer — secondary-email funders, duplicate contacts, or records not yet linked. Resolved in HubSpot, not here.`;
+  } else { el.textContent = ''; }
+}
+
+function renderAll(){ renderKpis(); renderTable(); renderNotes(); }
+
+// ── Drill drawer ─────────────────────────────────────────────────────────────
+function openDrill(refId){
+  const r = ROWS.find(x => x.id === refId);
+  if(!r) return;
+  const rng = getDateRange();
+
+  document.getElementById('drill-title').innerHTML =
+    `<a href="${contactUrl(r.id)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${esc(r.name)} ↗</a>`;
+  document.getElementById('drill-subtitle').textContent =
+    `${fmt(r.directCount)} direct referral${r.directCount === 1 ? '' : 's'} · ${fmt(r.allCount)} total · ${rng.label} · ${SCOPE === 'direct' ? 'Direct Only' : 'Rolled Up'}`;
+
+  let html = `<div class="dsplit">
+    <div><div class="l">Direct Capital</div><div class="v">${r.directCap > 0 ? fmtMoney(r.directCap) : '—'}</div></div>
+    <div><div class="l">Downstream Capital</div><div class="v">${r.downstreamCap > 0 ? fmtMoney(r.downstreamCap) : '—'}</div></div>
+  </div>`;
+
+  if(SCOPE === 'all' && r.maxDegree > 1){
+    html += `<div class="dsub">By degree</div><table class="dtbl">
+      <thead><tr><th>Degree</th><th class="r">Contacts</th><th class="r">Investors</th><th class="r">Capital</th></tr></thead><tbody>`;
+    Object.keys(r.byDegree).map(Number).sort((a,b) => a-b).forEach(d => {
+      const b = r.byDegree[d];
+      html += `<tr><td><span class="deg${d === 1 ? ' d1' : ''}">${d === 1 ? 'Direct' : d + '°'}</span></td>
+        <td class="r">${fmt(b.count)}</td><td class="r">${fmt(b.investors)}</td><td class="r">${b.capital > 0 ? fmtMoney(b.capital) : '—'}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  html += `<div class="dsub">Referred contacts</div><table class="dtbl">
+    <thead><tr><th>Contact</th><th>Degree</th><th>Chain</th><th class="r">Investments</th><th class="r">Capital</th></tr></thead><tbody>`;
+  const members = r.members.slice().sort((a,b) => b.amt - a.amt || a.degree - b.degree || String(nameOf(a.id)).localeCompare(String(nameOf(b.id))));
+  for(const m of members){
+    const chain = (SCOPE === 'all' && m.degree > 1)
+      ? chainTo(r.id, m.id).slice(1, -1).map(id => esc(nameOf(id))).join(' → ')
+      : '';
+    html += `<tr>
+      <td><a href="${contactUrl(m.id)}" target="_blank" rel="noopener">${esc(nameOf(m.id))}</a></td>
+      <td><span class="deg${m.degree === 1 ? ' d1' : ''}">${m.degree === 1 ? 'Direct' : m.degree + '°'}</span></td>
+      <td class="chain">${chain || '—'}</td>
+      <td class="r">${m.invs.length ? fmt(m.invs.length) : '—'}</td>
+      <td class="r">${m.amt > 0 ? fmtMoney(m.amt) : '—'}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+
+  const invRows = [];
+  for(const m of members) for(const i of m.invs) invRows.push({ ...i, who: nameOf(m.id), degree: m.degree });
+  if(invRows.length){
+    invRows.sort((a,b) => (b.fundsTs || 0) - (a.fundsTs || 0));
+    html += `<div class="dsub">Investments in range (${fmt(invRows.length)})</div><table class="dtbl">
+      <thead><tr><th>Investor</th><th>Funded</th><th>Fund</th><th>Class</th><th class="r">Amount</th></tr></thead><tbody>`;
+    for(const i of invRows){
+      const d = i.fundsTs ? new Date(i.fundsTs).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      html += `<tr><td>${esc(i.who)}${i.degree > 1 ? ` <span class="deg">${i.degree}°</span>` : ''}</td>
+        <td>${d}</td><td>${esc(i.fund || '—')}</td><td>${esc(i.cls || '—')}</td>
+        <td class="r">${fmtMoney(i.amount)}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  } else {
+    html += `<p style="font-size:12px;color:var(--text3)">No investments from these contacts in the selected range.</p>`;
+  }
+
+  const rb = (GRAPH[r.id] && GRAPH[r.id].referredBy) || [];
+  if(rb.length){
+    html += `<div class="dsub">Referred by</div><p style="font-size:12px">` +
+      rb.map(id => `<a href="${contactUrl(id)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(nameOf(id))}</a>`).join(', ') +
+      `</p>`;
+  }
+
+  document.getElementById('drill-body').innerHTML = html;
+  document.getElementById('drill-drawer').classList.add('on');
+}
+function closeDrill(){ document.getElementById('drill-drawer').classList.remove('on'); }
+
+// ── Load ─────────────────────────────────────────────────────────────────────
+async function load(){
+  const el = {
+    loading: document.getElementById('loading'),
+    content: document.getElementById('content'),
+    error: document.getElementById('error'),
+    loadMsg: document.getElementById('loadMsg'),
+    btn: document.getElementById('btn'),
+  };
+  el.loading.style.display = '';
+  el.content.style.display = 'none';
+  el.error.style.display = 'none';
+  el.btn.disabled = true;
+
+  try{
+    el.loadMsg.textContent = 'Loading referral graph…';
+    const gRes = await fetch(`${WORKER_URL}/cached-referrals`);
+    if(gRes.status === 404){
+      throw new Error(
+        'The referral graph cache has not been built yet.\n\n' +
+        'The /cached-referrals route exists but its R2 object does not. It is written by the ' +
+        'nightly rebuild (2 AM ET), or immediately by:\n\n' +
+        `${WORKER_URL}/admin/rebuild-referrals?key=<REFRESH_SECRET>`
+      );
+    }
+    if(!gRes.ok) throw new Error(`/cached-referrals: ${gRes.status}`);
+    GRAPH = await gRes.json();
+    if(!GRAPH || typeof GRAPH !== 'object') GRAPH = {};
+    DESC_CACHE = {};
+
+    el.loadMsg.textContent = 'Loading contacts and investments…';
+    const [rawContacts, rawInvestments] = await Promise.all([
+      fetchCache('cached-contacts'),
+      fetchCache('cached-investments'),
+    ]);
+
+    CONTACTS = rawContacts.map(c => {
+      const p = c.properties || {};
+      return {
+        id: String(c.id),
+        email: (p.email || '').trim().toLowerCase(),
+        name: ((p.firstname || '') + ' ' + (p.lastname || '')).trim() || '(unnamed)',
+      };
+    });
+    CONTACT_BY_ID = {};
+    const emailToContactId = {};
+    for(const c of CONTACTS){
+      CONTACT_BY_ID[c.id] = c;
+      if(c.email && !emailToContactId[c.email]) emailToContactId[c.email] = c.id;
+    }
+
+    INVESTMENTS = rawInvestments.map(r => {
+      const p = r.properties || {};
+      return {
+        id: String(r.id),
+        email: (p.email_address || '').trim().toLowerCase(),
+        amount: parseFloat(p.investment_amount) || 0,
+        fund: (p.fund_invested || '').trim(),
+        cls: (p.class || '').trim(),
+        type: (p.type_of_investment || '').trim(),
+        fundsTs: p.funds_received ? new Date(p.funds_received).getTime() : null,
+      };
+    });
+
+    // Investment → contact resolution, association-first with an email
+    // fallback. Lifted from roi.html v19.6 rather than reinvented, so the
+    // capital figures here reconcile with the Campaign ROI dashboard.
+    const contactIdSet = new Set(CONTACTS.map(c => c.id));
+    const invIds = INVESTMENTS.map(i => i.id);
+    const invAssoc = {};
+    for(let i = 0; i < invIds.length; i += 100){
+      el.loadMsg.textContent = `Resolving investment associations… batch ${Math.floor(i/100)+1} of ${Math.ceil(invIds.length/100)}`;
+      try{
+        const r = await fetch(`${WORKER_URL}/hs-api/crm/v4/associations/${INV_OBJ}/contacts/batch/read`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ inputs: invIds.slice(i, i + 100).map(id => ({id})) }),
+        });
+        if(r.ok || r.status === 207){
+          const d = await r.json();
+          for(const res of (d.results || [])){
+            const cands = (res.to || []).map(t => String(t.toObjectId));
+            invAssoc[String(res.from && res.from.id)] = cands.find(id => contactIdSet.has(id)) || null;
+          }
+        }
+      }catch(e){ console.warn('Investment assoc batch failed:', e.message); }
+    }
+
+    INV_BY_CONTACT = {};
+    UNATTRIB_INV = 0; UNATTRIB_CAP = 0;
+    for(const inv of INVESTMENTS){
+      const cid = invAssoc[inv.id] || emailToContactId[inv.email] || null;
+      inv.contactId = cid;
+      if(cid){ (INV_BY_CONTACT[cid] = INV_BY_CONTACT[cid] || []).push(inv); }
+      else { UNATTRIB_INV++; UNATTRIB_CAP += inv.amount; }
+    }
+
+    const meta = await fetch(`${WORKER_URL}/cache-meta`).then(r => r.json()).catch(() => null);
+    if(meta && meta.lastUpdated){
+      const d = new Date(meta.lastUpdated);
+      document.getElementById('ts').textContent = 'Cache: ' + d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    }
+
+    el.loadMsg.textContent = 'Rendering…';
+    computeRows();
+    renderAll();
+
+    el.loading.style.display = 'none';
+    el.content.style.display = '';
+  }catch(e){
+    el.loading.style.display = 'none';
+    el.error.style.display = '';
+    el.error.textContent = e.message;
+    console.error(e);
+  }finally{
+    el.btn.disabled = false;
+  }
+}
+
+// ── Wiring ───────────────────────────────────────────────────────────────────
+document.getElementById('range').addEventListener('change', e => {
+  document.getElementById('cd').classList.toggle('on', e.target.value === 'custom');
+  if(e.target.value !== 'custom'){ computeRows(); renderAll(); }
+});
+document.getElementById('cf').addEventListener('change', () => { computeRows(); renderAll(); });
+document.getElementById('ct').addEventListener('change', () => { computeRows(); renderAll(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ closeDrill(); document.getElementById('guide').classList.remove('on'); }
+});
+document.addEventListener('click', e => {
+  const drill = document.getElementById('drill-drawer');
+  const guide = document.getElementById('guide');
+  if(drill.classList.contains('on') && !drill.contains(e.target) && !e.target.closest('#refTable')) closeDrill();
+  if(guide.classList.contains('on') && !guide.contains(e.target)) guide.classList.remove('on');
+});
+
+load();
+</script>
+</body>
+</html>
