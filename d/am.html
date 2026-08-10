@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.9)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.10)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -86,8 +86,9 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 .reality-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .reality-card{background:var(--red-bg);border:1px solid #f0c9c9;border-radius:10px;padding:18px 20px}
 .reality-card h4{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px}
-.reality-headline{font-family:'DM Serif Display',serif;font-size:22px;color:var(--red);line-height:1.3;margin-bottom:8px}
-.reality-headline strong{font-weight:400;border-bottom:2px solid var(--red)}
+.reality-headline{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);line-height:1.3;margin-bottom:4px}
+.reality-pct{font-size:15px;color:var(--text2);margin-bottom:8px}
+.reality-pct strong{color:var(--text);font-weight:700}
 .reality-sub{font-size:11.5px;color:var(--text2);line-height:1.5}
 .reality-caveat{font-size:10.5px;color:var(--text3);margin-top:20px;font-style:italic}
 
@@ -126,7 +127,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.9</span>
+    <span class="vpill">v1.10</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -141,6 +142,8 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
       <option value="yesterday">Yesterday</option>
       <option value="this_week">This Week</option>
       <option value="last_week" selected>Last Week</option>
+      <option value="prev_14">Previous 14 Days</option>
+      <option value="prev_30">Previous 30 Days</option>
       <option value="this_quarter">This Quarter</option>
       <option value="last_quarter">Last Quarter</option>
       <option value="last_180">Last 180 Days</option>
@@ -339,6 +342,10 @@ function resolveDateKey(key){
   } else if(key==='last_week'){
     const sow=startOfWeek(now);
     from=addDays(sow,-7); to=endOfDay(addDays(sow,-1)); label='Last Week';
+  } else if(key==='prev_14'){
+    to=now; from=addDays(now,-14); label='Previous 14 Days';
+  } else if(key==='prev_30'){
+    to=now; from=addDays(now,-30); label='Previous 30 Days';
   } else if(key==='this_quarter'){
     from=startOfQuarter(now); to=now; label='This Quarter'; isPartial=true;
   } else if(key==='last_quarter'){
@@ -369,6 +376,10 @@ function autoPreviousPeriod(baseKey,baseFrom,baseTo){
   } else if(baseKey==='last_week'){
     const sow=startOfWeek(now);
     prevFrom=addDays(sow,-14); prevTo=endOfDay(addDays(sow,-8)); prevLabel='Previous week';
+  } else if(baseKey==='prev_14'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-14); prevLabel='Prior 14 days';
+  } else if(baseKey==='prev_30'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-30); prevLabel='Prior 30 days';
   } else if(baseKey==='this_quarter'){
     const soq=startOfQuarter(now); const lastSoq=startOfQuarter(addDays(soq,-1));
     const elapsed=baseTo-baseFrom;
@@ -857,7 +868,8 @@ function renderRealityCheck(){
 
     return `<div class="reality-card">
       <h4>${AMS[id]}</h4>
-      <div class="reality-headline">${fmtDur(timePerDaySec)} on the phone per active day — <strong>${pctOfWorkday.toFixed(1)}%</strong> of an 8-hour day</div>
+      <div class="reality-headline">${fmtDur(timePerDaySec)} on the phone per active day</div>
+      <div class="reality-pct"><strong>${pctOfWorkday.toFixed(1)}%</strong> of an 8-hour day</div>
       <div class="reality-sub">${callsPerDay.toFixed(1)} calls/day (in + out combined) across ${activeDays} of ${totalDaysInRange} days with any logged call activity. Total: ${totalCalls.toLocaleString()} calls, ${fmtDur(totalTimeSec)} talk time in the range.</div>
     </div>`;
   }).join('');
