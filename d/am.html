@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.7)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -83,6 +83,13 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 .fpill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;margin-bottom:10px}
 .chart-wrap{position:relative;height:340px}
 .chart-note{font-size:11px;color:var(--text3);margin-top:10px}
+.reality-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.reality-card{background:var(--red-bg);border:1px solid #f0c9c9;border-radius:10px;padding:18px 20px}
+.reality-card h4{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px}
+.reality-headline{font-family:'DM Serif Display',serif;font-size:22px;color:var(--red);line-height:1.3;margin-bottom:8px}
+.reality-headline strong{font-weight:400;border-bottom:2px solid var(--red)}
+.reality-sub{font-size:11.5px;color:var(--text2);line-height:1.5}
+.reality-caveat{font-size:10.5px;color:var(--text3);margin-top:20px;font-style:italic}
 
 /* Drilldown drawer */
 #dd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200}
@@ -119,7 +126,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.7</span>
+    <span class="vpill">v1.9</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -133,10 +140,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <select id="sel-date" onchange="onDateChange()">
       <option value="yesterday">Yesterday</option>
       <option value="this_week">This Week</option>
-      <option value="last_week">Last Week</option>
+      <option value="last_week" selected>Last Week</option>
       <option value="this_quarter">This Quarter</option>
       <option value="last_quarter">Last Quarter</option>
-      <option value="last_180" selected>Last 180 Days</option>
+      <option value="last_180">Last 180 Days</option>
       <option value="custom">Custom</option>
     </select>
   </div>
@@ -169,6 +176,17 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <div id="ov"><div class="spin"></div><div id="lm">Loading call activity…</div></div>
 
 <main>
+
+  <div class="section">
+    <div class="section-hd" style="background:var(--red-bg)">
+      <h2>Average Daily Phone Activity</h2>
+      <span class="tag" id="reality-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="reality-grid" id="reality-content"></div>
+      <div class="reality-caveat">Based on logged phone activity only (calls with a HubSpot call disposition). Does not include email, InvestNext follow-ups, internal meetings, or other AM work — this is a phone-specific measure, not a full productivity assessment. Assumes an 8-hour (480-minute) workday for the % figure.</div>
+    </div>
+  </div>
 
   <div class="section">
     <div class="section-hd">
@@ -250,6 +268,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
     <h3>Combined vs. Side by Side</h3>
     <p>Each section (Outbound / Inbound) can show a single combined table for both AMs together, or two tables side by side — one per AM. The AM filter in the top bar narrows everything (including the combined view) to a single person if selected.</p>
+
+    <h3>Average Daily Phone Activity</h3>
+    <p>One card per AM, combining outbound and inbound calls into a single figure: total talk time per active day, shown as a percentage of an 8-hour workday. This is deliberately <strong>per-person, not blended across both AMs</strong> — a combined average could mask one person carrying most of the activity while the other does very little. "Active day" here means any day with at least one logged call, inbound or outbound.</p>
+    <p><strong>Read this alongside the caveat below it.</strong> This only counts phone activity that HubSpot logged a disposition for. It says nothing about email, InvestNext follow-up work, internal meetings, or other parts of the AM role — a low percentage here means low logged phone time specifically, not necessarily low overall output. Treat it as a starting point for a conversation, not a verdict.</p>
 
     <h3>Telephone Activity chart</h3>
     <p>A stacked chart of total call volume by day across the selected date range, broken out by disposition. Outbound and inbound calls are <strong>merged together</strong> in this chart — each series is a disposition (Connected, Left voicemail, etc.) regardless of direction — so the top of the stack on any given day is total calls of any kind. If you need the outbound/inbound split, use the sections below instead.</p>
@@ -796,7 +818,56 @@ function renderTeleChart(){
   });
 }
 
+// ── Average Daily Phone Activity ──────────────────────────
+// Merges outbound + inbound for each AM into one stat: calls and talk time
+// per active day, framed against an 8-hour workday. Deliberately per-AM
+// (not merged across people) since the point is to show each person's own
+// activity level, not a blended number that could hide one person carrying
+// the other's average.
+const WORKDAY_SECONDS=8*60*60;
+
+function renderRealityCheck(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const ownerFilter=document.getElementById('sel-am').value;
+  document.getElementById('reality-range-tag').textContent=label+(isPartial?' (in progress)':'');
+
+  const totalDaysInRange=dayRangeArray(from,to).length;
+  const fromMs=startOfDay(from).getTime(), toMs=endOfDay(to).getTime();
+  const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+
+  const cardsHtml=idsToShow.map(id=>{
+    const calls=ALL_CALLS.filter(c=>{
+      const p=c.properties||{};
+      if(p.hubspot_owner_id!==id) return false;
+      const ts=new Date(p.hs_timestamp).getTime();
+      return ts>=fromMs && ts<=toMs;
+    });
+    const activeDays=new Set(calls.map(c=>ymd(new Date(c.properties.hs_timestamp)))).size;
+    const totalCalls=calls.length;
+    const totalTimeSec=calls.reduce((a,c)=>a+(c.properties.hs_call_duration?Number(c.properties.hs_call_duration)/1000:0),0);
+
+    if(activeDays===0){
+      return `<div class="reality-card"><h4>${AMS[id]}</h4><div class="reality-headline">No logged calls (in or out) across all ${totalDaysInRange} days in this range.</div></div>`;
+    }
+
+    const callsPerDay=totalCalls/activeDays;
+    const timePerDaySec=totalTimeSec/activeDays;
+    const pctOfWorkday=(timePerDaySec/WORKDAY_SECONDS*100);
+
+    return `<div class="reality-card">
+      <h4>${AMS[id]}</h4>
+      <div class="reality-headline">${fmtDur(timePerDaySec)} on the phone per active day — <strong>${pctOfWorkday.toFixed(1)}%</strong> of an 8-hour day</div>
+      <div class="reality-sub">${callsPerDay.toFixed(1)} calls/day (in + out combined) across ${activeDays} of ${totalDaysInRange} days with any logged call activity. Total: ${totalCalls.toLocaleString()} calls, ${fmtDur(totalTimeSec)} talk time in the range.</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reality-content').innerHTML=cardsHtml;
+  document.getElementById('reality-content').style.gridTemplateColumns = idsToShow.length===1 ? '1fr' : '1fr 1fr';
+}
+
 function render(){
+  renderRealityCheck();
   renderTeleChart();
   renderSection('out','OUTBOUND');
   renderSection('in','INBOUND');
