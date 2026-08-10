@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Account Manager Call Activity (v1.0)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#6d28d9;--accent-bg:#f5f3ff;
+  --green:#065f46;--green-bg:#ecfdf5;
+  --red:#991b1b;--red-bg:#fef2f2;
+  --amber:#92400e;--amber-bg:#fef3c7;
+  --out:#1d4ed8;--out-bg:#eff6ff;
+  --in:#c44a1e;--in-bg:#fdf3ee;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+h1{font-family:'DM Serif Display',serif;font-size:19px;font-weight:400}
+.vpill{background:#333;color:#c9c2b4;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+#ts{font-size:11px;color:#9e9789}
+.help-btn{font-family:'DM Sans',sans-serif;font-size:12px;background:#333;color:#f5f3ef;border:1px solid #444;border-radius:6px;padding:6px 12px;cursor:pointer}
+.help-btn:hover{background:#444}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar-divider{width:1px;height:20px;background:var(--border);align-self:center}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select,input[type=date]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+select:focus,input[type=date]:focus{outline:none;border-color:var(--accent)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px}
+.sl{color:var(--text3)}.so{color:var(--green);font-weight:500}.se{color:var(--red);font-weight:500}
+
+#ov{display:none;position:fixed;inset:0;background:rgba(245,243,239,.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lm{font-size:13px;color:var(--text2)}
+
+main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden}
+.section-hd{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.section-hd.out{background:var(--out-bg)}
+.section-hd.in{background:var(--in-bg)}
+.section-hd h2{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400}
+.section-hd .tag{font-size:11px;color:var(--text2)}
+.section-body{padding:18px 20px}
+
+.view-toggle{display:flex;gap:6px;margin-bottom:14px}
+.view-toggle button{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:white;color:var(--text2);cursor:pointer}
+.view-toggle button.active{background:var(--text);color:white;border-color:var(--text)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:8px 10px;color:var(--text2);font-weight:600;font-size:11px;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:var(--surface2)}
+.disp-name{font-weight:500}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.clickable{cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);text-decoration-thickness:1px}
+.clickable:hover{color:var(--accent)}
+.delta{font-size:10.5px;margin-left:4px}
+.delta.up{color:var(--green)}
+.delta.down{color:var(--red)}
+.am-block{margin-bottom:20px}
+.am-block h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.am-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fpill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;margin-bottom:10px}
+
+/* Drilldown drawer */
+#dd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200}
+#dd-overlay.on{display:block}
+#dd-drawer{position:fixed;top:0;right:0;bottom:0;width:520px;max-width:92vw;background:white;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s}
+#dd-drawer.on{transform:translateX(0)}
+#dd-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+#dd-hd h3{font-size:14px;font-weight:600}
+#dd-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)}
+#dd-body{padding:12px 20px;overflow-y:auto;flex:1}
+.dd-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.dd-row a{color:var(--accent);text-decoration:none}
+.dd-row a:hover{text-decoration:underline}
+.dd-empty{color:var(--text3);font-size:12px;padding:20px 0;text-align:center}
+
+/* Guide panel */
+#guide-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300}
+#guide-overlay.on{display:block}
+#guide{position:fixed;top:0;right:0;bottom:0;width:600px;max-width:92vw;background:white;z-index:301;box-shadow:-4px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow-y:auto}
+#guide.on{transform:translateX(0)}
+#guide-hd{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white}
+#guide-hd h2{font-family:'DM Serif Display',serif;font-size:18px}
+#guide-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)}
+#guide-body{padding:8px 24px 32px}
+#guide-body h3{font-size:14px;margin:20px 0 8px;color:var(--accent)}
+#guide-body p{font-size:12.5px;line-height:1.6;color:var(--text2);margin-bottom:8px}
+#guide-body ul{margin:6px 0 10px 18px;font-size:12.5px;line-height:1.6;color:var(--text2)}
+#guide-body strong{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <h1>Account Manager Call Activity</h1>
+    <span class="vpill">v1.0</span>
+  </div>
+  <div class="hdr">
+    <span id="ts"></span>
+    <button class="help-btn" onclick="openGuide()" title="Open the dashboard guide">ⓘ Guide</button>
+  </div>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label for="sel-date">Range</label>
+    <select id="sel-date" onchange="onDateChange()">
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="last_180" selected>Last 180 Days</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div class="cdates" id="cdates">
+    <span>from</span><input type="date" id="d-from">
+    <span>to</span><input type="date" id="d-to">
+  </div>
+  <div class="bar-divider"></div>
+  <div class="fg">
+    <label for="sel-compare">vs</label>
+    <select id="sel-compare" onchange="onCompareChange()">
+      <option value="none">None</option>
+      <option value="previous_period" selected>Previous Period</option>
+      <option value="same_period_last_year">Same period last year</option>
+    </select>
+  </div>
+  <div class="bar-divider"></div>
+  <div class="fg">
+    <label for="sel-am">AM</label>
+    <select id="sel-am" onchange="render()">
+      <option value="all">All AMs</option>
+      <option value="650567768">Alex Z.</option>
+      <option value="85544039">Daniel A.</option>
+    </select>
+  </div>
+  <button id="btn" onclick="load()">Refresh</button>
+  <span id="st"></span>
+</div>
+
+<div id="ov"><div class="spin"></div><div id="lm">Loading call activity…</div></div>
+
+<main>
+
+  <div class="section">
+    <div class="section-hd out">
+      <h2>Outbound Calls</h2>
+      <span class="tag" id="out-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="view-toggle" id="out-view-toggle">
+        <button class="active" data-view="combined" onclick="setView('out','combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setView('out','sidebyside')">Side by Side</button>
+      </div>
+      <div id="out-content"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd in">
+      <h2>Inbound Calls</h2>
+      <span class="tag" id="in-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="view-toggle" id="in-view-toggle">
+        <button class="active" data-view="combined" onclick="setView('in','combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setView('in','sidebyside')">Side by Side</button>
+      </div>
+      <div id="in-content"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Drilldown drawer -->
+<div id="dd-overlay" onclick="closeDrilldown()"></div>
+<div id="dd-drawer">
+  <div id="dd-hd"><h3 id="dd-title">Records</h3><button id="dd-close" onclick="closeDrilldown()">✕</button></div>
+  <div id="dd-body"></div>
+</div>
+
+<!-- Guide panel -->
+<div id="guide-overlay" onclick="closeGuide()"></div>
+<div id="guide">
+  <div id="guide-hd"><h2>Dashboard Guide</h2><button id="guide-close" onclick="closeGuide()">✕</button></div>
+  <div id="guide-body">
+    <h3>What this dashboard shows</h3>
+    <p>Call activity for Sunrise's two Account Managers, Alex Zahn and Daniel Ackerman — outbound and inbound calls, broken out by HubSpot call disposition (Connected, Left voicemail, Left live message, No answer, Busy, Wrong number, Connect - Scheduled, Connected - Not Engaged).</p>
+
+    <h3>Why dispositions are shown separately, not rolled into a "connect rate"</h3>
+    <p>Alex and Daniel disposition calls very differently in practice — Alex logs "Left live message" heavily, Daniel logs "Left voicemail" heavily, and neither uses every disposition equally. Rather than collapse dispositions into a single connect/no-connect metric (which would bake in an assumption about which dispositions "count"), each disposition is reported on its own with its own count, share of total, average duration, and median duration. Read them side by side rather than looking for one headline number.</p>
+
+    <h3>Average vs. median duration</h3>
+    <p>Both are shown per disposition because average alone can mislead — a handful of long calls pull the average up, and dispositions like "No answer" are mechanically near-zero seconds. Median is less sensitive to outliers and is usually the more representative number for a typical call under that disposition.</p>
+
+    <h3>Data source and freshness</h3>
+    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers the trailing <strong>180 days</strong> and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back further than 180 days on this dashboard.</p>
+
+    <h3>Date ranges and comparison</h3>
+    <ul>
+      <li><strong>Yesterday, This/Last Week, This/Last Quarter, Last 180 Days</strong> — fixed presets.</li>
+      <li><strong>Custom</strong> — pick any from/to date.</li>
+      <li>Quarters are calendar quarters (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec).</li>
+      <li>All date boundaries are pinned to America/New_York, so the range means the same thing regardless of the viewer's own timezone.</li>
+    </ul>
+    <p>The <strong>vs</strong> picker compares the selected range against either the immediately preceding period of equal length, or the same calendar period one year prior. If the current range is a still-in-progress period (This Week, This Quarter), the comparison period is truncated to the same elapsed span for a fair comparison.</p>
+
+    <h3>Combined vs. Side by Side</h3>
+    <p>Each section (Outbound / Inbound) can show a single combined table for both AMs together, or two tables side by side — one per AM. The AM filter in the top bar narrows everything (including the combined view) to a single person if selected.</p>
+
+    <h3>Drilldown</h3>
+    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const CACHE_ORIGIN='https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const WORKER_URL=CACHE_ORIGIN+'/hs-api';
+const HUBSPOT_PORTAL='23126809';
+
+const AMS={'650567768':'Alex Z.','85544039':'Daniel A.'};
+const AM_IDS=Object.keys(AMS);
+
+let DISPOSITIONS={};       // id -> label
+let ALL_CALLS=[];          // raw cached calls, filtered to AM_IDS
+let LOADED=false;
+
+// ── ET-pinned date helpers ─────────────────────────────────
+// Shifts "now" (and any Date built from ET wall-clock parts) so that local
+// getFullYear/getMonth/getDate/getHours reflect America/New_York time,
+// regardless of the viewer's actual timezone. Matches the convention used
+// on adweekly.html — every viewer sees the same range boundaries.
+function etNow(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+}
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+function endOfDay(d){const x=new Date(d);x.setHours(23,59,59,999);return x}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function startOfWeek(d){
+  const x=startOfDay(d);
+  const day=x.getDay();
+  const diff=(day===0?-6:1-day);
+  x.setDate(x.getDate()+diff);
+  return x;
+}
+function startOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1)}
+function endOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3+3,0,23,59,59,999)}
+
+function resolveDateKey(key){
+  const now=etNow();
+  let from,to,label='',isPartial=false;
+  if(key==='yesterday'){
+    const y=addDays(now,-1);
+    from=startOfDay(y); to=endOfDay(y); label='Yesterday';
+  } else if(key==='this_week'){
+    from=startOfWeek(now); to=now; label='This Week'; isPartial=true;
+  } else if(key==='last_week'){
+    const sow=startOfWeek(now);
+    from=addDays(sow,-7); to=endOfDay(addDays(sow,-1)); label='Last Week';
+  } else if(key==='this_quarter'){
+    from=startOfQuarter(now); to=now; label='This Quarter'; isPartial=true;
+  } else if(key==='last_quarter'){
+    const soq=startOfQuarter(now);
+    from=startOfQuarter(addDays(soq,-1)); to=endOfDay(addDays(soq,-1)); label='Last Quarter';
+  } else if(key==='last_180'){
+    to=now; from=addDays(now,-180); label='Last 180 Days';
+  } else if(key==='custom'){
+    const f=document.getElementById('d-from').value;
+    const t=document.getElementById('d-to').value;
+    from=f?startOfDay(new Date(f)):addDays(now,-180);
+    to=t?endOfDay(new Date(t)):now;
+    label='Custom';
+  }
+  return {from,to,label,isPartial};
+}
+
+function autoPreviousPeriod(baseKey,baseFrom,baseTo){
+  const now=etNow();
+  let prevFrom,prevTo,prevLabel='';
+  if(baseKey==='yesterday'){
+    const d=addDays(now,-2);
+    prevFrom=startOfDay(d); prevTo=endOfDay(d); prevLabel='Day before';
+  } else if(baseKey==='this_week'){
+    const sow=startOfWeek(now); const lastSow=addDays(sow,-7);
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSow; prevTo=new Date(lastSow.getTime()+elapsed); prevLabel='Last week (same elapsed)';
+  } else if(baseKey==='last_week'){
+    const sow=startOfWeek(now);
+    prevFrom=addDays(sow,-14); prevTo=endOfDay(addDays(sow,-8)); prevLabel='Previous week';
+  } else if(baseKey==='this_quarter'){
+    const soq=startOfQuarter(now); const lastSoq=startOfQuarter(addDays(soq,-1));
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSoq; prevTo=new Date(lastSoq.getTime()+elapsed); prevLabel='Last quarter (same elapsed)';
+  } else if(baseKey==='last_quarter'){
+    const soq=startOfQuarter(now); const prevQStart=startOfQuarter(addDays(soq,-1));
+    const prevPrevStart=startOfQuarter(addDays(prevQStart,-1));
+    prevFrom=prevPrevStart; prevTo=endOfDay(addDays(prevQStart,-1)); prevLabel='Quarter before that';
+  } else if(baseKey==='last_180'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-180); prevLabel='Prior 180 days';
+  } else { // custom
+    const elapsed=baseTo-baseFrom;
+    prevTo=new Date(baseFrom.getTime()-1); prevFrom=new Date(prevTo.getTime()-elapsed); prevLabel='Prior period (same length)';
+  }
+  return {from:prevFrom,to:prevTo,label:prevLabel};
+}
+
+function samePeriodLastYear(baseFrom,baseTo){
+  const from=new Date(baseFrom); from.setFullYear(from.getFullYear()-1);
+  const to=new Date(baseTo); to.setFullYear(to.getFullYear()-1);
+  return {from,to,label:'Same period last year'};
+}
+
+// ── Fetch ───────────────────────────────────────────────────
+async function api(path){
+  const r=await fetch(WORKER_URL+path);
+  if(!r.ok) throw new Error(`${path} -> ${r.status}`);
+  return r.json();
+}
+
+async function loadDispositions(){
+  try{
+    const d=await api('/calling/v1/dispositions');
+    const opts=Array.isArray(d)?d:(d.options||[]);
+    DISPOSITIONS={};
+    opts.forEach(o=>{
+      const id=o.id||o.value; const lbl=o.label;
+      if(id&&lbl) DISPOSITIONS[id]=lbl;
+    });
+  }catch(e){
+    console.warn('Could not load dispositions:',e.message);
+  }
+}
+
+async function loadCalls(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-calls');
+  if(!r.ok) throw new Error(`/cached-calls -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_CALLS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
+}
+
+async function load(){
+  const btn=document.getElementById('btn');
+  const ov=document.getElementById('ov');
+  btn.disabled=true; ov.classList.add('on');
+  try{
+    await Promise.all([loadDispositions(), loadCalls()]);
+    LOADED=true;
+    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls loaded</span>`;
+    document.getElementById('ts').textContent='Cache from /cached-calls (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
+    render();
+  }catch(e){
+    document.getElementById('st').innerHTML=`<span class="se">Load failed: ${e.message}</span>`;
+    console.error(e);
+  }finally{
+    btn.disabled=false; ov.classList.remove('on');
+  }
+}
+
+// ── UI: date/compare controls ───────────────────────────────
+function onDateChange(){
+  const key=document.getElementById('sel-date').value;
+  document.getElementById('cdates').classList.toggle('on', key==='custom');
+  if(LOADED) render();
+}
+function onCompareChange(){ if(LOADED) render(); }
+
+// ── View toggles (combined vs side-by-side), per section ────
+const VIEW_STATE={out:'combined', in:'combined'};
+function setView(section,view){
+  VIEW_STATE[section]=view;
+  document.querySelectorAll(`#${section}-view-toggle button`).forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) render();
+}
+
+// ── Metrics ──────────────────────────────────────────────────
+function median(arr){
+  if(!arr.length) return 0;
+  const s=[...arr].sort((a,b)=>a-b);
+  const mid=Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+function fmtDur(sec){
+  if(!sec && sec!==0) return '—';
+  const m=Math.floor(sec/60); const s=Math.round(sec%60);
+  return m>0 ? `${m}m ${pad(s)}s` : `${s}s`;
+}
+
+function filterCalls(from,to,direction,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_CALLS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    const dir=(p.hs_call_direction||'').toUpperCase();
+    if(dir!==direction) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+// Group a call list by disposition -> {count, durations:[]}
+function groupByDisposition(calls){
+  const g={};
+  calls.forEach(c=>{
+    const p=c.properties||{};
+    const dispoId=p.hs_call_disposition||'__none__';
+    const durSec=p.hs_call_duration ? Number(p.hs_call_duration)/1000 : 0;
+    if(!g[dispoId]) g[dispoId]={count:0, durations:[]};
+    g[dispoId].count++;
+    g[dispoId].durations.push(durSec);
+  });
+  return g;
+}
+
+function dispoLabel(id){
+  if(id==='__none__') return 'No disposition';
+  return DISPOSITIONS[id] || id;
+}
+
+// ── Drilldown ─────────────────────────────────────────────────
+function openDrilldown(direction,dispoId,ownerFilter,from,to,title){
+  const calls=filterCalls(from,to,direction,ownerFilter).filter(c=>{
+    const p=c.properties||{};
+    const d=p.hs_call_disposition||'__none__';
+    return d===dispoId;
+  });
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  if(!calls.length){
+    body.innerHTML='<div class="dd-empty">No calls match this selection.</div>';
+  }else{
+    calls.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+    body.innerHTML=calls.map(c=>{
+      const p=c.properties;
+      const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+      const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+      const durSec=p.hs_call_duration?Number(p.hs_call_duration)/1000:0;
+      const url=`https://app.hubspot.com/calls/${HUBSPOT_PORTAL}/review/${p.hs_object_id||c.id}`;
+      return `<div class="dd-row"><span>${dt} ET · ${owner} · ${fmtDur(durSec)}</span><a href="${url}" target="_blank" rel="noopener">Open ↗</a></div>`;
+    }).join('');
+  }
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+}
+function closeDrilldown(){
+  document.getElementById('dd-overlay').classList.remove('on');
+  document.getElementById('dd-drawer').classList.remove('on');
+}
+
+// ── Guide ─────────────────────────────────────────────────────
+function openGuide(){
+  document.getElementById('guide-overlay').classList.add('on');
+  document.getElementById('guide').classList.add('on');
+}
+function closeGuide(){
+  document.getElementById('guide-overlay').classList.remove('on');
+  document.getElementById('guide').classList.remove('on');
+}
+
+// ── Table rendering ───────────────────────────────────────────
+function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
+  const cur=groupByDisposition(calls);
+  const prev=prevCalls?groupByDisposition(prevCalls):null;
+  const dispoIds=[...new Set([...Object.keys(cur), ...(prev?Object.keys(prev):[])])];
+  // Sort by current count descending
+  dispoIds.sort((a,b)=>(cur[b]?.count||0)-(cur[a]?.count||0));
+
+  const totalCount=calls.length;
+  let rows=dispoIds.map(id=>{
+    const c=cur[id]||{count:0,durations:[]};
+    const pct=totalCount? (c.count/totalCount*100).toFixed(1) : '0.0';
+    const avg=c.durations.length? c.durations.reduce((a,b)=>a+b,0)/c.durations.length : 0;
+    const med=median(c.durations);
+    let deltaHtml='';
+    if(prev){
+      const p=prev[id]||{count:0};
+      if(p.count>0){
+        const pctChange=((c.count-p.count)/p.count*100);
+        const dir=pctChange>=0?'up':'down';
+        const arrow=pctChange>=0?'↑':'↓';
+        deltaHtml=`<span class="delta ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${p.count})</span>`;
+      }else if(c.count>0){
+        deltaHtml=`<span class="delta up">new (prev 0)</span>`;
+      }
+    }
+    const title=(`${dispoLabel(id)} — ${direction==='OUTBOUND'?'Outbound':'Inbound'} — ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    return `<tr>
+      <td class="disp-name">${dispoLabel(id)}</td>
+      <td class="num clickable" onclick='openDrilldown("${direction}","${id}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>${c.count.toLocaleString()}${deltaHtml}</td>
+      <td class="num">${pct}%</td>
+      <td class="num">${fmtDur(avg)}</td>
+      <td class="num">${fmtDur(med)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalAvg=(() => {
+    const all=Object.values(cur).flatMap(g=>g.durations);
+    return all.length? all.reduce((a,b)=>a+b,0)/all.length : 0;
+  })();
+  const totalMed=median(Object.values(cur).flatMap(g=>g.durations));
+  let totalDeltaHtml='';
+  if(prev){
+    const prevTotal=Object.values(prev).reduce((a,g)=>a+g.count,0);
+    if(prevTotal>0){
+      const pctChange=((totalCount-prevTotal)/prevTotal*100);
+      const dir=pctChange>=0?'up':'down';
+      const arrow=pctChange>=0?'↑':'↓';
+      totalDeltaHtml=`<span class="delta ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${prevTotal})</span>`;
+    }
+  }
+
+  return `<table>
+    <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row"><td>Total</td><td class="num">${totalCount.toLocaleString()}${totalDeltaHtml}</td><td class="num">100%</td><td class="num">${fmtDur(totalAvg)}</td><td class="num">${fmtDur(totalMed)}</td></tr></tfoot>
+  </table>`;
+}
+
+function renderSection(section,direction){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+  const view=VIEW_STATE[section];
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  const tagEl=document.getElementById(`${section}-range-tag`);
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  tagEl.textContent=tag;
+
+  const contentEl=document.getElementById(`${section}-content`);
+
+  if(view==='combined'){
+    const calls=filterCalls(from,to,direction,ownerFilter);
+    const prevCalls=prevRange?filterCalls(prevRange.from,prevRange.to,direction,ownerFilter):null;
+    contentEl.innerHTML=renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to);
+  }else{
+    // side-by-side: one block per AM (respecting the AM filter if set to a single AM)
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const calls=filterCalls(from,to,direction,id);
+      const prevCalls=prevRange?filterCalls(prevRange.from,prevRange.to,direction,id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderDispoTable(calls,prevCalls,direction,id,from,to)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function render(){
+  renderSection('out','OUTBOUND');
+  renderSection('in','INBOUND');
+}
+
+// ── Init ──────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
