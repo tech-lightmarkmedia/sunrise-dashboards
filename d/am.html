@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.0)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -77,6 +77,8 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 .am-block h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
 .am-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .fpill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;margin-bottom:10px}
+.chart-wrap{position:relative;height:340px}
+.chart-note{font-size:11px;color:var(--text3);margin-top:10px}
 
 /* Drilldown drawer */
 #dd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200}
@@ -106,13 +108,14 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 #guide-body ul{margin:6px 0 10px 18px;font-size:12.5px;line-height:1.6;color:var(--text2)}
 #guide-body strong{color:var(--text)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 </head>
 <body>
 
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.0</span>
+    <span class="vpill">v1.1</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -162,6 +165,17 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <div id="ov"><div class="spin"></div><div id="lm">Loading call activity…</div></div>
 
 <main>
+
+  <div class="section">
+    <div class="section-hd">
+      <h2>Telephone Activity</h2>
+      <span class="tag" id="tele-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap"><canvas id="tele-chart"></canvas></div>
+      <div class="chart-note" id="tele-note"></div>
+    </div>
+  </div>
 
   <div class="section">
     <div class="section-hd out">
@@ -228,6 +242,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
     <h3>Combined vs. Side by Side</h3>
     <p>Each section (Outbound / Inbound) can show a single combined table for both AMs together, or two tables side by side — one per AM. The AM filter in the top bar narrows everything (including the combined view) to a single person if selected.</p>
+
+    <h3>Telephone Activity chart</h3>
+    <p>A stacked chart of total call volume by day across the selected date range, broken out by disposition. Outbound and inbound calls are <strong>merged together</strong> in this chart — each series is a disposition (Connected, Left voicemail, etc.) regardless of direction — so the top of the stack on any given day is total calls of any kind. If you need the outbound/inbound split, use the sections below instead.</p>
+    <p>The chart type switches automatically based on the selected range: <strong>bars</strong> for a range of 7 days or less, an <strong>area chart</strong> for anything longer. This chart does not show a comparison period, even if one is selected in the "vs" picker above — it reflects the current range only.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
@@ -576,7 +594,121 @@ function renderSection(section,direction){
   }
 }
 
+// ── Telephone Activity chart (stacked, merged direction) ──────
+let TELE_CHART=null;
+
+// Fixed palette so disposition colors stay consistent run to run, rather than
+// depending on insertion order. Falls back to a generated color if a portal
+// ever adds a 9th disposition.
+const DISPO_COLORS={
+  'Connected':'#065f46',
+  'Left live message':'#1d4ed8',
+  'Left voicemail':'#6d28d9',
+  'No answer':'#c44a1e',
+  'Busy':'#b45309',
+  'Wrong number':'#991b1b',
+  'Connect - Scheduled':'#0891b2',
+  'Connected - Not Engaged':'#4d7c0f',
+  'No disposition':'#9e9789',
+};
+function colorForDispo(label,idx){
+  return DISPO_COLORS[label] || `hsl(${(idx*57)%360},55%,45%)`;
+}
+
+function dayRangeArray(from,to){
+  const days=[];
+  let cur=startOfDay(from);
+  const last=startOfDay(to);
+  while(cur<=last){
+    days.push(ymd(cur));
+    cur=addDays(cur,1);
+  }
+  return days;
+}
+
+function renderTeleChart(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  document.getElementById('tele-range-tag').textContent=label+(isPartial?' (in progress)':'');
+
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+
+  // Merge outbound + inbound: filter by owner only, both directions.
+  const fromMs=startOfDay(from).getTime(), toMs=endOfDay(to).getTime();
+  const calls=ALL_CALLS.filter(c=>{
+    const p=c.properties||{};
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    const ts=new Date(p.hs_timestamp).getTime();
+    return ts>=fromMs && ts<=toMs;
+  });
+
+  // Bucket: day -> dispoLabel -> count
+  const buckets={};
+  days.forEach(d=>buckets[d]={});
+  const dispoTotals={}; // for sort order (largest series first / bottom of stack)
+  calls.forEach(c=>{
+    const p=c.properties||{};
+    const day=ymd(new Date(p.hs_timestamp));
+    if(!buckets[day]) return; // safety, shouldn't happen given the filter above
+    const lbl=dispoLabel(p.hs_call_disposition||'__none__');
+    buckets[day][lbl]=(buckets[day][lbl]||0)+1;
+    dispoTotals[lbl]=(dispoTotals[lbl]||0)+1;
+  });
+
+  const dispoOrder=Object.keys(dispoTotals).sort((a,b)=>dispoTotals[b]-dispoTotals[a]);
+
+  const datasets=dispoOrder.map((lbl,idx)=>{
+    const color=colorForDispo(lbl,idx);
+    return {
+      label:lbl,
+      data:days.map(d=>buckets[d][lbl]||0),
+      backgroundColor:isBar?color:color+'aa',
+      borderColor:color,
+      fill:!isBar,
+      stack:'tele',
+      tension:0.25,
+      pointRadius:spanDays>60?0:2,
+    };
+  });
+
+  const totalCalls=calls.length;
+  document.getElementById('tele-note').textContent=
+    `${totalCalls.toLocaleString()} total calls across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar ? 'bar chart (range ≤ 7 days)' : 'area chart (range > 7 days)')+
+    ' · outbound + inbound merged · no comparison period shown';
+
+  const ctx=document.getElementById('tele-chart').getContext('2d');
+  if(TELE_CHART) TELE_CHART.destroy();
+  TELE_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{ labels:days, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{ stacked:true, grid:{display:false} },
+        y:{ stacked:true, beginAtZero:true, grid:{color:'#ede9e3'} },
+      },
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11} } },
+        tooltip:{ callbacks:{
+          footer:(items)=>{
+            const sum=items.reduce((a,i)=>a+i.parsed.y,0);
+            return 'Total: '+sum;
+          }
+        } }
+      }
+    }
+  });
+}
+
 function render(){
+  renderTeleChart();
   renderSection('out','OUTBOUND');
   renderSection('in','INBOUND');
 }
