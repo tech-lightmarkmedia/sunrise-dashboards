@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.4)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -73,6 +73,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 .delta{font-size:10.5px;margin-left:4px}
 .delta.up{color:var(--green)}
 .delta.down{color:var(--red)}
+.cell-main{font-variant-numeric:tabular-nums}
+.cell-sub{font-size:10.5px;color:var(--text3);margin-top:2px}
+.cell-sub.up{color:var(--green)}
+.cell-sub.down{color:var(--red)}
 .am-block{margin-bottom:20px}
 .am-block h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
 .am-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -115,7 +119,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.4</span>
+    <span class="vpill">v1.5</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -254,6 +258,9 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
     <h3>Total time column</h3>
     <p>The Outbound/Inbound disposition tables include a <strong>Total time</strong> column — the sum of call duration for that disposition in the current range. This is the same underlying number the chart's "Time Spent" view charts by day; the table shows the range total per disposition instead.</p>
+
+    <h3>Previous-period comparison on every column</h3>
+    <p>When a comparison period is selected in the "vs" picker, every column in the Outbound/Inbound tables — Count, % of total, Avg duration, Median duration, Total time — shows the prior period's value on a second line beneath the current value, with a percentage-change arrow. "% of total" compares the disposition's <em>share</em> between the two periods (e.g. Connected going from 30% to 42% of calls), not a count.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
@@ -438,6 +445,22 @@ function fmtDur(sec){
   return m>0 ? `${m}m ${pad(s)}s` : `${s}s`;
 }
 
+// Builds a "prev X" comparison subline for any metric. fmt formats both the
+// current and previous raw values the same way (e.g. fmtDur, or a plain
+// toLocaleString/percent formatter). Returns '' when there's no comparison
+// period active.
+function deltaSub(curVal, prevVal, fmt){
+  if(prevVal===null || prevVal===undefined) return '';
+  if(prevVal===0){
+    if(curVal>0) return `<div class="cell-sub up">new (prev ${fmt(0)})</div>`;
+    return `<div class="cell-sub">(prev ${fmt(0)})</div>`;
+  }
+  const pctChange=((curVal-prevVal)/prevVal*100);
+  const dir=pctChange>=0?'up':'down';
+  const arrow=pctChange>=0?'↑':'↓';
+  return `<div class="cell-sub ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${fmt(prevVal)})</div>`;
+}
+
 function filterCalls(from,to,direction,ownerFilter){
   const fromMs=from.getTime(), toMs=to.getTime();
   return ALL_CALLS.filter(c=>{
@@ -519,32 +542,37 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
   dispoIds.sort((a,b)=>(cur[b]?.count||0)-(cur[a]?.count||0));
 
   const totalCount=calls.length;
+  const prevTotalCount=prevCalls ? prevCalls.length : null;
+  const pctFmt=v=>v.toFixed(1)+'%';
+  const countFmt=v=>Math.round(v).toLocaleString();
+
   let rows=dispoIds.map(id=>{
     const c=cur[id]||{count:0,durations:[]};
-    const pct=totalCount? (c.count/totalCount*100).toFixed(1) : '0.0';
+    const pct=totalCount? (c.count/totalCount*100) : 0;
     const sumSec=c.durations.reduce((a,b)=>a+b,0);
     const avg=c.durations.length? sumSec/c.durations.length : 0;
     const med=median(c.durations);
-    let deltaHtml='';
+
+    let prevPct=null, prevAvg=null, prevMed=null, prevSum=null, prevCountVal=null;
     if(prev){
-      const p=prev[id]||{count:0};
-      if(p.count>0){
-        const pctChange=((c.count-p.count)/p.count*100);
-        const dir=pctChange>=0?'up':'down';
-        const arrow=pctChange>=0?'↑':'↓';
-        deltaHtml=`<span class="delta ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${p.count})</span>`;
-      }else if(c.count>0){
-        deltaHtml=`<span class="delta up">new (prev 0)</span>`;
-      }
+      const p=prev[id]||{count:0,durations:[]};
+      prevCountVal=p.count;
+      prevPct=prevTotalCount? (p.count/prevTotalCount*100) : 0;
+      prevAvg=p.durations.length? p.durations.reduce((a,b)=>a+b,0)/p.durations.length : 0;
+      prevMed=median(p.durations);
+      prevSum=p.durations.reduce((a,b)=>a+b,0);
     }
+
     const title=(`${dispoLabel(id)} — ${direction==='OUTBOUND'?'Outbound':'Inbound'} — ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
     return `<tr>
       <td class="disp-name">${dispoLabel(id)}</td>
-      <td class="num clickable" onclick='openDrilldown("${direction}","${id}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>${c.count.toLocaleString()}${deltaHtml}</td>
-      <td class="num">${pct}%</td>
-      <td class="num">${fmtDur(avg)}</td>
-      <td class="num">${fmtDur(med)}</td>
-      <td class="num">${fmtDur(sumSec)}</td>
+      <td class="num clickable" onclick='openDrilldown("${direction}","${id}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
+        <div class="cell-main">${c.count.toLocaleString()}</div>${deltaSub(c.count,prevCountVal,countFmt)}
+      </td>
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(avg)}</div>${deltaSub(avg,prevAvg,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(med)}</div>${deltaSub(med,prevMed,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(sumSec)}</div>${deltaSub(sumSec,prevSum,fmtDur)}</td>
     </tr>`;
   }).join('');
 
@@ -554,21 +582,27 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
   })();
   const totalMed=median(Object.values(cur).flatMap(g=>g.durations));
   const totalTime=Object.values(cur).flatMap(g=>g.durations).reduce((a,b)=>a+b,0);
-  let totalDeltaHtml='';
+
+  let prevTotalAvg=null, prevTotalMed=null, prevTotalTime=null, prevTotal=null;
   if(prev){
-    const prevTotal=Object.values(prev).reduce((a,g)=>a+g.count,0);
-    if(prevTotal>0){
-      const pctChange=((totalCount-prevTotal)/prevTotal*100);
-      const dir=pctChange>=0?'up':'down';
-      const arrow=pctChange>=0?'↑':'↓';
-      totalDeltaHtml=`<span class="delta ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${prevTotal})</span>`;
-    }
+    prevTotal=Object.values(prev).reduce((a,g)=>a+g.count,0);
+    const prevAll=Object.values(prev).flatMap(g=>g.durations);
+    prevTotalAvg=prevAll.length? prevAll.reduce((a,b)=>a+b,0)/prevAll.length : 0;
+    prevTotalMed=median(prevAll);
+    prevTotalTime=prevAll.reduce((a,b)=>a+b,0);
   }
 
   return `<table>
     <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th><th class="num">Total time</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
-    <tfoot><tr class="total-row"><td>Total</td><td class="num">${totalCount.toLocaleString()}${totalDeltaHtml}</td><td class="num">100%</td><td class="num">${fmtDur(totalAvg)}</td><td class="num">${fmtDur(totalMed)}</td><td class="num">${fmtDur(totalTime)}</td></tr></tfoot>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotal,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+      <td class="num"><div class="cell-main">${fmtDur(totalAvg)}</div>${deltaSub(totalAvg,prevTotalAvg,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(totalMed)}</div>${deltaSub(totalMed,prevTotalMed,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(totalTime)}</div>${deltaSub(totalTime,prevTotalTime,fmtDur)}</td>
+    </tr></tfoot>
   </table>`;
 }
 
