@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.3)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -115,7 +115,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.3</span>
+    <span class="vpill">v1.4</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -170,6 +170,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <div class="section-hd">
       <h2>Telephone Activity</h2>
       <span class="tag" id="tele-range-tag"></span>
+      <div class="view-toggle" id="tele-metric-toggle" style="margin-left:auto">
+        <button class="active" data-metric="count" onclick="setTeleMetric('count')">Count</button>
+        <button data-metric="duration" onclick="setTeleMetric('duration')">Time Spent</button>
+      </div>
     </div>
     <div class="section-body">
       <div class="chart-wrap"><canvas id="tele-chart"></canvas></div>
@@ -246,6 +250,10 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <h3>Telephone Activity chart</h3>
     <p>A stacked chart of total call volume by day across the selected date range, broken out by disposition. Outbound and inbound calls are <strong>merged together</strong> in this chart — each series is a disposition (Connected, Left voicemail, etc.) regardless of direction — so the top of the stack on any given day is total calls of any kind. If you need the outbound/inbound split, use the sections below instead.</p>
     <p>The chart type switches automatically based on the selected range: <strong>bars</strong> for a range of 7 days or less, an <strong>area chart</strong> for anything longer. This chart does not show a comparison period, even if one is selected in the "vs" picker above — it reflects the current range only.</p>
+    <p><strong>Count / Time Spent toggle.</strong> Switches the chart's y-axis between raw call count (default) and total call duration in minutes, still stacked by disposition. Stack order (which disposition sits at the bottom) is always based on call count, so switching the metric doesn't reshuffle the stack.</p>
+
+    <h3>Total time column</h3>
+    <p>The Outbound/Inbound disposition tables include a <strong>Total time</strong> column — the sum of call duration for that disposition in the current range. This is the same underlying number the chart's "Time Spent" view charts by day; the table shows the range total per disposition instead.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
@@ -514,7 +522,8 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
   let rows=dispoIds.map(id=>{
     const c=cur[id]||{count:0,durations:[]};
     const pct=totalCount? (c.count/totalCount*100).toFixed(1) : '0.0';
-    const avg=c.durations.length? c.durations.reduce((a,b)=>a+b,0)/c.durations.length : 0;
+    const sumSec=c.durations.reduce((a,b)=>a+b,0);
+    const avg=c.durations.length? sumSec/c.durations.length : 0;
     const med=median(c.durations);
     let deltaHtml='';
     if(prev){
@@ -535,6 +544,7 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
       <td class="num">${pct}%</td>
       <td class="num">${fmtDur(avg)}</td>
       <td class="num">${fmtDur(med)}</td>
+      <td class="num">${fmtDur(sumSec)}</td>
     </tr>`;
   }).join('');
 
@@ -543,6 +553,7 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
     return all.length? all.reduce((a,b)=>a+b,0)/all.length : 0;
   })();
   const totalMed=median(Object.values(cur).flatMap(g=>g.durations));
+  const totalTime=Object.values(cur).flatMap(g=>g.durations).reduce((a,b)=>a+b,0);
   let totalDeltaHtml='';
   if(prev){
     const prevTotal=Object.values(prev).reduce((a,g)=>a+g.count,0);
@@ -555,9 +566,9 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
   }
 
   return `<table>
-    <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
-    <tfoot><tr class="total-row"><td>Total</td><td class="num">${totalCount.toLocaleString()}${totalDeltaHtml}</td><td class="num">100%</td><td class="num">${fmtDur(totalAvg)}</td><td class="num">${fmtDur(totalMed)}</td></tr></tfoot>
+    <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th><th class="num">Total time</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row"><td>Total</td><td class="num">${totalCount.toLocaleString()}${totalDeltaHtml}</td><td class="num">100%</td><td class="num">${fmtDur(totalAvg)}</td><td class="num">${fmtDur(totalMed)}</td><td class="num">${fmtDur(totalTime)}</td></tr></tfoot>
   </table>`;
 }
 
@@ -596,6 +607,15 @@ function renderSection(section,direction){
 
 // ── Telephone Activity chart (stacked, merged direction) ──────
 let TELE_CHART=null;
+let TELE_METRIC='count'; // 'count' or 'duration'
+
+function setTeleMetric(metric){
+  TELE_METRIC=metric;
+  document.querySelectorAll('#tele-metric-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.metric===metric);
+  });
+  if(LOADED) renderTeleChart();
+}
 
 // Fixed palette so disposition colors stay consistent run to run, rather than
 // depending on insertion order. Falls back to a generated color if a portal
@@ -646,17 +666,21 @@ function renderTeleChart(){
     return ts>=fromMs && ts<=toMs;
   });
 
-  // Bucket: day -> dispoLabel -> count
+  // Bucket: day -> dispoLabel -> value (count, or total duration in seconds)
   const buckets={};
   days.forEach(d=>buckets[d]={});
-  const dispoTotals={}; // for sort order (largest series first / bottom of stack)
+  const dispoTotals={}; // for sort order (largest series first / bottom of stack) — always by count, so stack order doesn't reshuffle when switching metric
+  const dispoDurationTotals={};
   calls.forEach(c=>{
     const p=c.properties||{};
     const day=ymd(new Date(p.hs_timestamp));
     if(!buckets[day]) return; // safety, shouldn't happen given the filter above
     const lbl=dispoLabel(p.hs_call_disposition||'__none__');
-    buckets[day][lbl]=(buckets[day][lbl]||0)+1;
+    const durSec=p.hs_call_duration ? Number(p.hs_call_duration)/1000 : 0;
+    const val = TELE_METRIC==='duration' ? durSec/60 : 1; // chart in minutes for duration
+    buckets[day][lbl]=(buckets[day][lbl]||0)+val;
     dispoTotals[lbl]=(dispoTotals[lbl]||0)+1;
+    dispoDurationTotals[lbl]=(dispoDurationTotals[lbl]||0)+durSec;
   });
 
   const dispoOrder=Object.keys(dispoTotals).sort((a,b)=>dispoTotals[b]-dispoTotals[a]);
@@ -665,7 +689,7 @@ function renderTeleChart(){
     const color=colorForDispo(lbl,idx);
     return {
       label:lbl,
-      data:days.map(d=>buckets[d][lbl]||0),
+      data:days.map(d=>Math.round((buckets[d][lbl]||0)*100)/100),
       backgroundColor:isBar?color:color+'aa',
       borderColor:color,
       fill:!isBar,
@@ -676,8 +700,12 @@ function renderTeleChart(){
   });
 
   const totalCalls=calls.length;
+  const totalDurationSec=Object.values(dispoDurationTotals).reduce((a,b)=>a+b,0);
+  const metricNote = TELE_METRIC==='duration'
+    ? `${fmtDur(totalDurationSec)} total time on calls (y-axis in minutes)`
+    : `${totalCalls.toLocaleString()} total calls`;
   document.getElementById('tele-note').textContent=
-    `${totalCalls.toLocaleString()} total calls across ${spanDays} day${spanDays===1?'':'s'} · `+
+    `${metricNote} across ${spanDays} day${spanDays===1?'':'s'} · `+
     (isBar ? 'bar chart (range ≤ 7 days)' : 'area chart (range > 7 days)')+
     ' · outbound + inbound merged · no comparison period shown';
 
@@ -692,14 +720,18 @@ function renderTeleChart(){
       interaction:{mode:'index',intersect:false},
       scales:{
         x:{ stacked:true, grid:{display:false} },
-        y:{ stacked:true, beginAtZero:true, grid:{color:'#ede9e3'} },
+        y:{ stacked:true, beginAtZero:true, grid:{color:'#ede9e3'},
+            title:{ display:true, text: TELE_METRIC==='duration'?'Minutes':'Calls', font:{size:11} } },
       },
       plugins:{
         legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11} } },
         tooltip:{ callbacks:{
+          label:(item)=> TELE_METRIC==='duration'
+            ? `${item.dataset.label}: ${item.parsed.y.toFixed(1)} min`
+            : `${item.dataset.label}: ${item.parsed.y}`,
           footer:(items)=>{
             const sum=items.reduce((a,i)=>a+i.parsed.y,0);
-            return 'Total: '+sum;
+            return TELE_METRIC==='duration' ? `Total: ${sum.toFixed(1)} min` : `Total: ${sum}`;
           }
         } }
       }
