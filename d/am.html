@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.5)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v1.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -119,7 +119,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.5</span>
+    <span class="vpill">v1.7</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -261,6 +261,9 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
     <h3>Previous-period comparison on every column</h3>
     <p>When a comparison period is selected in the "vs" picker, every column in the Outbound/Inbound tables — Count, % of total, Avg duration, Median duration, Total time — shows the prior period's value on a second line beneath the current value, with a percentage-change arrow. "% of total" compares the disposition's <em>share</em> between the two periods (e.g. Connected going from 30% to 42% of calls), not a count.</p>
+
+    <h3>Per active day line</h3>
+    <p>Below each table, a line reports per-disposition figures divided by the number of <strong>active days</strong> — days that had at least one call, not the total number of calendar days in the range. This matters for ranges with gaps (weekends, days someone didn't dial): dividing by every calendar day would understate typical daily activity, so the figure reflects a typical day someone was actually working the phones. The line states the denominator explicitly ("÷ 17 active days, out of 21 days in the range") so it's clear which day-count every number on that line was divided by. In Side by Side view, each AM's active-day count is their own, not shared.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
@@ -592,6 +595,25 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
     prevTotalTime=prevAll.reduce((a,b)=>a+b,0);
   }
 
+  const activeDaySet=new Set(calls.map(c=>ymd(new Date(c.properties.hs_timestamp))));
+  const activeDays=activeDaySet.size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any calls — no per-day average to show).</div>`;
+  }else{
+    const perDispoAvg=dispoIds.map(id=>{
+      const c=cur[id]||{count:0};
+      const perDay=c.count/activeDays;
+      return `${dispoLabel(id)} ${perDay.toFixed(1)}`;
+    }).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    const timePerDay=totalTime/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is ÷ <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} calls — ${perDispoAvg} · ${fmtDur(timePerDay)} total time</div>`;
+  }
+
   return `<table>
     <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th><th class="num">Total time</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
@@ -603,7 +625,8 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
       <td class="num"><div class="cell-main">${fmtDur(totalMed)}</div>${deltaSub(totalMed,prevTotalMed,fmtDur)}</td>
       <td class="num"><div class="cell-main">${fmtDur(totalTime)}</div>${deltaSub(totalTime,prevTotalTime,fmtDur)}</td>
     </tr></tfoot>
-  </table>`;
+  </table>
+  ${avgDayLine}`;
 }
 
 function renderSection(section,direction){
