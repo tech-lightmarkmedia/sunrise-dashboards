@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v2.1)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v2.2)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -127,7 +127,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v2.1</span>
+    <span class="vpill">v2.2</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -310,7 +310,8 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <h3>SMS Activity</h3>
     <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each AM. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
     <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the AM sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
-    <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications\u2192contact association, not cached with the rest of the data — confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
+    <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications\u2192contact association, not cached with the rest of the data \u2014 confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
+    <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables \u2014 divided by days that had at least one SMS, not every calendar day in the range \u2014 with the divisor stated explicitly.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
@@ -1061,6 +1062,20 @@ function renderSmsTable(sms,prevSms,ownerFilter,from,to){
     </tr>`;
   }).join('');
 
+  const activeDaySet=new Set(sms.map(c=>ymd(new Date(c.properties.hs_timestamp))));
+  const activeDays=activeDaySet.size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any SMS \u2014 no per-day average to show).</div>`;
+  }else{
+    const perDirAvg=activeDirs.map(d=>`${dirLabel[d]} ${((cur[d]||0)/activeDays).toFixed(1)}`).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is \u00f7 <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} SMS \u2014 ${perDirAvg}</div>`;
+  }
+
   return `<table>
     <thead><tr><th>Direction</th><th class="num">Count</th><th class="num">% of total</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">No SMS in this range</td></tr>'}</tbody>
@@ -1069,7 +1084,8 @@ function renderSmsTable(sms,prevSms,ownerFilter,from,to){
       <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotalCount,countFmt)}</td>
       <td class="num"><div class="cell-main">100%</div></td>
     </tr></tfoot>
-  </table>`;
+  </table>
+  ${avgDayLine}`;
 }
 
 function renderSmsChart(from,to,ownerFilter){
