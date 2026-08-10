@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v1.10)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v2.0)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -127,7 +127,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v1.10</span>
+    <span class="vpill">v2.0</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -234,6 +234,23 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     </div>
   </div>
 
+  <div class="section">
+    <div class="section-hd" style="background:var(--accent-bg)">
+      <h2>SMS Activity</h2>
+      <span class="tag" id="sms-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap" style="height:280px"><canvas id="sms-chart"></canvas></div>
+      <div class="chart-note" id="sms-chart-note"></div>
+      <div class="view-toggle" id="sms-view-toggle" style="margin-top:16px">
+        <button class="active" data-view="combined" onclick="setSmsView('combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setSmsView('sidebyside')">Side by Side</button>
+      </div>
+      <div id="sms-content"></div>
+      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits.</div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Drilldown drawer -->
@@ -290,6 +307,11 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <h3>Per active day line</h3>
     <p>Below each table, a line reports per-disposition figures divided by the number of <strong>active days</strong> — days that had at least one call, not the total number of calendar days in the range. This matters for ranges with gaps (weekends, days someone didn't dial): dividing by every calendar day would understate typical daily activity, so the figure reflects a typical day someone was actually working the phones. The line states the denominator explicitly ("÷ 17 active days, out of 21 days in the range") so it's clear which day-count every number on that line was divided by. In Side by Side view, each AM's active-day count is their own, not shared.</p>
 
+    <h3>SMS Activity</h3>
+    <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each AM. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
+    <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the AM sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
+    <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. There's no drilldown or per-message content shown anywhere on this dashboard — only counts.</p>
+
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
   </div>
@@ -306,6 +328,7 @@ const AM_IDS=Object.keys(AMS);
 
 let DISPOSITIONS={};       // id -> label
 let ALL_CALLS=[];          // raw cached calls, filtered to AM_IDS
+let ALL_SMS=[];            // raw cached SMS (communications, channel=SMS), filtered to AM_IDS, with __direction inferred
 let LOADED=false;
 
 // ── ET-pinned date helpers ─────────────────────────────────
@@ -432,15 +455,41 @@ async function loadCalls(){
   ALL_CALLS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
 }
 
+// Direction is not a native property on the communications object (verified
+// live — a property search including "direction" in the regex returned
+// nothing). Inferred from the logged message text instead:
+//   Outbound: "{Name} has sent an SMS to {number}" — the AM sent it.
+//   Inbound:  "{number} has sent an SMS" (no "to") — the contact sent it,
+//             usually with a "Click here to respond" link.
+// This is a text-pattern heuristic, not a guaranteed field — if HubSpot or
+// Aloware ever changes the logged message format, this silently breaks.
+function classifySmsDirection(bodyPreview){
+  if(!bodyPreview) return 'UNKNOWN';
+  if(/has sent an SMS to\b/i.test(bodyPreview)) return 'OUTBOUND';
+  if(/has sent an SMS\b/i.test(bodyPreview)) return 'INBOUND';
+  return 'UNKNOWN';
+}
+
+async function loadSms(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-sms');
+  if(!r.ok) throw new Error(`/cached-sms -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_SMS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id)).map(c=>{
+    c.properties.__direction=classifySmsDirection(c.properties.hs_body_preview);
+    return c;
+  });
+}
+
 async function load(){
   const btn=document.getElementById('btn');
   const ov=document.getElementById('ov');
   btn.disabled=true; ov.classList.add('on');
   try{
-    await Promise.all([loadDispositions(), loadCalls()]);
+    await Promise.all([loadDispositions(), loadCalls(), loadSms()]);
     LOADED=true;
-    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls loaded</span>`;
-    document.getElementById('ts').textContent='Cache from /cached-calls (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
+    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls, ${ALL_SMS.length.toLocaleString()} SMS loaded</span>`;
+    document.getElementById('ts').textContent='Cache from /cached-calls + /cached-sms (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
     render();
   }catch(e){
     document.getElementById('st').innerHTML=`<span class="se">Load failed: ${e.message}</span>`;
@@ -878,11 +927,163 @@ function renderRealityCheck(){
   document.getElementById('reality-content').style.gridTemplateColumns = idsToShow.length===1 ? '1fr' : '1fr 1fr';
 }
 
+// ── SMS Activity ────────────────────────────────────────────────
+let SMS_VIEW='combined';
+let SMS_CHART=null;
+
+function setSmsView(view){
+  SMS_VIEW=view;
+  document.querySelectorAll('#sms-view-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) renderSms();
+}
+
+function filterSms(from,to,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_SMS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+// Table shaped like renderDispoTable but rows are direction (Outbound/Inbound/
+// Unknown) instead of disposition — SMS has no duration or disposition, so
+// Avg/Median/Total-time columns don't apply here. Count, % of total, and the
+// previous-period subline reuse the same deltaSub helper as the call tables.
+function renderSmsTable(sms,prevSms){
+  const dirs=['OUTBOUND','INBOUND','UNKNOWN'];
+  const dirLabel={OUTBOUND:'Outbound',INBOUND:'Inbound',UNKNOWN:'Unknown (couldn\u2019t parse direction)'};
+  const cur={}; dirs.forEach(d=>cur[d]=0);
+  sms.forEach(c=>{ cur[c.properties.__direction]=(cur[c.properties.__direction]||0)+1; });
+  let prev=null;
+  if(prevSms){
+    prev={}; dirs.forEach(d=>prev[d]=0);
+    prevSms.forEach(c=>{ prev[c.properties.__direction]=(prev[c.properties.__direction]||0)+1; });
+  }
+  const totalCount=sms.length;
+  const prevTotalCount=prevSms?prevSms.length:null;
+  const countFmt=v=>Math.round(v).toLocaleString();
+  const pctFmt=v=>v.toFixed(1)+'%';
+
+  const activeDirs=dirs.filter(d=>cur[d]>0 || (prev&&prev[d]>0));
+  let rows=activeDirs.map(d=>{
+    const c=cur[d]||0;
+    const pct=totalCount?(c/totalCount*100):0;
+    const p=prev?(prev[d]||0):null;
+    const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
+    return `<tr>
+      <td class="disp-name">${dirLabel[d]}</td>
+      <td class="num"><div class="cell-main">${c.toLocaleString()}</div>${deltaSub(c,p,countFmt)}</td>
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<table>
+    <thead><tr><th>Direction</th><th class="num">Count</th><th class="num">% of total</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">No SMS in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotalCount,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+    </tr></tfoot>
+  </table>`;
+}
+
+function renderSmsChart(from,to,ownerFilter){
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+  const sms=filterSms(startOfDay(from),endOfDay(to),ownerFilter);
+
+  const buckets={}; days.forEach(d=>buckets[d]={OUTBOUND:0,INBOUND:0,UNKNOWN:0});
+  sms.forEach(c=>{
+    const day=ymd(new Date(c.properties.hs_timestamp));
+    if(!buckets[day]) return;
+    buckets[day][c.properties.__direction]=(buckets[day][c.properties.__direction]||0)+1;
+  });
+
+  const seriesDefs=[
+    {key:'OUTBOUND',label:'Outbound',color:'#1d4ed8'},
+    {key:'INBOUND',label:'Inbound',color:'#c44a1e'},
+    {key:'UNKNOWN',label:'Unknown',color:'#9e9789'},
+  ].filter(s=>days.some(d=>buckets[d][s.key]>0));
+
+  const datasets=seriesDefs.map(s=>({
+    label:s.label,
+    data:days.map(d=>buckets[d][s.key]||0),
+    backgroundColor:isBar?s.color:s.color+'aa',
+    borderColor:s.color,
+    fill:!isBar,
+    stack:'sms',
+    tension:0.25,
+    pointRadius:spanDays>60?0:2,
+  }));
+
+  document.getElementById('sms-chart-note').textContent=
+    `${sms.length.toLocaleString()} total SMS across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar?'bar chart (range \u2264 7 days)':'area chart (range > 7 days)');
+
+  const ctx=document.getElementById('sms-chart').getContext('2d');
+  if(SMS_CHART) SMS_CHART.destroy();
+  SMS_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{labels:days,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{stacked:true, grid:{display:false}},
+        y:{stacked:true, beginAtZero:true, grid:{color:'#ede9e3'}, title:{display:true,text:'SMS',font:{size:11}}},
+      },
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}},
+        tooltip:{callbacks:{ footer:(items)=>'Total: '+items.reduce((a,i)=>a+i.parsed.y,0) }},
+      },
+    },
+  });
+  return sms;
+}
+
+function renderSms(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  document.getElementById('sms-range-tag').textContent=tag;
+
+  const sms=renderSmsChart(from,to,ownerFilter);
+  const prevSms=prevRange?filterSms(startOfDay(prevRange.from),endOfDay(prevRange.to),ownerFilter):null;
+
+  const contentEl=document.getElementById('sms-content');
+  if(SMS_VIEW==='combined'){
+    contentEl.innerHTML=renderSmsTable(sms,prevSms);
+  }else{
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const idSms=filterSms(startOfDay(from),endOfDay(to),id);
+      const idPrevSms=prevRange?filterSms(startOfDay(prevRange.from),endOfDay(prevRange.to),id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderSmsTable(idSms,idPrevSms)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
 function render(){
   renderRealityCheck();
   renderTeleChart();
   renderSection('out','OUTBOUND');
   renderSection('in','INBOUND');
+  renderSms();
 }
 
 // ── Init ──────────────────────────────────────────────────────
