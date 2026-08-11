@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Communication Activity (v3.3)</title>
+<title>Sunrise Capital — Account Manager Communication Activity (v3.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -133,7 +133,7 @@ th.sorted{color:var(--accent);font-weight:700}
 <header>
   <div class="hdr">
     <h1>Account Manager Communication Activity</h1>
-    <span class="vpill">v3.3</span>
+    <span class="vpill">v3.4</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -353,22 +353,22 @@ th.sorted{color:var(--accent);font-weight:700}
     <h3>SMS Activity</h3>
     <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each AM. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
     <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the AM sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
-    <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications\u2192contact association, not cached with the rest of the data \u2014 confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
-    <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables \u2014 divided by days that had at least one SMS, not every calendar day in the range \u2014 with the divisor stated explicitly.</p>
+    <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications→contact association, not cached with the rest of the data — confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
+    <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables — divided by days that had at least one SMS, not every calendar day in the range — with the divisor stated explicitly.</p>
 
     <h3>Email Activity</h3>
-    <p>Volume of one-on-one emails between each AM and their contacts, by day. Unlike SMS, email direction is a <strong>real HubSpot field</strong> (not inferred) \u2014 outbound emails the AM sent, and inbound replies from the contact, are distinguished natively. The associated contact is also a direct field on the record, so contact resolution here doesn't depend on a separate association lookup the way calls/SMS do.</p>
-    <p>Same chart/table shape as SMS \u2014 Combined/Side by Side toggle, per-active-day line, drilldown on click showing timestamp, resolved contact, subject line, and a link to the record in HubSpot.</p>
+    <p>Volume of one-on-one emails between each AM and their contacts, by day. Unlike SMS, email direction is a <strong>real HubSpot field</strong> (not inferred) — outbound emails the AM sent, and inbound replies from the contact, are distinguished natively. The associated contact is also a direct field on the record, so contact resolution here doesn't depend on a separate association lookup the way calls/SMS do.</p>
+    <p>Same chart/table shape as SMS — Combined/Side by Side toggle, per-active-day line, drilldown on click showing timestamp, resolved contact, subject line, and a link to the record in HubSpot.</p>
 
     <h3>Investor Activity</h3>
-    <p>One row per investor, regardless of whether they had any activity in the selected range \u2014 zeroes are shown, not hidden, so gaps are visible. The investor list comes from tickets in the <strong>AM Pipeline (Year 1)</strong> and <strong>AM Pipeline (Ongoing)</strong> \u2014 the same ticket follows an investor through both pipelines over time, so there's one row per investor, not one per pipeline stage they've passed through.</p>
-    <p>Columns: <strong>Inbound Connected / Inbound Missed</strong> and <strong>Outbound Connected / Outbound Not Connected</strong> (calls, collapsed to just Connected vs. everything else \u2014 no per-disposition breakdown here), plus <strong>SMS Out/In</strong> and <strong>Email Out/In</strong>. All counts are scoped to the currently selected date range (the top-bar Range picker), matching a specific investor via their resolved HubSpot contact.</p>
-    <p>The <strong>All / Alex / Daniel</strong> toggle above the table filters which investors show, based on the ticket's <code>am_owner</code> field \u2014 independent of the top-bar AM filter, which doesn't affect this table. Click any count to drill into the underlying records. If an investor's ticket has no resolved contact, their row shows zeros throughout and isn't clickable \u2014 there's nothing to look up activity against.</p>
+    <p>One row per investor, regardless of whether they had any activity in the selected range — zeroes are shown, not hidden, so gaps are visible. The investor list comes from tickets in the <strong>AM Pipeline (Year 1)</strong> and <strong>AM Pipeline (Ongoing)</strong> — the same ticket follows an investor through both pipelines over time, so there's one row per investor, not one per pipeline stage they've passed through.</p>
+    <p>Columns: <strong>Inbound Connected / Inbound Missed</strong> and <strong>Outbound Connected / Outbound Not Connected</strong> (calls, collapsed to just Connected vs. everything else — no per-disposition breakdown here), plus <strong>SMS Out/In</strong> and <strong>Email Out/In</strong>. All counts are scoped to the currently selected date range (the top-bar Range picker), matching a specific investor via their resolved HubSpot contact.</p>
+    <p>The <strong>All / Alex / Daniel</strong> toggle above the table filters which investors show, based on the ticket's <code>am_owner</code> field — independent of the top-bar AM filter, which doesn't affect this table. Click any count to drill into the underlying records. If an investor's ticket has no resolved contact, their row shows zeros throughout and isn't clickable — there's nothing to look up activity against.</p>
     <p>Click any column header to sort by it; click again to reverse direction. The table shows roughly 25 rows before scrolling, with the header staying fixed in place while you scroll.</p>
-    <p>The second toggle (<strong>All / Activity / No Activity</strong>) filters rows by whether the investor had <em>any</em> logged activity \u2014 across all eight columns combined \u2014 in the selected date range. "No Activity" is the useful one for spotting investors who've gone quiet.</p>
+    <p>The second toggle (<strong>All / Activity / No Activity</strong>) filters rows by whether the investor had <em>any</em> logged activity — across all eight columns combined — in the selected date range. "No Activity" is the useful one for spotting investors who've gone quiet.</p>
 
     <h3>Drilldown</h3>
-    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls\u2192contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing.</p>
+    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls→contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing.</p>
   </div>
 </div>
 
