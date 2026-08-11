@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v2.2)</title>
+<title>Sunrise Capital — Account Manager Call Activity (v2.3)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -127,7 +127,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v2.2</span>
+    <span class="vpill">v2.3</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -314,7 +314,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables \u2014 divided by days that had at least one SMS, not every calendar day in the range \u2014 with the divisor stated explicitly.</p>
 
     <h3>Drilldown</h3>
-    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. This is a new feature on this dashboard — flag it if the record list doesn't match what you'd expect.</p>
+    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls\u2192contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing.</p>
   </div>
 </div>
 
@@ -580,7 +580,7 @@ function dispoLabel(id){
 }
 
 // ── Drilldown ─────────────────────────────────────────────────
-function openDrilldown(direction,dispoId,ownerFilter,from,to,title){
+async function openDrilldown(direction,dispoId,ownerFilter,from,to,title){
   const calls=filterCalls(from,to,direction,ownerFilter).filter(c=>{
     const p=c.properties||{};
     const d=p.hs_call_disposition||'__none__';
@@ -588,21 +588,36 @@ function openDrilldown(direction,dispoId,ownerFilter,from,to,title){
   });
   document.getElementById('dd-title').textContent=title;
   const body=document.getElementById('dd-body');
-  if(!calls.length){
-    body.innerHTML='<div class="dd-empty">No calls match this selection.</div>';
-  }else{
-    calls.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
-    body.innerHTML=calls.map(c=>{
-      const p=c.properties;
-      const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
-      const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
-      const durSec=p.hs_call_duration?Number(p.hs_call_duration)/1000:0;
-      const url=`https://app.hubspot.com/calls/${HUBSPOT_PORTAL}/review/${p.hs_object_id||c.id}`;
-      return `<div class="dd-row"><span>${dt} ET · ${owner} · ${fmtDur(durSec)}</span><a href="${url}" target="_blank" rel="noopener">Open ↗</a></div>`;
-    }).join('');
-  }
   document.getElementById('dd-overlay').classList.add('on');
   document.getElementById('dd-drawer').classList.add('on');
+
+  if(!calls.length){
+    body.innerHTML='<div class="dd-empty">No calls match this selection.</div>';
+    return;
+  }
+  calls.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+  body.innerHTML='<div class="dd-empty">Loading contact names…</div>';
+
+  const contactIds=calls.map(c=>c.properties.hs_associated_contact_id);
+  const nameMap=await resolveContactNames(contactIds);
+
+  body.innerHTML=calls.map(c=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    const durSec=p.hs_call_duration?Number(p.hs_call_duration)/1000:0;
+    const contactId=p.hs_associated_contact_id;
+    const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
+    const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
+    const url=`https://app.hubspot.com/calls/${HUBSPOT_PORTAL}/review/${p.hs_object_id||c.id}`;
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET · ${owner} · ${fmtDur(durSec)}</span>
+        <a href="${url}" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
+    </div>`;
+  }).join('');
 }
 function closeDrilldown(){
   document.getElementById('dd-overlay').classList.remove('on');
