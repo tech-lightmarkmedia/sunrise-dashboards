@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Setter Communication Activity (v1.5)</title>
+<title>Sunrise Capital — Setter Communication Activity (v1.6)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Setter Communication Activity</h1>
-    <span class="vpill">v1.5</span>
+    <span class="vpill">v1.6</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -772,7 +772,7 @@ async function openSmsDrilldown(direction,ownerFilter,from,to,title){
   const contactIds=sms.map(c=>c.properties.hs_associated_contact_id);
   const nameMap=await resolveContactNames(contactIds);
 
-  body.innerHTML=sms.map(c=>{
+  body.innerHTML=sms.map((c,i)=>{
     const p=c.properties;
     const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
     const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
@@ -780,18 +780,35 @@ async function openSmsDrilldown(direction,ownerFilter,from,to,title){
     const contactId=p.hs_associated_contact_id;
     const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
     const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
-    const smsUrl=`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-18/${p.hs_object_id||c.id}`;
+    // SMS/communications has no standalone record page in HubSpot (confirmed
+    // live 2026-08-11 — the record/0-18/{id} URL 404s regardless of ID; per
+    // HubSpot's own docs, calls/payments/forms/campaigns/custom objects get
+    // an index page, communications doesn't). The contact record is the only
+    // place the message is actually viewable, so Open goes there instead.
     const rawPreview=p.hs_body_preview||'';
-    const preview=escapeHtml(rawPreview.slice(0,110))+(rawPreview.length>110?'\u2026':'');
+    const preview=escapeHtml(rawPreview);
+    const previewShort=escapeHtml(rawPreview.slice(0,110))+(rawPreview.length>110?'\u2026':'');
+    const rowId=`sms-dd-row-${i}`;
     return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
       <div style="display:flex;justify-content:space-between;width:100%">
         <span>${dt} ET \u00b7 ${owner} \u00b7 ${dirLabel}</span>
-        <a href="${smsUrl}" target="_blank" rel="noopener">Open \u2197</a>
+        ${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">Open \u2197</a>`:'<span style="color:var(--text3)">No contact to open</span>'}
       </div>
       <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
-      <div style="font-size:11px;color:var(--text3);font-style:italic">\u201c${preview}\u201d</div>
+      <div class="clickable" style="font-size:11px;color:var(--text3);font-style:italic" onclick="toggleSmsPreview('${rowId}')">
+        <span id="${rowId}-short">\u201c${previewShort}\u201d (click to expand)</span>
+        <span id="${rowId}-full" style="display:none">\u201c${preview}\u201d (click to collapse)</span>
+      </div>
     </div>`;
   }).join('');
+}
+
+function toggleSmsPreview(rowId){
+  const short=document.getElementById(rowId+'-short');
+  const full=document.getElementById(rowId+'-full');
+  const showingShort=short.style.display!=='none';
+  short.style.display=showingShort?'none':'';
+  full.style.display=showingShort?'':'none';
 }
 
 // ── Guide ─────────────────────────────────────────────────────
