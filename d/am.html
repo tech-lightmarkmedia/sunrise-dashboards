@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Communication Activity (v3.2)</title>
+<title>Sunrise Capital — Account Manager Communication Activity (v3.3)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -133,7 +133,7 @@ th.sorted{color:var(--accent);font-weight:700}
 <header>
   <div class="hdr">
     <h1>Account Manager Communication Activity</h1>
-    <span class="vpill">v3.2</span>
+    <span class="vpill">v3.3</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -284,6 +284,11 @@ th.sorted{color:var(--accent);font-weight:700}
         <button data-am="650567768" onclick="setInvestorAmFilter('650567768')">Alex</button>
         <button data-am="85544039" onclick="setInvestorAmFilter('85544039')">Daniel</button>
       </div>
+      <div class="view-toggle" id="investor-activity-toggle" style="margin-top:8px">
+        <button class="active" data-activity="all" onclick="setInvestorActivityFilter('all')">All</button>
+        <button data-activity="activity" onclick="setInvestorActivityFilter('activity')">Activity</button>
+        <button data-activity="noactivity" onclick="setInvestorActivityFilter('noactivity')">No Activity</button>
+      </div>
       <div id="investor-content" style="margin-top:14px"></div>
       <div class="chart-note" style="margin-top:10px" id="investor-note"></div>
     </div>
@@ -360,6 +365,7 @@ th.sorted{color:var(--accent);font-weight:700}
     <p>Columns: <strong>Inbound Connected / Inbound Missed</strong> and <strong>Outbound Connected / Outbound Not Connected</strong> (calls, collapsed to just Connected vs. everything else \u2014 no per-disposition breakdown here), plus <strong>SMS Out/In</strong> and <strong>Email Out/In</strong>. All counts are scoped to the currently selected date range (the top-bar Range picker), matching a specific investor via their resolved HubSpot contact.</p>
     <p>The <strong>All / Alex / Daniel</strong> toggle above the table filters which investors show, based on the ticket's <code>am_owner</code> field \u2014 independent of the top-bar AM filter, which doesn't affect this table. Click any count to drill into the underlying records. If an investor's ticket has no resolved contact, their row shows zeros throughout and isn't clickable \u2014 there's nothing to look up activity against.</p>
     <p>Click any column header to sort by it; click again to reverse direction. The table shows roughly 25 rows before scrolling, with the header staying fixed in place while you scroll.</p>
+    <p>The second toggle (<strong>All / Activity / No Activity</strong>) filters rows by whether the investor had <em>any</em> logged activity \u2014 across all eight columns combined \u2014 in the selected date range. "No Activity" is the useful one for spotting investors who've gone quiet.</p>
 
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls\u2192contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing.</p>
@@ -1478,11 +1484,20 @@ async function openEmailDrilldown(direction,ownerFilter,from,to,title){
 // dedicated All/Alex/Daniel toggle here, not the top-bar one, since this
 // table is its own section with its own natural filter).
 let INVESTOR_AM_FILTER='all';
+let INVESTOR_ACTIVITY_FILTER='all';
 
 function setInvestorAmFilter(am){
   INVESTOR_AM_FILTER=am;
   document.querySelectorAll('#investor-am-toggle button').forEach(b=>{
     b.classList.toggle('active', b.dataset.am===am);
+  });
+  if(LOADED) renderInvestorActivity();
+}
+
+function setInvestorActivityFilter(mode){
+  INVESTOR_ACTIVITY_FILTER=mode;
+  document.querySelectorAll('#investor-activity-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.activity===mode);
   });
   if(LOADED) renderInvestorActivity();
 }
@@ -1575,6 +1590,10 @@ function renderInvestorActivity(){
     return {inv, cs, ss, es};
   });
 
+  const hasActivity=({cs,ss,es})=> (cs.inboundConnected+cs.inboundMissed+cs.outboundConnected+cs.outboundNotConnected+ss.out+ss.inn+es.out+es.inn) > 0;
+  if(INVESTOR_ACTIVITY_FILTER==='activity') dataRows=dataRows.filter(hasActivity);
+  else if(INVESTOR_ACTIVITY_FILTER==='noactivity') dataRows=dataRows.filter(r=>!hasActivity(r));
+
   const sortCol=INVESTOR_COLS.find(c=>c.key===INVESTOR_SORT.col) || INVESTOR_COLS[0];
   const dir = INVESTOR_SORT.dir==='asc' ? 1 : -1;
   dataRows.sort((a,b)=>{
@@ -1609,9 +1628,12 @@ function renderInvestorActivity(){
     </tr>`;
   }).join('');
 
-  const withContact=rows.filter(r=>r.contactId).length;
+  const withContact=dataRows.filter(r=>r.inv.contactId).length;
+  const filterNote = INVESTOR_ACTIVITY_FILTER==='activity' ? ' \u00b7 filtered to investors with activity in range'
+    : INVESTOR_ACTIVITY_FILTER==='noactivity' ? ' \u00b7 filtered to investors with no activity in range'
+    : ' \u00b7 every investor shown regardless of activity';
   document.getElementById('investor-note').textContent=
-    `${rows.length.toLocaleString()} investors (${withContact.toLocaleString()} with a resolved contact) \u00b7 counts reflect the selected date range \u00b7 every investor shown regardless of activity \u00b7 click a column header to sort`;
+    `${dataRows.length.toLocaleString()} investor${dataRows.length===1?'':'s'} shown (${withContact.toLocaleString()} with a resolved contact) \u00b7 counts reflect the selected date range${filterNote} \u00b7 click a column header to sort`;
 
   const headerCells = INVESTOR_COLS.map(col=>{
     const isSorted = INVESTOR_SORT.col===col.key;
