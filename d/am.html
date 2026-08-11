@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Call Activity (v2.3)</title>
+<title>Sunrise Capital — Account Manager Communication Activity (v3.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -126,8 +126,8 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
 <header>
   <div class="hdr">
-    <h1>Account Manager Call Activity</h1>
-    <span class="vpill">v2.3</span>
+    <h1>Account Manager Communication Activity</h1>
+    <span class="vpill">v3.1</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -251,6 +251,38 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     </div>
   </div>
 
+  <div class="section">
+    <div class="section-hd" style="background:var(--out-bg)">
+      <h2>Email Activity</h2>
+      <span class="tag" id="email-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap" style="height:280px"><canvas id="email-chart"></canvas></div>
+      <div class="chart-note" id="email-chart-note"></div>
+      <div class="view-toggle" id="email-view-toggle" style="margin-top:16px">
+        <button class="active" data-view="combined" onclick="setEmailView('combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setEmailView('sidebyside')">Side by Side</button>
+      </div>
+      <div id="email-content"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd" style="background:var(--surface2)">
+      <h2>Investor Activity</h2>
+      <span class="tag" id="investor-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="view-toggle" id="investor-am-toggle">
+        <button class="active" data-am="all" onclick="setInvestorAmFilter('all')">All</button>
+        <button data-am="650567768" onclick="setInvestorAmFilter('650567768')">Alex</button>
+        <button data-am="85544039" onclick="setInvestorAmFilter('85544039')">Daniel</button>
+      </div>
+      <div id="investor-content" style="margin-top:14px"></div>
+      <div class="chart-note" style="margin-top:10px" id="investor-note"></div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Drilldown drawer -->
@@ -266,7 +298,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
   <div id="guide-hd"><h2>Dashboard Guide</h2><button id="guide-close" onclick="closeGuide()">✕</button></div>
   <div id="guide-body">
     <h3>What this dashboard shows</h3>
-    <p>Call activity for Sunrise's two Account Managers, Alex Zahn and Daniel Ackerman — outbound and inbound calls, broken out by HubSpot call disposition (Connected, Left voicemail, Left live message, No answer, Busy, Wrong number, Connect - Scheduled, Connected - Not Engaged).</p>
+    <p>Communication activity for Sunrise's two Account Managers, Alex Zahn and Daniel Ackerman — calls, SMS, and email, plus a roll-up of activity per investor. Calls are broken out by HubSpot call disposition (Connected, Left voicemail, Left live message, No answer, Busy, Wrong number, Connect - Scheduled, Connected - Not Engaged).</p>
 
     <h3>Why dispositions are shown separately, not rolled into a "connect rate"</h3>
     <p>Alex and Daniel disposition calls very differently in practice — Alex logs "Left live message" heavily, Daniel logs "Left voicemail" heavily, and neither uses every disposition equally. Rather than collapse dispositions into a single connect/no-connect metric (which would bake in an assumption about which dispositions "count"), each disposition is reported on its own with its own count, share of total, average duration, and median duration. Read them side by side rather than looking for one headline number.</p>
@@ -313,6 +345,15 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <p>The chart and table both use the same date range, comparison period, and AM filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications\u2192contact association, not cached with the rest of the data \u2014 confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
     <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables \u2014 divided by days that had at least one SMS, not every calendar day in the range \u2014 with the divisor stated explicitly.</p>
 
+    <h3>Email Activity</h3>
+    <p>Volume of one-on-one emails between each AM and their contacts, by day. Unlike SMS, email direction is a <strong>real HubSpot field</strong> (not inferred) \u2014 outbound emails the AM sent, and inbound replies from the contact, are distinguished natively. The associated contact is also a direct field on the record, so contact resolution here doesn't depend on a separate association lookup the way calls/SMS do.</p>
+    <p>Same chart/table shape as SMS \u2014 Combined/Side by Side toggle, per-active-day line, drilldown on click showing timestamp, resolved contact, subject line, and a link to the record in HubSpot.</p>
+
+    <h3>Investor Activity</h3>
+    <p>One row per investor, regardless of whether they had any activity in the selected range \u2014 zeroes are shown, not hidden, so gaps are visible. The investor list comes from tickets in the <strong>AM Pipeline (Year 1)</strong> and <strong>AM Pipeline (Ongoing)</strong> \u2014 the same ticket follows an investor through both pipelines over time, so there's one row per investor, not one per pipeline stage they've passed through.</p>
+    <p>Columns: <strong>Inbound Connected / Inbound Missed</strong> and <strong>Outbound Connected / Outbound Not Connected</strong> (calls, collapsed to just Connected vs. everything else \u2014 no per-disposition breakdown here), plus <strong>SMS Out/In</strong> and <strong>Email Out/In</strong>. All counts are scoped to the currently selected date range (the top-bar Range picker), matching a specific investor via their resolved HubSpot contact.</p>
+    <p>The <strong>All / Alex / Daniel</strong> toggle above the table filters which investors show, based on the ticket's <code>am_owner</code> field \u2014 independent of the top-bar AM filter, which doesn't affect this table. Click any count to drill into the underlying records. If an investor's ticket has no resolved contact, their row shows zeros throughout and isn't clickable \u2014 there's nothing to look up activity against.</p>
+
     <h3>Drilldown</h3>
     <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls\u2192contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing.</p>
   </div>
@@ -330,6 +371,8 @@ const AM_IDS=Object.keys(AMS);
 let DISPOSITIONS={};       // id -> label
 let ALL_CALLS=[];          // raw cached calls, filtered to AM_IDS
 let ALL_SMS=[];            // raw cached SMS (communications, channel=SMS), filtered to AM_IDS, with __direction inferred
+let ALL_EMAILS=[];         // raw cached emails, filtered to AM_IDS. Real hs_email_direction + hs_email_associated_contact_id, no inference needed.
+let ALL_INVESTOR_ROSTER=[]; // one row per investor ticket (AM Pipeline Year1 + Ongoing), {ticketId, amOwnerId, contactId, contactName, contactEmail, ...}
 let LOADED=false;
 
 // ── ET-pinned date helpers ─────────────────────────────────
@@ -482,15 +525,31 @@ async function loadSms(){
   });
 }
 
+async function loadEmails(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-emails');
+  if(!r.ok) throw new Error(`/cached-emails -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_EMAILS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
+}
+
+async function loadInvestorRoster(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-investor-roster');
+  if(!r.ok) throw new Error(`/cached-investor-roster -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_INVESTOR_ROSTER=raw.filter(r=>AM_IDS.includes(r.amOwnerId));
+}
+
 async function load(){
   const btn=document.getElementById('btn');
   const ov=document.getElementById('ov');
   btn.disabled=true; ov.classList.add('on');
   try{
-    await Promise.all([loadDispositions(), loadCalls(), loadSms()]);
+    await Promise.all([loadDispositions(), loadCalls(), loadSms(), loadEmails(), loadInvestorRoster()]);
     LOADED=true;
-    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls, ${ALL_SMS.length.toLocaleString()} SMS loaded</span>`;
-    document.getElementById('ts').textContent='Cache from /cached-calls + /cached-sms (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
+    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls, ${ALL_SMS.length.toLocaleString()} SMS, ${ALL_EMAILS.length.toLocaleString()} emails, ${ALL_INVESTOR_ROSTER.length.toLocaleString()} investors loaded</span>`;
+    document.getElementById('ts').textContent='Cache from /cached-calls, /cached-sms, /cached-emails, /cached-investor-roster (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
     render();
   }catch(e){
     document.getElementById('st').innerHTML=`<span class="se">Load failed: ${e.message}</span>`;
@@ -1194,7 +1253,415 @@ function render(){
   renderSection('out','OUTBOUND');
   renderSection('in','INBOUND');
   renderSms();
+  renderEmail();
+  renderInvestorActivity();
 }
+
+// ── Email Activity ─────────────────────────────────────────────
+// Simpler than SMS: hs_email_direction is a real field (EMAIL=outbound,
+// INCOMING_EMAIL=inbound) and hs_email_associated_contact_id is a direct
+// property, so no text-parsing heuristic and no separate association step.
+let EMAIL_VIEW='combined';
+let EMAIL_CHART=null;
+const EMAIL_DIR_LABEL={EMAIL:'Outbound',INCOMING_EMAIL:'Inbound'};
+
+function setEmailView(view){
+  EMAIL_VIEW=view;
+  document.querySelectorAll('#email-view-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) renderEmail();
+}
+
+function filterEmails(from,to,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_EMAILS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+function renderEmailTable(emails,prevEmails,ownerFilter,from,to){
+  const dirs=['EMAIL','INCOMING_EMAIL'];
+  const cur={}; dirs.forEach(d=>cur[d]=0);
+  emails.forEach(c=>{ const d=c.properties.hs_email_direction; if(cur[d]!==undefined) cur[d]++; });
+  let prev=null;
+  if(prevEmails){
+    prev={}; dirs.forEach(d=>prev[d]=0);
+    prevEmails.forEach(c=>{ const d=c.properties.hs_email_direction; if(prev[d]!==undefined) prev[d]++; });
+  }
+  const totalCount=emails.length;
+  const prevTotalCount=prevEmails?prevEmails.length:null;
+  const countFmt=v=>Math.round(v).toLocaleString();
+  const pctFmt=v=>v.toFixed(1)+'%';
+
+  const activeDirs=dirs.filter(d=>cur[d]>0 || (prev&&prev[d]>0));
+  let rows=activeDirs.map(d=>{
+    const c=cur[d]||0;
+    const pct=totalCount?(c/totalCount*100):0;
+    const p=prev?(prev[d]||0):null;
+    const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
+    const title=(`${EMAIL_DIR_LABEL[d]} Email \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    return `<tr>
+      <td class="disp-name">${EMAIL_DIR_LABEL[d]}</td>
+      <td class="num clickable" onclick='openEmailDrilldown("${d}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
+        <div class="cell-main">${c.toLocaleString()}</div>${deltaSub(c,p,countFmt)}
+      </td>
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+    </tr>`;
+  }).join('');
+
+  const activeDays=new Set(emails.map(c=>ymd(new Date(c.properties.hs_timestamp)))).size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any email \u2014 no per-day average to show).</div>`;
+  }else{
+    const perDirAvg=activeDirs.map(d=>`${EMAIL_DIR_LABEL[d]} ${((cur[d]||0)/activeDays).toFixed(1)}`).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is \u00f7 <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} emails \u2014 ${perDirAvg}</div>`;
+  }
+
+  return `<table>
+    <thead><tr><th>Direction</th><th class="num">Count</th><th class="num">% of total</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">No emails in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotalCount,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+    </tr></tfoot>
+  </table>
+  ${avgDayLine}`;
+}
+
+function renderEmailChart(from,to,ownerFilter){
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+  const emails=filterEmails(startOfDay(from),endOfDay(to),ownerFilter);
+
+  const buckets={}; days.forEach(d=>buckets[d]={EMAIL:0,INCOMING_EMAIL:0});
+  emails.forEach(c=>{
+    const day=ymd(new Date(c.properties.hs_timestamp));
+    if(!buckets[day]) return;
+    const d=c.properties.hs_email_direction;
+    if(buckets[day][d]!==undefined) buckets[day][d]++;
+  });
+
+  const seriesDefs=[
+    {key:'EMAIL',label:'Outbound',color:'#1d4ed8'},
+    {key:'INCOMING_EMAIL',label:'Inbound',color:'#c44a1e'},
+  ].filter(s=>days.some(d=>buckets[d][s.key]>0));
+
+  const datasets=seriesDefs.map(s=>({
+    label:s.label,
+    data:days.map(d=>buckets[d][s.key]||0),
+    backgroundColor:isBar?s.color:s.color+'aa',
+    borderColor:s.color,
+    fill:!isBar,
+    stack:'email',
+    tension:0.25,
+    pointRadius:spanDays>60?0:2,
+  }));
+
+  document.getElementById('email-chart-note').textContent=
+    `${emails.length.toLocaleString()} total emails across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar?'bar chart (range \u2264 7 days)':'area chart (range > 7 days)');
+
+  const ctx=document.getElementById('email-chart').getContext('2d');
+  if(EMAIL_CHART) EMAIL_CHART.destroy();
+  EMAIL_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{labels:days,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{stacked:true, grid:{display:false}},
+        y:{stacked:true, beginAtZero:true, grid:{color:'#ede9e3'}, title:{display:true,text:'Emails',font:{size:11}}},
+      },
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}},
+        tooltip:{callbacks:{ footer:(items)=>'Total: '+items.reduce((a,i)=>a+i.parsed.y,0) }},
+      },
+    },
+  });
+  return emails;
+}
+
+function renderEmail(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  document.getElementById('email-range-tag').textContent=tag;
+
+  const emails=renderEmailChart(from,to,ownerFilter);
+  const prevEmails=prevRange?filterEmails(startOfDay(prevRange.from),endOfDay(prevRange.to),ownerFilter):null;
+
+  const contentEl=document.getElementById('email-content');
+  if(EMAIL_VIEW==='combined'){
+    contentEl.innerHTML=renderEmailTable(emails,prevEmails,ownerFilter,from,to);
+  }else{
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const idEmails=filterEmails(startOfDay(from),endOfDay(to),id);
+      const idPrevEmails=prevRange?filterEmails(startOfDay(prevRange.from),endOfDay(prevRange.to),id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderEmailTable(idEmails,idPrevEmails,id,from,to)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
+async function openEmailDrilldown(direction,ownerFilter,from,to,title){
+  let emails=filterEmails(startOfDay(from),endOfDay(to),ownerFilter);
+  if(direction!=='ALL') emails=emails.filter(c=>c.properties.hs_email_direction===direction);
+
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+
+  if(!emails.length){
+    body.innerHTML='<div class="dd-empty">No emails match this selection.</div>';
+    return;
+  }
+  emails.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+  body.innerHTML='<div class="dd-empty">Loading contact names…</div>';
+
+  const contactIds=emails.map(c=>c.properties.hs_email_associated_contact_id);
+  const nameMap=await resolveContactNames(contactIds);
+
+  body.innerHTML=emails.map(c=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    const dirLabel=EMAIL_DIR_LABEL[p.hs_email_direction]||p.hs_email_direction;
+    const contactId=p.hs_email_associated_contact_id;
+    const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
+    const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
+    const emailUrl=`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-49/${p.hs_object_id||c.id}`;
+    const subject=escapeHtml(p.hs_email_subject||'(no subject)');
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET · ${owner} · ${dirLabel}</span>
+        <a href="${emailUrl}" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
+      <div style="font-size:11px;color:var(--text3);font-style:italic">${subject}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Investor Activity ───────────────────────────────────────────
+// One row per investor (from the ticket roster), regardless of activity.
+// Columns: Inbound Connected / Inbound Missed / Outbound Connected /
+// Outbound Not Connected (calls, grouped by disposition) / SMS Out / SMS In /
+// Email Out / Email In. Respects the global date range + AM filter (the
+// dedicated All/Alex/Daniel toggle here, not the top-bar one, since this
+// table is its own section with its own natural filter).
+let INVESTOR_AM_FILTER='all';
+
+function setInvestorAmFilter(am){
+  INVESTOR_AM_FILTER=am;
+  document.querySelectorAll('#investor-am-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.am===am);
+  });
+  if(LOADED) renderInvestorActivity();
+}
+
+function getConnectedDispoId(){
+  for(const id in DISPOSITIONS){ if(DISPOSITIONS[id]==='Connected') return id; }
+  return null;
+}
+
+function investorCallStats(contactId,from,to){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  const connectedId=getConnectedDispoId();
+  const calls=ALL_CALLS.filter(c=>{
+    const p=c.properties||{};
+    if(p.hs_associated_contact_id!==contactId) return false;
+    const ts=new Date(p.hs_timestamp).getTime();
+    return ts>=fromMs && ts<=toMs;
+  });
+  let inboundConnected=0, inboundMissed=0, outboundConnected=0, outboundNotConnected=0;
+  calls.forEach(c=>{
+    const p=c.properties;
+    const isConnected = connectedId && p.hs_call_disposition===connectedId;
+    const dir=(p.hs_call_direction||'').toUpperCase();
+    if(dir==='INBOUND'){ isConnected ? inboundConnected++ : inboundMissed++; }
+    else if(dir==='OUTBOUND'){ isConnected ? outboundConnected++ : outboundNotConnected++; }
+  });
+  return {inboundConnected,inboundMissed,outboundConnected,outboundNotConnected};
+}
+
+function investorSmsStats(contactId,from,to){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  const sms=ALL_SMS.filter(c=>{
+    const p=c.properties||{};
+    if(p.hs_associated_contact_id!==contactId) return false;
+    const ts=new Date(p.hs_timestamp).getTime();
+    return ts>=fromMs && ts<=toMs;
+  });
+  let out=0,inn=0;
+  sms.forEach(c=>{ if(c.properties.__direction==='OUTBOUND') out++; else if(c.properties.__direction==='INBOUND') inn++; });
+  return {out,inn};
+}
+
+function investorEmailStats(contactId,from,to){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  const emails=ALL_EMAILS.filter(c=>{
+    const p=c.properties||{};
+    if(p.hs_email_associated_contact_id!==contactId) return false;
+    const ts=new Date(p.hs_timestamp).getTime();
+    return ts>=fromMs && ts<=toMs;
+  });
+  let out=0,inn=0;
+  emails.forEach(c=>{ if(c.properties.hs_email_direction==='EMAIL') out++; else if(c.properties.hs_email_direction==='INCOMING_EMAIL') inn++; });
+  return {out,inn};
+}
+
+function renderInvestorActivity(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  document.getElementById('investor-range-tag').textContent=label+(isPartial?' (in progress)':'');
+
+  let rows = INVESTOR_AM_FILTER==='all' ? ALL_INVESTOR_ROSTER : ALL_INVESTOR_ROSTER.filter(r=>r.amOwnerId===INVESTOR_AM_FILTER);
+  rows = [...rows].sort((a,b)=>(a.contactName||'zzz').localeCompare(b.contactName||'zzz'));
+
+  const dataRows = rows.map(inv => {
+    const cs = inv.contactId ? investorCallStats(inv.contactId,from,to) : {inboundConnected:0,inboundMissed:0,outboundConnected:0,outboundNotConnected:0};
+    const ss = inv.contactId ? investorSmsStats(inv.contactId,from,to) : {out:0,inn:0};
+    const es = inv.contactId ? investorEmailStats(inv.contactId,from,to) : {out:0,inn:0};
+    return {inv, cs, ss, es};
+  });
+
+  const cellOnclick=(kind,inv)=>{
+    if(!inv.contactId) return '';
+    const title=(`${kind.label} \u2014 ${inv.contactName||'Unknown'}`).replace(/'/g,'\u2019');
+    return `onclick='openInvestorCellDrilldown("${kind.type}","${kind.filter}","${inv.contactId}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'`;
+  };
+
+  const bodyRows = dataRows.map(({inv,cs,ss,es})=>{
+    const nameCell = inv.contactId
+      ? `<a href="https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${inv.contactId}" target="_blank" rel="noopener">${escapeHtml(inv.contactName||'(unnamed)')}</a>`
+      : escapeHtml(inv.contactName||inv.subject||'(no contact linked)');
+    const amLabel = AMS[inv.amOwnerId]||inv.amOwnerId||'\u2014';
+    const cellClass = inv.contactId ? 'num clickable' : 'num';
+    return `<tr>
+      <td>${nameCell}</td>
+      <td>${amLabel}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'call',filter:'inboundConnected',label:'Inbound Connected'},inv)}>${cs.inboundConnected}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'call',filter:'inboundMissed',label:'Inbound Missed'},inv)}>${cs.inboundMissed}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'call',filter:'outboundConnected',label:'Outbound Connected'},inv)}>${cs.outboundConnected}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'call',filter:'outboundNotConnected',label:'Outbound Not Connected'},inv)}>${cs.outboundNotConnected}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'sms',filter:'out',label:'SMS Out'},inv)}>${ss.out}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'sms',filter:'in',label:'SMS In'},inv)}>${ss.inn}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'email',filter:'out',label:'Email Out'},inv)}>${es.out}</td>
+      <td class="${cellClass}" ${cellOnclick({type:'email',filter:'in',label:'Email In'},inv)}>${es.inn}</td>
+    </tr>`;
+  }).join('');
+
+  const withContact=rows.filter(r=>r.contactId).length;
+  document.getElementById('investor-note').textContent=
+    `${rows.length.toLocaleString()} investors (${withContact.toLocaleString()} with a resolved contact) \u00b7 counts reflect the selected date range \u00b7 every investor shown regardless of activity`;
+
+  document.getElementById('investor-content').innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>Investor</th><th>AM</th>
+      <th class="num">Inbound<br>Connected</th><th class="num">Inbound<br>Missed</th>
+      <th class="num">Outbound<br>Connected</th><th class="num">Outbound<br>Not Connected</th>
+      <th class="num">SMS<br>Out</th><th class="num">SMS<br>In</th>
+      <th class="num">Email<br>Out</th><th class="num">Email<br>In</th>
+    </tr></thead>
+    <tbody>${bodyRows || '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">No investors on the roster</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+async function openInvestorCellDrilldown(type,filterKey,contactId,from,to,title){
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+
+  const fromMs=from.getTime(), toMs=to.getTime();
+  const connectedId=getConnectedDispoId();
+
+  let records=[];
+  if(type==='call'){
+    records=ALL_CALLS.filter(c=>{
+      const p=c.properties||{};
+      if(p.hs_associated_contact_id!==contactId) return false;
+      const ts=new Date(p.hs_timestamp).getTime();
+      if(ts<fromMs||ts>toMs) return false;
+      const dir=(p.hs_call_direction||'').toUpperCase();
+      const isConnected=connectedId && p.hs_call_disposition===connectedId;
+      if(filterKey==='inboundConnected') return dir==='INBOUND'&&isConnected;
+      if(filterKey==='inboundMissed') return dir==='INBOUND'&&!isConnected;
+      if(filterKey==='outboundConnected') return dir==='OUTBOUND'&&isConnected;
+      if(filterKey==='outboundNotConnected') return dir==='OUTBOUND'&&!isConnected;
+      return false;
+    });
+  }else if(type==='sms'){
+    records=ALL_SMS.filter(c=>{
+      const p=c.properties||{};
+      if(p.hs_associated_contact_id!==contactId) return false;
+      const ts=new Date(p.hs_timestamp).getTime();
+      if(ts<fromMs||ts>toMs) return false;
+      return filterKey==='out' ? p.__direction==='OUTBOUND' : p.__direction==='INBOUND';
+    });
+  }else if(type==='email'){
+    records=ALL_EMAILS.filter(c=>{
+      const p=c.properties||{};
+      if(p.hs_email_associated_contact_id!==contactId) return false;
+      const ts=new Date(p.hs_timestamp).getTime();
+      if(ts<fromMs||ts>toMs) return false;
+      return filterKey==='out' ? p.hs_email_direction==='EMAIL' : p.hs_email_direction==='INCOMING_EMAIL';
+    });
+  }
+
+  if(!records.length){
+    body.innerHTML='<div class="dd-empty">No records match this selection.</div>';
+    return;
+  }
+  records.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+
+  body.innerHTML=records.map(c=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    let detail='', url='';
+    if(type==='call'){
+      const durSec=p.hs_call_duration?Number(p.hs_call_duration)/1000:0;
+      detail=fmtDur(durSec);
+      url=`https://app.hubspot.com/calls/${HUBSPOT_PORTAL}/review/${p.hs_object_id||c.id}`;
+    }else if(type==='sms'){
+      detail=escapeHtml((p.hs_body_preview||'').slice(0,90));
+      url=`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-18/${p.hs_object_id||c.id}`;
+    }else{
+      detail=escapeHtml(p.hs_email_subject||'(no subject)');
+      url=`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-49/${p.hs_object_id||c.id}`;
+    }
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET · ${owner}</span>
+        <a href="${url}" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-style:italic">${detail}</div>
+    </div>`;
+  }).join('');
+}
+
 
 // ── Init ──────────────────────────────────────────────────────
 load();
