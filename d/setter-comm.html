@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Setter Communication Activity (v1.4)</title>
+<title>Sunrise Capital — Setter Communication Activity (v1.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Setter Communication Activity</h1>
-    <span class="vpill">v1.4</span>
+    <span class="vpill">v1.5</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -353,7 +353,7 @@ const WORKER_URL=CACHE_ORIGIN+'/hs-api';
 const HUBSPOT_PORTAL='23126809';
 
 const AMS={'1750115047':'Kayla D.','80677823':'Cierra M.','82187398':'Alex W.','85017246':'Aidan C.'};
-const AM_IDS=Object.keys(AMS);
+const AM_IDS=['1750115047','80677823','82187398','85017246']; // Kayla, Cierra, Alex, Aidan — explicit array, NOT Object.keys(AMS): numeric-looking string keys get auto-sorted ascending by JS regardless of source order, which silently broke this before (Object.keys(AMS) rendered as Cierra/Alex/Aidan/Kayla, sorted by ID number, not the order written)
 
 let DISPOSITIONS={};       // id -> label
 let ALL_CALLS=[];          // raw cached calls, filtered to AM_IDS
