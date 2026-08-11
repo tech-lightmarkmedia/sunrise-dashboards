@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Setter Communication Activity (v1.3)</title>
+<title>Sunrise Capital — Setter Communication Activity (v1.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Setter Communication Activity</h1>
-    <span class="vpill">v1.3</span>
+    <span class="vpill">v1.4</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -251,7 +251,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
         <button data-view="sidebyside" onclick="setSmsView('sidebyside')">Side by Side</button>
       </div>
       <div id="sms-content"></div>
-      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits. <strong>Automated messages are excluded</strong> — native HubSpot Workflow sends outright, plus templated text (5+ exact repeats across all setters) hiding inside "Manual"-tagged messages. Requires the <code>hs_communication_body</code> field to be cached (added 2026-08-11) — filters silently pass everything through until the next SMS rebuild.</div>
+      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits. <strong>Automated messages are excluded</strong> — native HubSpot Workflow sends outright, plus templated text (5+ exact repeats across all setters) hiding inside "Manual"-tagged messages. Requires the worker's extracted <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields to be cached (added 2026-08-11) — filters silently pass everything through until the next SMS rebuild.</div>
     </div>
   </div>
 
@@ -329,9 +329,9 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 
     <h3>SMS Activity</h3>
     <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each setter. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
-    <p><strong>Automated messages are excluded, via two layers.</strong> First, a real HubSpot field: every SMS has a Creator Type of "HubSpot Workflow" or "Manual," cleanly parsed from <code>hs_communication_body</code> (the HTML field — its plain-text counterpart, <code>hs_body_preview</code>, runs everything together with no separator between the Creator Type value and the message text, which caused a real bug in an earlier version of this filter). "HubSpot Workflow" is excluded outright.</p>
+    <p><strong>Automated messages are excluded, via two layers.</strong> First, a real HubSpot field: every SMS has a Creator Type of "HubSpot Workflow" or "Manual." The worker extracts this server-side from <code>hs_communication_body</code> (the HTML field — its plain-text counterpart, <code>hs_body_preview</code>, runs everything together with no separator between the Creator Type value and the message text, which caused a real bug in an earlier version of this filter) into a clean <code>hs_creator_type</code> field, and drops the raw HTML before caching — the full HTML for ~55K records made the SMS cache large enough to hit Cloudflare's resource limit on its own, confirmed live 2026-08-11. "HubSpot Workflow" is excluded outright.</p>
     <p>Second — and this is the part that isn't a clean field lookup — <strong>"Manual" does not mean a human typed it in the moment.</strong> Confirmed live 2026-08-11 that Aloware's own automated drip/cadence sequences also get logged as "Manual," since HubSpot only distinguishes its own native Workflow feature from everything else. So "Manual" messages still go through frequency-based template detection: the message text (with the phone/line/creator-type metadata stripped out, and a personalized greeting like "Hi Michael," normalized so the same template with a different name still matches) repeated <strong>5 or more times across all setters combined</strong> is treated as a template and excluded. Frequency is counted cross-setter, not per person, because shared templates were confirmed between Kayla/Cierra and between Alex/Aidan — counted individually, a shared template split evenly between two people might not hit the threshold.</p>
-    <p>This is a text-matching heuristic layered on top of a real field, not a guaranteed classification — it can't catch a template sent fewer than 5 times total, and it depends on <code>hs_communication_body</code> being present in the cache (added 2026-08-11; older cached records without it pass through both filters untouched rather than being incorrectly excluded).</p>
+    <p>This is a text-matching heuristic layered on top of a real field, not a guaranteed classification — it can't catch a template sent fewer than 5 times total, and it depends on the worker's <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields being present in the cache (added 2026-08-11; older cached records without them pass through both filters untouched rather than being incorrectly excluded).</p>
     <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the setter sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
     <p>The chart and table both use the same date range, comparison period, and Setter filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications→contact association, not cached with the rest of the data — confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
     <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables — divided by days that had at least one SMS, not every calendar day in the range — with the divisor stated explicitly.</p>
@@ -502,10 +502,15 @@ function classifySmsDirection(bodyPreview){
 
 // The "HubSpot Workflow Message:"/"Manual Message:" text run together in
 // hs_body_preview with no delimiter (confirmed 2026-08-11 — this was the bug
-// behind the first, broken version of this filter: it matched against the
-// wrong, metadata-mixed string and excluded nothing). hs_communication_body
-// (HTML) has the same information cleanly separated by <br> tags, so this
-// parses that field instead.
+// behind the first, broken version of this filter).
+//
+// v2.5.29 (worker): Creator Type and message text used to be parsed
+// client-side from hs_communication_body's HTML, but caching that full HTML
+// field for ~55K records made the SMS cache large enough to hit Cloudflare's
+// "Worker exceeded resource limits" on its own — confirmed live 2026-08-11.
+// The worker now extracts hs_creator_type / hs_extracted_message_text
+// server-side and drops the raw HTML before caching, so this dashboard just
+// reads those two fields directly instead of parsing anything itself.
 //
 // Two-layer filter:
 //  1. Creator Type "HubSpot Workflow" is excluded outright — a clean,
@@ -514,9 +519,9 @@ function classifySmsDirection(bodyPreview){
 //     confirmed live that Aloware's own automated drip/cadence sequences
 //     also get logged as "Manual" (HubSpot only distinguishes its own native
 //     Workflow feature from "everything else"). So Manual messages still go
-//     through frequency-based template detection: the message text (with
-//     metadata stripped and the personalized greeting name normalized out)
-//     repeated 5+ times across ALL setters combined is treated as a
+//     through frequency-based template detection: the message text (already
+//     stripped of metadata and normalized for a personalized greeting by the
+//     worker) repeated 5+ times across ALL setters combined is treated as a
 //     template. Confirmed live that Kayla/Cierra share templates and
 //     Alex/Aidan share templates, so frequency must be counted cross-person,
 //     not per-setter. Computed once across the full cached dataset, not the
@@ -525,29 +530,12 @@ function classifySmsDirection(bodyPreview){
 // Only outbound is checked — inbound is the contact's own words.
 const SMS_TEMPLATE_THRESHOLD = 5;
 
-function extractCreatorType(commBody){
-  if(!commBody) return null;
-  const m=commBody.match(/Creator Type:\s*<\/b>\s*([^<]+?)\s*(?:<br|$)/i);
-  return m ? m[1].trim() : null;
-}
-
-function extractMessageText(commBody){
-  if(!commBody) return null;
-  const m=commBody.match(/<b>Message:<\/b>\s*(?:<br>)?\s*([\s\S]*?)(?:<b>Communication Notes:<\/b>|$)/i);
-  if(!m) return null;
-  let text=m[1].replace(/<br\s*\/?>/gi,' ').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
-  // Normalize a leading personalized greeting ("Hi Michael," / "Hi Rich!")
-  // so the same template with a different recipient name still matches.
-  text=text.replace(/^Hi\s+[A-Z][a-zA-Z]*(?:\s[A-Z][a-zA-Z]*)?\s*([,!])/,'Hi {NAME}$1');
-  return text;
-}
-
 function buildSmsTemplateSet(smsRecords){
   const counts={};
   smsRecords.forEach(c=>{
     const p=c.properties||{};
     if(classifySmsDirection(p.hs_body_preview)!=='OUTBOUND') return;
-    const msgText=extractMessageText(p.hs_communication_body);
+    const msgText=p.hs_extracted_message_text;
     if(!msgText) return;
     counts[msgText]=(counts[msgText]||0)+1;
   });
@@ -568,9 +556,9 @@ async function loadSms(){
   ALL_SMS=owned
     .filter(c=>{
       const p=c.properties||{};
-      const creatorType=extractCreatorType(p.hs_communication_body);
+      const creatorType=p.hs_creator_type;
       if(creatorType && /hubspot workflow/i.test(creatorType)) return false; // layer 1
-      const msgText=extractMessageText(p.hs_communication_body);
+      const msgText=p.hs_extracted_message_text;
       if(msgText && templateSet.has(msgText)) return false; // layer 2
       return true;
     })
