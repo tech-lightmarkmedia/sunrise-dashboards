@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Closer Communication Activity (v1.0)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#6d28d9;--accent-bg:#f5f3ff;
+  --green:#065f46;--green-bg:#ecfdf5;
+  --red:#991b1b;--red-bg:#fef2f2;
+  --amber:#92400e;--amber-bg:#fef3c7;
+  --out:#1d4ed8;--out-bg:#eff6ff;
+  --in:#c44a1e;--in-bg:#fdf3ee;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr{display:flex;align-items:center;gap:12px}
+h1{font-family:'DM Serif Display',serif;font-size:19px;font-weight:400}
+.vpill{background:#333;color:#c9c2b4;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+#ts{font-size:11px;color:#9e9789}
+.help-btn{font-family:'DM Sans',sans-serif;font-size:12px;background:#333;color:#f5f3ef;border:1px solid #444;border-radius:6px;padding:6px 12px;cursor:pointer}
+.help-btn:hover{background:#444}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar-divider{width:1px;height:20px;background:var(--border);align-self:center}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select,input[type=date]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text);cursor:pointer}
+select:focus,input[type=date]:focus{outline:none;border-color:var(--accent)}
+.cdates{display:none;align-items:center;gap:6px}
+.cdates.on{display:flex}
+.cdates span{font-size:11px;color:var(--text3)}
+#btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:var(--text);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;margin-left:auto}
+#btn:hover{background:#333}
+#btn:disabled{background:#888;cursor:not-allowed}
+#st{font-size:11px}
+.sl{color:var(--text3)}.so{color:var(--green);font-weight:500}.se{color:var(--red);font-weight:500}
+
+#ov{display:none;position:fixed;inset:0;background:rgba(245,243,239,.88);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lm{font-size:13px;color:var(--text2)}
+
+main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden}
+.section-hd{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.section-hd.out{background:var(--out-bg)}
+.section-hd.in{background:var(--in-bg)}
+.section-hd h2{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400}
+.section-hd .tag{font-size:11px;color:var(--text2)}
+.section-body{padding:18px 20px}
+
+.view-toggle{display:flex;gap:6px;margin-bottom:14px}
+.view-toggle button{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:white;color:var(--text2);cursor:pointer}
+.view-toggle button.active{background:var(--text);color:white;border-color:var(--text)}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:8px 10px;color:var(--text2);font-weight:600;font-size:11px;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:var(--surface2)}
+.disp-name{font-weight:500}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.clickable{cursor:pointer;text-decoration:underline;text-decoration-color:var(--border);text-decoration-thickness:1px}
+.clickable:hover{color:var(--accent)}
+.delta{font-size:10.5px;margin-left:4px}
+.delta.up{color:var(--green)}
+.delta.down{color:var(--red)}
+.cell-main{font-variant-numeric:tabular-nums}
+.cell-sub{font-size:10.5px;color:var(--text3);margin-top:2px}
+.cell-sub.up{color:var(--green)}
+.cell-sub.down{color:var(--red)}
+.am-block{margin-bottom:20px;overflow-x:auto;min-width:0}
+.am-block table{min-width:520px}
+.am-block h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.am-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fpill{display:inline-block;font-size:11px;padding:3px 10px;border-radius:12px;margin-bottom:10px}
+.chart-wrap{position:relative;height:340px}
+.chart-note{font-size:11px;color:var(--text3);margin-top:10px}
+.reality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.reality-card{background:var(--red-bg);border:1px solid #f0c9c9;border-radius:10px;padding:18px 20px}
+.reality-card h4{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px}
+.reality-headline{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);line-height:1.3;margin-bottom:4px}
+.reality-pct{font-size:15px;color:var(--text2);margin-bottom:8px}
+.reality-pct strong{color:var(--text);font-weight:700}
+.reality-sub{font-size:11.5px;color:var(--text2);line-height:1.5}
+.reality-caveat{font-size:10.5px;color:var(--text3);margin-top:20px;font-style:italic}
+
+/* Drilldown drawer */
+#dd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200}
+#dd-overlay.on{display:block}
+#dd-drawer{position:fixed;top:0;right:0;bottom:0;width:520px;max-width:92vw;background:white;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s}
+#dd-drawer.on{transform:translateX(0)}
+#dd-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+#dd-hd h3{font-size:14px;font-weight:600}
+#dd-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)}
+#dd-body{padding:12px 20px;overflow-y:auto;flex:1}
+.dd-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.dd-row a{color:var(--accent);text-decoration:none}
+.dd-row a:hover{text-decoration:underline}
+.dd-empty{color:var(--text3);font-size:12px;padding:20px 0;text-align:center}
+
+/* Guide panel */
+#guide-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300}
+#guide-overlay.on{display:block}
+#guide{position:fixed;top:0;right:0;bottom:0;width:600px;max-width:92vw;background:white;z-index:301;box-shadow:-4px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s;overflow-y:auto}
+#guide.on{transform:translateX(0)}
+#guide-hd{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white}
+#guide-hd h2{font-family:'DM Serif Display',serif;font-size:18px}
+#guide-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)}
+#guide-body{padding:8px 24px 32px}
+#guide-body h3{font-size:14px;margin:20px 0 8px;color:var(--accent)}
+#guide-body p{font-size:12.5px;line-height:1.6;color:var(--text2);margin-bottom:8px}
+#guide-body ul{margin:6px 0 10px 18px;font-size:12.5px;line-height:1.6;color:var(--text2)}
+#guide-body strong{color:var(--text)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <h1>Closer Communication Activity</h1>
+    <span class="vpill">v1.0</span>
+  </div>
+  <div class="hdr">
+    <span id="ts"></span>
+    <button class="help-btn" onclick="openGuide()" title="Open the dashboard guide">ⓘ Guide</button>
+  </div>
+</header>
+
+<div id="bar">
+  <div class="fg">
+    <label for="sel-date">Range</label>
+    <select id="sel-date" onchange="onDateChange()">
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week" selected>Last Week</option>
+      <option value="prev_14">Previous 14 Days</option>
+      <option value="prev_30">Previous 30 Days</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="last_180">Last 180 Days</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div class="cdates" id="cdates">
+    <span>from</span><input type="date" id="d-from">
+    <span>to</span><input type="date" id="d-to">
+  </div>
+  <div class="bar-divider"></div>
+  <div class="fg">
+    <label for="sel-compare">vs</label>
+    <select id="sel-compare" onchange="onCompareChange()">
+      <option value="none">None</option>
+      <option value="previous_period" selected>Previous Period</option>
+      <option value="same_period_last_year">Same period last year</option>
+    </select>
+  </div>
+  <div class="bar-divider"></div>
+  <div class="fg">
+    <label for="sel-am">Closer</label>
+    <select id="sel-am" onchange="render()">
+      <option value="all">All Closers</option>
+      <option value="266072428">Kelvin E.</option>
+      <option value="424254278">Bronson P.</option>
+      <option value="601355604">Jonny C.</option>
+    </select>
+  </div>
+  <button id="btn" onclick="load()">Refresh</button>
+  <span id="st"></span>
+</div>
+
+<div id="ov"><div class="spin"></div><div id="lm">Loading call activity…</div></div>
+
+<main>
+
+  <div class="section">
+    <div class="section-hd" style="background:var(--red-bg)">
+      <h2>Average Daily Phone Activity</h2>
+      <span class="tag" id="reality-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="reality-grid" id="reality-content"></div>
+      <div class="reality-caveat">Based on logged phone activity only (calls with a HubSpot call disposition). Does not include email, SMS, internal meetings, or other closer work — this is a phone-specific measure, not a full productivity assessment. Assumes an 8-hour (480-minute) workday for the % figure.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd">
+      <h2>Telephone Activity</h2>
+      <span class="tag" id="tele-range-tag"></span>
+      <div class="view-toggle" id="tele-metric-toggle" style="margin-left:auto">
+        <button class="active" data-metric="count" onclick="setTeleMetric('count')">Count</button>
+        <button data-metric="duration" onclick="setTeleMetric('duration')">Time Spent</button>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap"><canvas id="tele-chart"></canvas></div>
+      <div class="chart-note" id="tele-note"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd out">
+      <h2>Outbound Calls</h2>
+      <span class="tag" id="out-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="view-toggle" id="out-view-toggle">
+        <button class="active" data-view="combined" onclick="setView('out','combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setView('out','sidebyside')">Side by Side</button>
+      </div>
+      <div id="out-content"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd in">
+      <h2>Inbound Calls</h2>
+      <span class="tag" id="in-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="view-toggle" id="in-view-toggle">
+        <button class="active" data-view="combined" onclick="setView('in','combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setView('in','sidebyside')">Side by Side</button>
+      </div>
+      <div id="in-content"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd" style="background:var(--accent-bg)">
+      <h2>SMS Activity</h2>
+      <span class="tag" id="sms-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap" style="height:280px"><canvas id="sms-chart"></canvas></div>
+      <div class="chart-note" id="sms-chart-note"></div>
+      <div class="view-toggle" id="sms-view-toggle" style="margin-top:16px">
+        <button class="active" data-view="combined" onclick="setSmsView('combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setSmsView('sidebyside')">Side by Side</button>
+      </div>
+      <div id="sms-content"></div>
+      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits. <strong>Automated messages and reaction events are excluded</strong> — native HubSpot Workflow sends, templated text (5+ exact repeats across all closers) hiding inside "Manual"-tagged messages, and emoji reaction add/remove events. Requires the worker's extracted <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields to be cached (added 2026-08-11) — filters silently pass everything through until the next SMS rebuild.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd" style="background:var(--out-bg)">
+      <h2>Email Activity</h2>
+      <span class="tag" id="email-range-tag"></span>
+    </div>
+    <div class="section-body">
+      <div class="chart-wrap" style="height:280px"><canvas id="email-chart"></canvas></div>
+      <div class="chart-note" id="email-chart-note"></div>
+      <div class="view-toggle" id="email-view-toggle" style="margin-top:16px">
+        <button class="active" data-view="combined" onclick="setEmailView('combined')">Combined</button>
+        <button data-view="sidebyside" onclick="setEmailView('sidebyside')">Side by Side</button>
+      </div>
+      <div id="email-content"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Drilldown drawer -->
+<div id="dd-overlay" onclick="closeDrilldown()"></div>
+<div id="dd-drawer">
+  <div id="dd-hd"><h3 id="dd-title">Records</h3><button id="dd-close" onclick="closeDrilldown()">✕</button></div>
+  <div id="dd-body"></div>
+</div>
+
+<!-- Guide panel -->
+<div id="guide-overlay" onclick="closeGuide()"></div>
+<div id="guide">
+  <div id="guide-hd"><h2>Dashboard Guide</h2><button id="guide-close" onclick="closeGuide()">✕</button></div>
+  <div id="guide-body">
+    <h3>What this dashboard shows</h3>
+    <p>Communication activity for Sunrise's three closers — Kelvin Evans, Bronson Picket, and Jonathan Cattani — calls, SMS, and email. Calls are broken out by HubSpot call disposition (Connected, Left voicemail, Left live message, No answer, Busy, Wrong number, Connect - Scheduled, Connected - Not Engaged).</p>
+
+    <h3>Why dispositions are shown separately, not rolled into a "connect rate"</h3>
+    <p>Different closers may disposition calls differently in practice — one might lean on "Left live message" while another leans on "Left voicemail," and not everyone uses every disposition equally. Rather than collapse dispositions into a single connect/no-connect metric (which would bake in an assumption about which dispositions "count"), each disposition is reported on its own with its own count, share of total, average duration, and median duration. Read them side by side rather than looking for one headline number.</p>
+
+    <h3>Average vs. median duration</h3>
+    <p>Both are shown per disposition because average alone can mislead — a handful of long calls pull the average up, and dispositions like "No answer" are mechanically near-zero seconds. Median is less sensitive to outliers and is usually the more representative number for a typical call under that disposition.</p>
+
+    <h3>Data source and freshness</h3>
+    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers the trailing <strong>180 days</strong> and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back further than 180 days on this dashboard.</p>
+
+    <h3>Date ranges and comparison</h3>
+    <ul>
+      <li><strong>Yesterday, This/Last Week, This/Last Quarter, Last 180 Days</strong> — fixed presets.</li>
+      <li><strong>Custom</strong> — pick any from/to date.</li>
+      <li>Quarters are calendar quarters (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec).</li>
+      <li>All date boundaries are pinned to America/New_York, so the range means the same thing regardless of the viewer's own timezone.</li>
+    </ul>
+    <p>The <strong>vs</strong> picker compares the selected range against either the immediately preceding period of equal length, or the same calendar period one year prior. If the current range is a still-in-progress period (This Week, This Quarter), the comparison period is truncated to the same elapsed span for a fair comparison.</p>
+
+    <h3>Combined vs. Side by Side</h3>
+    <p>Each section (Outbound / Inbound) can show a single combined table for all three closers together, or tables side by side — one per closer. The Closer filter in the top bar narrows everything (including the combined view) to a single person if selected.</p>
+
+    <h3>Average Daily Phone Activity</h3>
+    <p>One card per closer, combining outbound and inbound calls into a single figure: total talk time per active day, shown as a percentage of an 8-hour workday. This is deliberately <strong>per-person, not blended across all three closers</strong> — a combined average could mask uneven activity between people. "Active day" here means any day with at least one logged call, inbound or outbound.</p>
+    <p><strong>Read this alongside the caveat below it.</strong> This only counts phone activity that HubSpot logged a disposition for. It says nothing about email, SMS, internal meetings, or other parts of the closer role — a low percentage here means low logged phone time specifically, not necessarily low overall output. Treat it as a starting point for a conversation, not a verdict.</p>
+
+    <h3>Telephone Activity chart</h3>
+    <p>A stacked chart of total call volume by day across the selected date range, broken out by disposition. Outbound and inbound calls are <strong>merged together</strong> in this chart — each series is a disposition (Connected, Left voicemail, etc.) regardless of direction — so the top of the stack on any given day is total calls of any kind. If you need the outbound/inbound split, use the sections below instead.</p>
+    <p>The chart type switches automatically based on the selected range: <strong>bars</strong> for a range of 7 days or less, an <strong>area chart</strong> for anything longer. This chart does not show a comparison period, even if one is selected in the "vs" picker above — it reflects the current range only.</p>
+    <p><strong>Count / Time Spent toggle.</strong> Switches the chart's y-axis between raw call count (default) and total call duration in minutes, still stacked by disposition. Stack order (which disposition sits at the bottom) is always based on call count, so switching the metric doesn't reshuffle the stack.</p>
+
+    <h3>Total time column</h3>
+    <p>The Outbound/Inbound disposition tables include a <strong>Total time</strong> column — the sum of call duration for that disposition in the current range. This is the same underlying number the chart's "Time Spent" view charts by day; the table shows the range total per disposition instead.</p>
+
+    <h3>Previous-period comparison on every column</h3>
+    <p>When a comparison period is selected in the "vs" picker, every column in the Outbound/Inbound tables — Count, % of total, Avg duration, Median duration, Total time — shows the prior period's value on a second line beneath the current value, with a percentage-change arrow. "% of total" compares the disposition's <em>share</em> between the two periods (e.g. Connected going from 30% to 42% of calls), not a count.</p>
+
+    <h3>Per active day line</h3>
+    <p>Below each table, a line reports per-disposition figures divided by the number of <strong>active days</strong> — days that had at least one call, not the total number of calendar days in the range. This matters for ranges with gaps (weekends, days someone didn't dial): dividing by every calendar day would understate typical daily activity, so the figure reflects a typical day someone was actually working the phones. The line states the denominator explicitly ("÷ 17 active days, out of 21 days in the range") so it's clear which day-count every number on that line was divided by. In Side by Side view, each closer's active-day count is their own, not shared.</p>
+
+    <h3>SMS Activity</h3>
+    <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each closer. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
+    <p><strong>Automated messages are excluded, via two layers.</strong> First, a real HubSpot field: every SMS has a Creator Type of "HubSpot Workflow" or "Manual." The worker extracts this server-side from <code>hs_communication_body</code> (the HTML field — its plain-text counterpart, <code>hs_body_preview</code>, runs everything together with no separator between the Creator Type value and the message text, which caused a real bug in an earlier version of this filter) into a clean <code>hs_creator_type</code> field, and drops the raw HTML before caching — the full HTML for ~55K records made the SMS cache large enough to hit Cloudflare's resource limit on its own, confirmed live 2026-08-11. "HubSpot Workflow" is excluded outright.</p>
+    <p><strong>A third layer excludes emoji reaction events.</strong> Confirmed live 2026-08-11: a contact tapping a reaction (e.g. 👍) on a message, or removing it, gets logged as its own separate Inbound SMS "message" — not an actual reply. The pattern is "{emoji} to '{original message}'" (add) or "Removed {emoji} from '{original message}'" (remove), checked against <code>hs_extracted_message_text</code> specifically, anchored at the start of that field. Small — 40 of 54,772 records checked (~0.07%), all Inbound — but real and unambiguous in every sample checked, so it's excluded to keep Inbound counts reflecting actual replies rather than reaction telemetry.</p>
+    <p>Second — and this is the part that isn't a clean field lookup — <strong>"Manual" does not mean a human typed it in the moment.</strong> Confirmed live 2026-08-11 that Aloware's own automated drip/cadence sequences also get logged as "Manual," since HubSpot only distinguishes its own native Workflow feature from everything else. So "Manual" messages still go through frequency-based template detection: the message text (with the phone/line/creator-type metadata stripped out, and a personalized greeting like "Hi Michael," normalized so the same template with a different name still matches) repeated <strong>5 or more times across all closers combined</strong> is treated as a template and excluded. Confirmed live that Jonathan alone has two such templates (67 and 40 occurrences) — frequency is still counted cross-closer rather than per person, since a template shared unevenly between two people could otherwise dodge the threshold if counted individually.</p>
+    <p>This is a text-matching heuristic layered on top of a real field, not a guaranteed classification — it can't catch a template sent fewer than 5 times total, and it depends on the worker's <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields being present in the cache (added 2026-08-11; older cached records without them pass through both filters untouched rather than being incorrectly excluded).</p>
+    <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the closer sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
+    <p>The chart and table both use the same date range, comparison period, and Closer filter as the rest of the dashboard. Clicking a direction's count opens a drilldown listing the individual messages: timestamp, the associated HubSpot contact (resolved live via the native communications→contact association, not cached with the rest of the data — confirmed live 2026-08-10 that this association exists and requires no custom label), a message preview, and a link to the record in HubSpot. If a message has no resolved contact, the drilldown says so rather than guessing.</p>
+    <p>Below the table, a <strong>per active day</strong> line reports the same denominator convention used on the call tables — divided by days that had at least one SMS, not every calendar day in the range — with the divisor stated explicitly.</p>
+
+    <h3>Email Activity</h3>
+    <p>Volume of one-on-one emails between each closer and their contacts, by day. Unlike SMS, email direction is a <strong>real HubSpot field</strong> (not inferred) — outbound emails the closer sent, and inbound replies from the contact, are distinguished natively. The associated contact is also a direct field on the record, so contact resolution here doesn't depend on a separate association lookup the way calls/SMS do.</p>
+    <p>Same chart/table shape as SMS — Combined/Side by Side toggle, per-active-day line, drilldown on click showing timestamp, resolved contact, subject line, and a link to the record in HubSpot.</p>
+
+    <h3>Drilldown</h3>
+    <p>Click a disposition's count to open a drawer listing the individual call records for that disposition in the current range, with a link to the record in HubSpot. Each row also shows the resolved contact (via the native calls→contact association, same mechanism as the SMS drilldown), linked to their HubSpot record. If a call has no resolved contact, the row says so rather than guessing. Every section (Outbound, Inbound, SMS, Email) has drilldown.</p>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const CACHE_ORIGIN='https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const WORKER_URL=CACHE_ORIGIN+'/hs-api';
+const HUBSPOT_PORTAL='23126809';
+
+const AMS={'266072428':'Kelvin E.','424254278':'Bronson P.','601355604':'Jonny C.'};
+const AM_IDS=['266072428','424254278','601355604']; // Kelvin, Bronson, Jonny — explicit array, NOT Object.keys(AMS): numeric-looking string keys get auto-sorted ascending by JS regardless of source order (confirmed bug on an earlier version of this dashboard's earlier version)
+
+let DISPOSITIONS={};       // id -> label
+let ALL_CALLS=[];          // raw cached calls, filtered to AM_IDS
+let ALL_SMS=[];            // raw cached SMS (communications, channel=SMS), filtered to AM_IDS, with __direction inferred
+let ALL_EMAILS=[];         // raw cached emails, filtered to AM_IDS. Real hs_email_direction + hs_email_associated_contact_id, no inference needed.
+let LOADED=false;
+
+// ── ET-pinned date helpers ─────────────────────────────────
+// Shifts "now" (and any Date built from ET wall-clock parts) so that local
+// getFullYear/getMonth/getDate/getHours reflect America/New_York time,
+// regardless of the viewer's actual timezone. Matches the convention used
+// on adweekly.html — every viewer sees the same range boundaries.
+function etNow(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+}
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function startOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
+function endOfDay(d){const x=new Date(d);x.setHours(23,59,59,999);return x}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function startOfWeek(d){
+  const x=startOfDay(d);
+  const day=x.getDay();
+  const diff=(day===0?-6:1-day);
+  x.setDate(x.getDate()+diff);
+  return x;
+}
+function startOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1)}
+function endOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3+3,0,23,59,59,999)}
+
+function resolveDateKey(key){
+  const now=etNow();
+  let from,to,label='',isPartial=false;
+  if(key==='yesterday'){
+    const y=addDays(now,-1);
+    from=startOfDay(y); to=endOfDay(y); label='Yesterday';
+  } else if(key==='this_week'){
+    from=startOfWeek(now); to=now; label='This Week'; isPartial=true;
+  } else if(key==='last_week'){
+    const sow=startOfWeek(now);
+    from=addDays(sow,-7); to=endOfDay(addDays(sow,-1)); label='Last Week';
+  } else if(key==='prev_14'){
+    to=now; from=addDays(now,-14); label='Previous 14 Days';
+  } else if(key==='prev_30'){
+    to=now; from=addDays(now,-30); label='Previous 30 Days';
+  } else if(key==='this_quarter'){
+    from=startOfQuarter(now); to=now; label='This Quarter'; isPartial=true;
+  } else if(key==='last_quarter'){
+    const soq=startOfQuarter(now);
+    from=startOfQuarter(addDays(soq,-1)); to=endOfDay(addDays(soq,-1)); label='Last Quarter';
+  } else if(key==='last_180'){
+    to=now; from=addDays(now,-180); label='Last 180 Days';
+  } else if(key==='custom'){
+    const f=document.getElementById('d-from').value;
+    const t=document.getElementById('d-to').value;
+    from=f?startOfDay(new Date(f)):addDays(now,-180);
+    to=t?endOfDay(new Date(t)):now;
+    label='Custom';
+  }
+  return {from,to,label,isPartial};
+}
+
+function autoPreviousPeriod(baseKey,baseFrom,baseTo){
+  const now=etNow();
+  let prevFrom,prevTo,prevLabel='';
+  if(baseKey==='yesterday'){
+    const d=addDays(now,-2);
+    prevFrom=startOfDay(d); prevTo=endOfDay(d); prevLabel='Day before';
+  } else if(baseKey==='this_week'){
+    const sow=startOfWeek(now); const lastSow=addDays(sow,-7);
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSow; prevTo=new Date(lastSow.getTime()+elapsed); prevLabel='Last week (same elapsed)';
+  } else if(baseKey==='last_week'){
+    const sow=startOfWeek(now);
+    prevFrom=addDays(sow,-14); prevTo=endOfDay(addDays(sow,-8)); prevLabel='Previous week';
+  } else if(baseKey==='prev_14'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-14); prevLabel='Prior 14 days';
+  } else if(baseKey==='prev_30'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-30); prevLabel='Prior 30 days';
+  } else if(baseKey==='this_quarter'){
+    const soq=startOfQuarter(now); const lastSoq=startOfQuarter(addDays(soq,-1));
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSoq; prevTo=new Date(lastSoq.getTime()+elapsed); prevLabel='Last quarter (same elapsed)';
+  } else if(baseKey==='last_quarter'){
+    const soq=startOfQuarter(now); const prevQStart=startOfQuarter(addDays(soq,-1));
+    const prevPrevStart=startOfQuarter(addDays(prevQStart,-1));
+    prevFrom=prevPrevStart; prevTo=endOfDay(addDays(prevQStart,-1)); prevLabel='Quarter before that';
+  } else if(baseKey==='last_180'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-180); prevLabel='Prior 180 days';
+  } else { // custom
+    const elapsed=baseTo-baseFrom;
+    prevTo=new Date(baseFrom.getTime()-1); prevFrom=new Date(prevTo.getTime()-elapsed); prevLabel='Prior period (same length)';
+  }
+  return {from:prevFrom,to:prevTo,label:prevLabel};
+}
+
+function samePeriodLastYear(baseFrom,baseTo){
+  const from=new Date(baseFrom); from.setFullYear(from.getFullYear()-1);
+  const to=new Date(baseTo); to.setFullYear(to.getFullYear()-1);
+  return {from,to,label:'Same period last year'};
+}
+
+// ── Fetch ───────────────────────────────────────────────────
+async function api(path){
+  const r=await fetch(WORKER_URL+path);
+  if(!r.ok) throw new Error(`${path} -> ${r.status}`);
+  return r.json();
+}
+
+async function loadDispositions(){
+  try{
+    const d=await api('/calling/v1/dispositions');
+    const opts=Array.isArray(d)?d:(d.options||[]);
+    DISPOSITIONS={};
+    opts.forEach(o=>{
+      const id=o.id||o.value; const lbl=o.label;
+      if(id&&lbl) DISPOSITIONS[id]=lbl;
+    });
+  }catch(e){
+    console.warn('Could not load dispositions:',e.message);
+  }
+}
+
+async function loadCalls(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-calls');
+  if(!r.ok) throw new Error(`/cached-calls -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_CALLS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
+}
+
+// Direction is not a native property on the communications object (verified
+// live — a property search including "direction" in the regex returned
+// nothing). Inferred from the logged message text instead:
+//   Outbound: "{Name} has sent an SMS to {number}" — the closer sent it.
+//   Inbound:  "{number} has sent an SMS" (no "to") — the contact sent it,
+//             usually with a "Click here to respond" link.
+// This is a text-pattern heuristic, not a guaranteed field — if HubSpot or
+// Aloware ever changes the logged message format, this silently breaks.
+function classifySmsDirection(bodyPreview){
+  if(!bodyPreview) return 'UNKNOWN';
+  if(/has sent an SMS to\b/i.test(bodyPreview)) return 'OUTBOUND';
+  if(/has sent an SMS\b/i.test(bodyPreview)) return 'INBOUND';
+  return 'UNKNOWN';
+}
+
+// The "HubSpot Workflow Message:"/"Manual Message:" text run together in
+// hs_body_preview with no delimiter (confirmed 2026-08-11 — this was the bug
+// behind the first, broken version of this filter).
+//
+// v2.5.29 (worker): Creator Type and message text used to be parsed
+// client-side from hs_communication_body's HTML, but caching that full HTML
+// field for ~55K records made the SMS cache large enough to hit Cloudflare's
+// "Worker exceeded resource limits" on its own — confirmed live 2026-08-11.
+// The worker now extracts hs_creator_type / hs_extracted_message_text
+// server-side and drops the raw HTML before caching, so this dashboard just
+// reads those two fields directly instead of parsing anything itself.
+//
+// Two-layer filter:
+//  1. Creator Type "HubSpot Workflow" is excluded outright — a clean,
+//     reliable field, no heuristic needed.
+//  2. Creator Type "Manual" does NOT mean a human typed it in the moment —
+//     confirmed live that Aloware's own automated drip/cadence sequences
+//     also get logged as "Manual" (HubSpot only distinguishes its own native
+//     Workflow feature from "everything else"). So Manual messages still go
+//     through frequency-based template detection: the message text (already
+//     stripped of metadata and normalized for a personalized greeting by the
+//     worker) repeated 5+ times across ALL closers combined is treated as a
+//     template. Confirmed live that Jonathan alone has two such templates
+//     (67 and 40 occurrences) — frequency is still counted cross-closer,
+//     not per-person, so an unevenly-shared template can't dodge detection.
+//     Computed once across the full cached dataset, not the currently
+//     selected range, so a template can't dodge detection just because the
+//     visible window is narrow.
+// Only outbound is checked — inbound is the contact's own words.
+const SMS_TEMPLATE_THRESHOLD = 5;
+
+function buildSmsTemplateSet(smsRecords){
+  const counts={};
+  smsRecords.forEach(c=>{
+    const p=c.properties||{};
+    if(classifySmsDirection(p.hs_body_preview)!=='OUTBOUND') return;
+    const msgText=p.hs_extracted_message_text;
+    if(!msgText) return;
+    counts[msgText]=(counts[msgText]||0)+1;
+  });
+  const templates=new Set();
+  Object.entries(counts).forEach(([text,count])=>{
+    if(count>=SMS_TEMPLATE_THRESHOLD) templates.add(text);
+  });
+  return templates;
+}
+
+// Confirmed live 2026-08-11: emoji reaction add/remove events (a contact
+// tapping 👍 on a message, or removing it) get logged as their own separate
+// inbound SMS "message" — not a real reply. Text pattern: "{emoji} to
+// '{original message}'" (add) or "Removed {emoji} from '{original
+// message}'" (remove), both against hs_extracted_message_text specifically
+// (the isolated message field, not the full raw preview — an earlier,
+// wrong attempt at this matched against the full preview text and produced
+// false positives on ordinary sentences containing the words "to" or
+// "removed"). Small (~0.07% of records, 40 of 54,772 checked) but real and
+// unambiguous in every sample checked — excluded so Inbound counts reflect
+// actual replies, not reaction telemetry.
+function isReactionEvent(msgText){
+  if(!msgText) return false;
+  if(/^Removed\s+\S+\s+from\s+[\u201c"]/u.test(msgText)) return true;
+  if(/^\S+\s+to\s+[\u201c"]/u.test(msgText)) return true;
+  return false;
+}
+
+async function loadSms(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-sms');
+  if(!r.ok) throw new Error(`/cached-sms -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  const owned=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
+  const templateSet=buildSmsTemplateSet(owned);
+  ALL_SMS=owned
+    .filter(c=>{
+      const p=c.properties||{};
+      const creatorType=p.hs_creator_type;
+      if(creatorType && /hubspot workflow/i.test(creatorType)) return false; // layer 1
+      const msgText=p.hs_extracted_message_text;
+      if(msgText && templateSet.has(msgText)) return false; // layer 2
+      if(isReactionEvent(msgText)) return false; // layer 3
+      return true;
+    })
+    .map(c=>{
+      c.properties.__direction=classifySmsDirection(c.properties.hs_body_preview);
+      return c;
+    });
+}
+
+async function loadEmails(){
+  const r=await fetch(CACHE_ORIGIN+'/cached-emails');
+  if(!r.ok) throw new Error(`/cached-emails -> ${r.status}`);
+  const data=await r.json();
+  const raw=Array.isArray(data)?data:(data.results||[]);
+  ALL_EMAILS=raw.filter(c=>AM_IDS.includes(c.properties?.hubspot_owner_id));
+}
+
+async function load(){
+  const btn=document.getElementById('btn');
+  const ov=document.getElementById('ov');
+  btn.disabled=true; ov.classList.add('on');
+  try{
+    await Promise.all([loadDispositions(), loadCalls(), loadSms(), loadEmails()]);
+    LOADED=true;
+    document.getElementById('st').innerHTML=`<span class="so">${ALL_CALLS.length.toLocaleString()} calls, ${ALL_SMS.length.toLocaleString()} manual SMS, ${ALL_EMAILS.length.toLocaleString()} emails loaded</span>`;
+    document.getElementById('ts').textContent='Cache from /cached-calls, /cached-sms, /cached-emails (nightly, 2 AM ET) · Loaded '+new Date().toLocaleTimeString();
+    render();
+  }catch(e){
+    document.getElementById('st').innerHTML=`<span class="se">Load failed: ${e.message}</span>`;
+    console.error(e);
+  }finally{
+    btn.disabled=false; ov.classList.remove('on');
+  }
+}
+
+// ── UI: date/compare controls ───────────────────────────────
+function onDateChange(){
+  const key=document.getElementById('sel-date').value;
+  document.getElementById('cdates').classList.toggle('on', key==='custom');
+  if(LOADED) render();
+}
+function onCompareChange(){ if(LOADED) render(); }
+
+// ── View toggles (combined vs side-by-side), per section ────
+const VIEW_STATE={out:'combined', in:'combined'};
+function setView(section,view){
+  VIEW_STATE[section]=view;
+  document.querySelectorAll(`#${section}-view-toggle button`).forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) render();
+}
+
+// ── Metrics ──────────────────────────────────────────────────
+function median(arr){
+  if(!arr.length) return 0;
+  const s=[...arr].sort((a,b)=>a-b);
+  const mid=Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+function fmtDur(sec){
+  if(!sec && sec!==0) return '—';
+  const m=Math.floor(sec/60); const s=Math.round(sec%60);
+  return m>0 ? `${m}m ${pad(s)}s` : `${s}s`;
+}
+
+// Builds a "prev X" comparison subline for any metric. fmt formats both the
+// current and previous raw values the same way (e.g. fmtDur, or a plain
+// toLocaleString/percent formatter). Returns '' when there's no comparison
+// period active.
+function deltaSub(curVal, prevVal, fmt){
+  if(prevVal===null || prevVal===undefined) return '';
+  if(prevVal===0){
+    if(curVal>0) return `<div class="cell-sub up">new (prev ${fmt(0)})</div>`;
+    return `<div class="cell-sub">(prev ${fmt(0)})</div>`;
+  }
+  const pctChange=((curVal-prevVal)/prevVal*100);
+  const dir=pctChange>=0?'up':'down';
+  const arrow=pctChange>=0?'↑':'↓';
+  return `<div class="cell-sub ${dir}">${arrow}${Math.abs(pctChange).toFixed(0)}% (prev ${fmt(prevVal)})</div>`;
+}
+
+function filterCalls(from,to,direction,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_CALLS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    const dir=(p.hs_call_direction||'').toUpperCase();
+    if(dir!==direction) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+// Group a call list by disposition -> {count, durations:[]}
+function groupByDisposition(calls){
+  const g={};
+  calls.forEach(c=>{
+    const p=c.properties||{};
+    const dispoId=p.hs_call_disposition||'__none__';
+    const durSec=p.hs_call_duration ? Number(p.hs_call_duration)/1000 : 0;
+    if(!g[dispoId]) g[dispoId]={count:0, durations:[]};
+    g[dispoId].count++;
+    g[dispoId].durations.push(durSec);
+  });
+  return g;
+}
+
+function dispoLabel(id){
+  if(id==='__none__') return 'No disposition';
+  return DISPOSITIONS[id] || id;
+}
+
+// ── Drilldown ─────────────────────────────────────────────────
+async function openDrilldown(direction,dispoId,ownerFilter,from,to,title){
+  const calls=filterCalls(from,to,direction,ownerFilter).filter(c=>{
+    const p=c.properties||{};
+    const d=p.hs_call_disposition||'__none__';
+    return d===dispoId;
+  });
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+
+  if(!calls.length){
+    body.innerHTML='<div class="dd-empty">No calls match this selection.</div>';
+    return;
+  }
+  calls.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+  body.innerHTML='<div class="dd-empty">Loading contact names…</div>';
+
+  const contactIds=calls.map(c=>c.properties.hs_associated_contact_id);
+  const nameMap=await resolveContactNames(contactIds);
+
+  body.innerHTML=calls.map(c=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    const durSec=p.hs_call_duration?Number(p.hs_call_duration)/1000:0;
+    const contactId=p.hs_associated_contact_id;
+    const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
+    const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
+    const url=`https://app.hubspot.com/calls/${HUBSPOT_PORTAL}/review/${p.hs_object_id||c.id}`;
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET · ${owner} · ${fmtDur(durSec)}</span>
+        <a href="${url}" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
+    </div>`;
+  }).join('');
+}
+function closeDrilldown(){
+  document.getElementById('dd-overlay').classList.remove('on');
+  document.getElementById('dd-drawer').classList.remove('on');
+}
+
+// ── SMS drilldown ─────────────────────────────────────────────
+// Resolves contact names live (not cached) — the drilldown's record set is
+// always bounded by the current date range/filters, so this stays small.
+// Chunked at 100 to match the safe batch size proven elsewhere in this
+// project (referral.html found ~3,000 inputs 502s; 100 is the known-safe size).
+async function resolveContactNames(contactIds){
+  const ids=[...new Set(contactIds.filter(Boolean))];
+  const map={};
+  if(!ids.length) return map;
+  const CHUNK=100;
+  for(let i=0;i<ids.length;i+=CHUNK){
+    const batch=ids.slice(i,i+CHUNK);
+    try{
+      const body={properties:['firstname','lastname','email'], inputs:batch.map(id=>({id}))};
+      const r=await fetch(WORKER_URL+'/crm/v3/objects/contacts/batch/read',{
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+      });
+      if(!r.ok) throw new Error(`contacts batch read -> ${r.status}`);
+      const j=await r.json();
+      (j.results||[]).forEach(c=>{
+        const p=c.properties||{};
+        const name=[p.firstname,p.lastname].filter(Boolean).join(' ').trim() || p.email || c.id;
+        map[c.id]=name;
+      });
+    }catch(e){
+      console.warn('Could not resolve contact names for a batch:',e.message);
+    }
+  }
+  return map;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function openSmsDrilldown(direction,ownerFilter,from,to,title){
+  let sms=filterSms(startOfDay(from),endOfDay(to),ownerFilter);
+  if(direction!=='ALL') sms=sms.filter(c=>c.properties.__direction===direction);
+
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+
+  if(!sms.length){
+    body.innerHTML='<div class="dd-empty">No SMS match this selection.</div>';
+    return;
+  }
+  sms.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+  body.innerHTML='<div class="dd-empty">Loading contact names…</div>';
+
+  const contactIds=sms.map(c=>c.properties.hs_associated_contact_id);
+  const nameMap=await resolveContactNames(contactIds);
+
+  body.innerHTML=sms.map((c,i)=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    const dirLabel=p.__direction==='OUTBOUND'?'Outbound':p.__direction==='INBOUND'?'Inbound':'Unknown direction';
+    const contactId=p.hs_associated_contact_id;
+    const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
+    const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
+    // SMS/communications has no standalone record page in HubSpot (confirmed
+    // live 2026-08-11 — the record/0-18/{id} URL 404s regardless of ID; per
+    // HubSpot's own docs, calls/payments/forms/campaigns/custom objects get
+    // an index page, communications doesn't). The contact record is the only
+    // place the message is actually viewable, so Open goes there instead.
+    const rawPreview=p.hs_body_preview||'';
+    const preview=escapeHtml(rawPreview);
+    const previewShort=escapeHtml(rawPreview.slice(0,110))+(rawPreview.length>110?'\u2026':'');
+    const rowId=`sms-dd-row-${i}`;
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET \u00b7 ${owner} \u00b7 ${dirLabel}</span>
+        ${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">Open \u2197</a>`:'<span style="color:var(--text3)">No contact to open</span>'}
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
+      <div class="clickable" style="font-size:11px;color:var(--text3);font-style:italic" onclick="toggleSmsPreview('${rowId}')">
+        <span id="${rowId}-short">\u201c${previewShort}\u201d (click to expand)</span>
+        <span id="${rowId}-full" style="display:none">\u201c${preview}\u201d (click to collapse)</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSmsPreview(rowId){
+  const short=document.getElementById(rowId+'-short');
+  const full=document.getElementById(rowId+'-full');
+  const showingShort=short.style.display!=='none';
+  short.style.display=showingShort?'none':'';
+  full.style.display=showingShort?'':'none';
+}
+
+// ── Guide ─────────────────────────────────────────────────────
+function openGuide(){
+  document.getElementById('guide-overlay').classList.add('on');
+  document.getElementById('guide').classList.add('on');
+}
+function closeGuide(){
+  document.getElementById('guide-overlay').classList.remove('on');
+  document.getElementById('guide').classList.remove('on');
+}
+
+// ── Table rendering ───────────────────────────────────────────
+function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
+  const cur=groupByDisposition(calls);
+  const prev=prevCalls?groupByDisposition(prevCalls):null;
+  const dispoIds=[...new Set([...Object.keys(cur), ...(prev?Object.keys(prev):[])])];
+  // Sort by current count descending
+  dispoIds.sort((a,b)=>(cur[b]?.count||0)-(cur[a]?.count||0));
+
+  const totalCount=calls.length;
+  const prevTotalCount=prevCalls ? prevCalls.length : null;
+  const pctFmt=v=>v.toFixed(1)+'%';
+  const countFmt=v=>Math.round(v).toLocaleString();
+
+  let rows=dispoIds.map(id=>{
+    const c=cur[id]||{count:0,durations:[]};
+    const pct=totalCount? (c.count/totalCount*100) : 0;
+    const sumSec=c.durations.reduce((a,b)=>a+b,0);
+    const avg=c.durations.length? sumSec/c.durations.length : 0;
+    const med=median(c.durations);
+
+    let prevPct=null, prevAvg=null, prevMed=null, prevSum=null, prevCountVal=null;
+    if(prev){
+      const p=prev[id]||{count:0,durations:[]};
+      prevCountVal=p.count;
+      prevPct=prevTotalCount? (p.count/prevTotalCount*100) : 0;
+      prevAvg=p.durations.length? p.durations.reduce((a,b)=>a+b,0)/p.durations.length : 0;
+      prevMed=median(p.durations);
+      prevSum=p.durations.reduce((a,b)=>a+b,0);
+    }
+
+    const title=(`${dispoLabel(id)} — ${direction==='OUTBOUND'?'Outbound':'Inbound'} — ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    const countCell = `<td class="num clickable" onclick='openDrilldown("${direction}","${id}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
+          <div class="cell-main">${c.count.toLocaleString()}</div>${deltaSub(c.count,prevCountVal,countFmt)}
+        </td>`;
+    return `<tr>
+      <td class="disp-name">${dispoLabel(id)}</td>
+      ${countCell}
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(avg)}</div>${deltaSub(avg,prevAvg,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(med)}</div>${deltaSub(med,prevMed,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(sumSec)}</div>${deltaSub(sumSec,prevSum,fmtDur)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalAvg=(() => {
+    const all=Object.values(cur).flatMap(g=>g.durations);
+    return all.length? all.reduce((a,b)=>a+b,0)/all.length : 0;
+  })();
+  const totalMed=median(Object.values(cur).flatMap(g=>g.durations));
+  const totalTime=Object.values(cur).flatMap(g=>g.durations).reduce((a,b)=>a+b,0);
+
+  let prevTotalAvg=null, prevTotalMed=null, prevTotalTime=null, prevTotal=null;
+  if(prev){
+    prevTotal=Object.values(prev).reduce((a,g)=>a+g.count,0);
+    const prevAll=Object.values(prev).flatMap(g=>g.durations);
+    prevTotalAvg=prevAll.length? prevAll.reduce((a,b)=>a+b,0)/prevAll.length : 0;
+    prevTotalMed=median(prevAll);
+    prevTotalTime=prevAll.reduce((a,b)=>a+b,0);
+  }
+
+  const activeDaySet=new Set(calls.map(c=>ymd(new Date(c.properties.hs_timestamp))));
+  const activeDays=activeDaySet.size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any calls — no per-day average to show).</div>`;
+  }else{
+    const perDispoAvg=dispoIds.map(id=>{
+      const c=cur[id]||{count:0};
+      const perDay=c.count/activeDays;
+      return `${dispoLabel(id)} ${perDay.toFixed(1)}`;
+    }).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    const timePerDay=totalTime/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is ÷ <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} calls — ${perDispoAvg} · ${fmtDur(timePerDay)} total time</div>`;
+  }
+
+  return `<table>
+    <thead><tr><th>Disposition</th><th class="num">Count</th><th class="num">% of total</th><th class="num">Avg duration</th><th class="num">Median duration</th><th class="num">Total time</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No calls in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotal,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+      <td class="num"><div class="cell-main">${fmtDur(totalAvg)}</div>${deltaSub(totalAvg,prevTotalAvg,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(totalMed)}</div>${deltaSub(totalMed,prevTotalMed,fmtDur)}</td>
+      <td class="num"><div class="cell-main">${fmtDur(totalTime)}</div>${deltaSub(totalTime,prevTotalTime,fmtDur)}</td>
+    </tr></tfoot>
+  </table>
+  ${avgDayLine}`;
+}
+
+function renderSection(section,direction){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+  const view=VIEW_STATE[section];
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  const tagEl=document.getElementById(`${section}-range-tag`);
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  tagEl.textContent=tag;
+
+  const contentEl=document.getElementById(`${section}-content`);
+
+  if(view==='combined'){
+    const calls=filterCalls(from,to,direction,ownerFilter);
+    const prevCalls=prevRange?filterCalls(prevRange.from,prevRange.to,direction,ownerFilter):null;
+    contentEl.innerHTML=renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to);
+  }else{
+    // side-by-side: one block per closer (respecting the Closer filter if set to a single closer)
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const calls=filterCalls(from,to,direction,id);
+      const prevCalls=prevRange?filterCalls(prevRange.from,prevRange.to,direction,id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderDispoTable(calls,prevCalls,direction,id,from,to)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
+// ── Telephone Activity chart (stacked, merged direction) ──────
+let TELE_CHART=null;
+let TELE_METRIC='count'; // 'count' or 'duration'
+
+function setTeleMetric(metric){
+  TELE_METRIC=metric;
+  document.querySelectorAll('#tele-metric-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.metric===metric);
+  });
+  if(LOADED) renderTeleChart();
+}
+
+// Fixed palette so disposition colors stay consistent run to run, rather than
+// depending on insertion order. Falls back to a generated color if a portal
+// ever adds a 9th disposition.
+const DISPO_COLORS={
+  'Connected':'#065f46',
+  'Left live message':'#1d4ed8',
+  'Left voicemail':'#6d28d9',
+  'No answer':'#c44a1e',
+  'Busy':'#b45309',
+  'Wrong number':'#991b1b',
+  'Connect - Scheduled':'#0891b2',
+  'Connected - Not Engaged':'#4d7c0f',
+  'No disposition':'#9e9789',
+};
+function colorForDispo(label,idx){
+  return DISPO_COLORS[label] || `hsl(${(idx*57)%360},55%,45%)`;
+}
+
+function dayRangeArray(from,to){
+  const days=[];
+  let cur=startOfDay(from);
+  const last=startOfDay(to);
+  while(cur<=last){
+    days.push(ymd(cur));
+    cur=addDays(cur,1);
+  }
+  return days;
+}
+
+function renderTeleChart(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  document.getElementById('tele-range-tag').textContent=label+(isPartial?' (in progress)':'');
+
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+
+  // Merge outbound + inbound: filter by owner only, both directions.
+  const fromMs=startOfDay(from).getTime(), toMs=endOfDay(to).getTime();
+  const calls=ALL_CALLS.filter(c=>{
+    const p=c.properties||{};
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    const ts=new Date(p.hs_timestamp).getTime();
+    return ts>=fromMs && ts<=toMs;
+  });
+
+  // Bucket: day -> dispoLabel -> value (count, or total duration in seconds)
+  const buckets={};
+  days.forEach(d=>buckets[d]={});
+  const dispoTotals={}; // for sort order (largest series first / bottom of stack) — always by count, so stack order doesn't reshuffle when switching metric
+  const dispoDurationTotals={};
+  calls.forEach(c=>{
+    const p=c.properties||{};
+    const day=ymd(new Date(p.hs_timestamp));
+    if(!buckets[day]) return; // safety, shouldn't happen given the filter above
+    const lbl=dispoLabel(p.hs_call_disposition||'__none__');
+    const durSec=p.hs_call_duration ? Number(p.hs_call_duration)/1000 : 0;
+    const val = TELE_METRIC==='duration' ? durSec/60 : 1; // chart in minutes for duration
+    buckets[day][lbl]=(buckets[day][lbl]||0)+val;
+    dispoTotals[lbl]=(dispoTotals[lbl]||0)+1;
+    dispoDurationTotals[lbl]=(dispoDurationTotals[lbl]||0)+durSec;
+  });
+
+  const dispoOrder=Object.keys(dispoTotals).sort((a,b)=>dispoTotals[b]-dispoTotals[a]);
+
+  const datasets=dispoOrder.map((lbl,idx)=>{
+    const color=colorForDispo(lbl,idx);
+    return {
+      label:lbl,
+      data:days.map(d=>Math.round((buckets[d][lbl]||0)*100)/100),
+      backgroundColor:isBar?color:color+'aa',
+      borderColor:color,
+      fill:!isBar,
+      stack:'tele',
+      tension:0.25,
+      pointRadius:spanDays>60?0:2,
+    };
+  });
+
+  const totalCalls=calls.length;
+  const totalDurationSec=Object.values(dispoDurationTotals).reduce((a,b)=>a+b,0);
+  const metricNote = TELE_METRIC==='duration'
+    ? `${fmtDur(totalDurationSec)} total time on calls (y-axis in minutes)`
+    : `${totalCalls.toLocaleString()} total calls`;
+  document.getElementById('tele-note').textContent=
+    `${metricNote} across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar ? 'bar chart (range ≤ 7 days)' : 'area chart (range > 7 days)')+
+    ' · outbound + inbound merged · no comparison period shown';
+
+  const ctx=document.getElementById('tele-chart').getContext('2d');
+  if(TELE_CHART) TELE_CHART.destroy();
+  TELE_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{ labels:days, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{ stacked:true, grid:{display:false} },
+        y:{ stacked:true, beginAtZero:true, grid:{color:'#ede9e3'},
+            title:{ display:true, text: TELE_METRIC==='duration'?'Minutes':'Calls', font:{size:11} } },
+      },
+      plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:12, font:{size:11} } },
+        tooltip:{ callbacks:{
+          label:(item)=> TELE_METRIC==='duration'
+            ? `${item.dataset.label}: ${item.parsed.y.toFixed(1)} min`
+            : `${item.dataset.label}: ${item.parsed.y}`,
+          footer:(items)=>{
+            const sum=items.reduce((a,i)=>a+i.parsed.y,0);
+            return TELE_METRIC==='duration' ? `Total: ${sum.toFixed(1)} min` : `Total: ${sum}`;
+          }
+        } }
+      }
+    }
+  });
+}
+
+// ── Average Daily Phone Activity ──────────────────────────
+// Merges outbound + inbound for each closer into one stat: calls and talk time
+// per active day, framed against an 8-hour workday. Deliberately per-closer
+// (not merged across people) since the point is to show each person's own
+// activity level, not a blended number that could hide one person carrying
+// the other's average.
+const WORKDAY_SECONDS=8*60*60;
+
+function renderRealityCheck(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const ownerFilter=document.getElementById('sel-am').value;
+  document.getElementById('reality-range-tag').textContent=label+(isPartial?' (in progress)':'');
+
+  const totalDaysInRange=dayRangeArray(from,to).length;
+  const fromMs=startOfDay(from).getTime(), toMs=endOfDay(to).getTime();
+  const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+
+  const cardsHtml=idsToShow.map(id=>{
+    const calls=ALL_CALLS.filter(c=>{
+      const p=c.properties||{};
+      if(p.hubspot_owner_id!==id) return false;
+      const ts=new Date(p.hs_timestamp).getTime();
+      return ts>=fromMs && ts<=toMs;
+    });
+    const activeDays=new Set(calls.map(c=>ymd(new Date(c.properties.hs_timestamp)))).size;
+    const totalCalls=calls.length;
+    const totalTimeSec=calls.reduce((a,c)=>a+(c.properties.hs_call_duration?Number(c.properties.hs_call_duration)/1000:0),0);
+
+    if(activeDays===0){
+      return `<div class="reality-card"><h4>${AMS[id]}</h4><div class="reality-headline">No logged calls (in or out) across all ${totalDaysInRange} days in this range.</div></div>`;
+    }
+
+    const callsPerDay=totalCalls/activeDays;
+    const timePerDaySec=totalTimeSec/activeDays;
+    const pctOfWorkday=(timePerDaySec/WORKDAY_SECONDS*100);
+
+    return `<div class="reality-card">
+      <h4>${AMS[id]}</h4>
+      <div class="reality-headline">${fmtDur(timePerDaySec)} on the phone per active day</div>
+      <div class="reality-pct"><strong>${pctOfWorkday.toFixed(1)}%</strong> of an 8-hour day</div>
+      <div class="reality-sub">${callsPerDay.toFixed(1)} calls/day (in + out combined) across ${activeDays} of ${totalDaysInRange} days with any logged call activity. Total: ${totalCalls.toLocaleString()} calls, ${fmtDur(totalTimeSec)} talk time in the range.</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('reality-content').innerHTML=cardsHtml;
+}
+
+// ── SMS Activity ────────────────────────────────────────────────
+let SMS_VIEW='combined';
+let SMS_CHART=null;
+
+function setSmsView(view){
+  SMS_VIEW=view;
+  document.querySelectorAll('#sms-view-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) renderSms();
+}
+
+function filterSms(from,to,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_SMS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+// Table shaped like renderDispoTable but rows are direction (Outbound/Inbound/
+// Unknown) instead of disposition — SMS has no duration or disposition, so
+// Avg/Median/Total-time columns don't apply here. Count, % of total, and the
+// previous-period subline reuse the same deltaSub helper as the call tables.
+function renderSmsTable(sms,prevSms,ownerFilter,from,to){
+  const dirs=['OUTBOUND','INBOUND','UNKNOWN'];
+  const dirLabel={OUTBOUND:'Outbound',INBOUND:'Inbound',UNKNOWN:'Unknown (couldn\u2019t parse direction)'};
+  const cur={}; dirs.forEach(d=>cur[d]=0);
+  sms.forEach(c=>{ cur[c.properties.__direction]=(cur[c.properties.__direction]||0)+1; });
+  let prev=null;
+  if(prevSms){
+    prev={}; dirs.forEach(d=>prev[d]=0);
+    prevSms.forEach(c=>{ prev[c.properties.__direction]=(prev[c.properties.__direction]||0)+1; });
+  }
+  const totalCount=sms.length;
+  const prevTotalCount=prevSms?prevSms.length:null;
+  const countFmt=v=>Math.round(v).toLocaleString();
+  const pctFmt=v=>v.toFixed(1)+'%';
+
+  const activeDirs=dirs.filter(d=>cur[d]>0 || (prev&&prev[d]>0));
+  let rows=activeDirs.map(d=>{
+    const c=cur[d]||0;
+    const pct=totalCount?(c/totalCount*100):0;
+    const p=prev?(prev[d]||0):null;
+    const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
+    const title=(`${dirLabel[d]} SMS \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    return `<tr>
+      <td class="disp-name">${dirLabel[d]}</td>
+      <td class="num clickable" onclick='openSmsDrilldown("${d}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
+        <div class="cell-main">${c.toLocaleString()}</div>${deltaSub(c,p,countFmt)}
+      </td>
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+    </tr>`;
+  }).join('');
+
+  const activeDaySet=new Set(sms.map(c=>ymd(new Date(c.properties.hs_timestamp))));
+  const activeDays=activeDaySet.size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any SMS \u2014 no per-day average to show).</div>`;
+  }else{
+    const perDirAvg=activeDirs.map(d=>`${dirLabel[d]} ${((cur[d]||0)/activeDays).toFixed(1)}`).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is \u00f7 <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} SMS \u2014 ${perDirAvg}</div>`;
+  }
+
+  return `<table>
+    <thead><tr><th>Direction</th><th class="num">Count</th><th class="num">% of total</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">No SMS in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotalCount,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+    </tr></tfoot>
+  </table>
+  ${avgDayLine}`;
+}
+
+function renderSmsChart(from,to,ownerFilter){
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+  const sms=filterSms(startOfDay(from),endOfDay(to),ownerFilter);
+
+  const buckets={}; days.forEach(d=>buckets[d]={OUTBOUND:0,INBOUND:0,UNKNOWN:0});
+  sms.forEach(c=>{
+    const day=ymd(new Date(c.properties.hs_timestamp));
+    if(!buckets[day]) return;
+    buckets[day][c.properties.__direction]=(buckets[day][c.properties.__direction]||0)+1;
+  });
+
+  const seriesDefs=[
+    {key:'OUTBOUND',label:'Outbound',color:'#1d4ed8'},
+    {key:'INBOUND',label:'Inbound',color:'#c44a1e'},
+    {key:'UNKNOWN',label:'Unknown',color:'#9e9789'},
+  ].filter(s=>days.some(d=>buckets[d][s.key]>0));
+
+  const datasets=seriesDefs.map(s=>({
+    label:s.label,
+    data:days.map(d=>buckets[d][s.key]||0),
+    backgroundColor:isBar?s.color:s.color+'aa',
+    borderColor:s.color,
+    fill:!isBar,
+    stack:'sms',
+    tension:0.25,
+    pointRadius:spanDays>60?0:2,
+  }));
+
+  document.getElementById('sms-chart-note').textContent=
+    `${sms.length.toLocaleString()} total SMS across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar?'bar chart (range \u2264 7 days)':'area chart (range > 7 days)');
+
+  const ctx=document.getElementById('sms-chart').getContext('2d');
+  if(SMS_CHART) SMS_CHART.destroy();
+  SMS_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{labels:days,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{stacked:true, grid:{display:false}},
+        y:{stacked:true, beginAtZero:true, grid:{color:'#ede9e3'}, title:{display:true,text:'SMS',font:{size:11}}},
+      },
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}},
+        tooltip:{callbacks:{ footer:(items)=>'Total: '+items.reduce((a,i)=>a+i.parsed.y,0) }},
+      },
+    },
+  });
+  return sms;
+}
+
+function renderSms(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  document.getElementById('sms-range-tag').textContent=tag;
+
+  const sms=renderSmsChart(from,to,ownerFilter);
+  const prevSms=prevRange?filterSms(startOfDay(prevRange.from),endOfDay(prevRange.to),ownerFilter):null;
+
+  const contentEl=document.getElementById('sms-content');
+  if(SMS_VIEW==='combined'){
+    contentEl.innerHTML=renderSmsTable(sms,prevSms,ownerFilter,from,to);
+  }else{
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const idSms=filterSms(startOfDay(from),endOfDay(to),id);
+      const idPrevSms=prevRange?filterSms(startOfDay(prevRange.from),endOfDay(prevRange.to),id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderSmsTable(idSms,idPrevSms,id,from,to)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function render(){
+  renderRealityCheck();
+  renderTeleChart();
+  renderSection('out','OUTBOUND');
+  renderSection('in','INBOUND');
+  renderSms();
+  renderEmail();
+}
+
+// ── Email Activity ─────────────────────────────────────────────
+// Simpler than SMS: hs_email_direction is a real field (EMAIL=outbound,
+// INCOMING_EMAIL=inbound) and hs_email_associated_contact_id is a direct
+// property, so no text-parsing heuristic and no separate association step.
+let EMAIL_VIEW='combined';
+let EMAIL_CHART=null;
+const EMAIL_DIR_LABEL={EMAIL:'Outbound',INCOMING_EMAIL:'Inbound'};
+
+function setEmailView(view){
+  EMAIL_VIEW=view;
+  document.querySelectorAll('#email-view-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(LOADED) renderEmail();
+}
+
+function filterEmails(from,to,ownerFilter){
+  const fromMs=from.getTime(), toMs=to.getTime();
+  return ALL_EMAILS.filter(c=>{
+    const p=c.properties||{};
+    const ts=new Date(p.hs_timestamp).getTime();
+    if(ts<fromMs || ts>toMs) return false;
+    if(ownerFilter!=='all' && p.hubspot_owner_id!==ownerFilter) return false;
+    return true;
+  });
+}
+
+function renderEmailTable(emails,prevEmails,ownerFilter,from,to){
+  const dirs=['EMAIL','INCOMING_EMAIL'];
+  const cur={}; dirs.forEach(d=>cur[d]=0);
+  emails.forEach(c=>{ const d=c.properties.hs_email_direction; if(cur[d]!==undefined) cur[d]++; });
+  let prev=null;
+  if(prevEmails){
+    prev={}; dirs.forEach(d=>prev[d]=0);
+    prevEmails.forEach(c=>{ const d=c.properties.hs_email_direction; if(prev[d]!==undefined) prev[d]++; });
+  }
+  const totalCount=emails.length;
+  const prevTotalCount=prevEmails?prevEmails.length:null;
+  const countFmt=v=>Math.round(v).toLocaleString();
+  const pctFmt=v=>v.toFixed(1)+'%';
+
+  const activeDirs=dirs.filter(d=>cur[d]>0 || (prev&&prev[d]>0));
+  let rows=activeDirs.map(d=>{
+    const c=cur[d]||0;
+    const pct=totalCount?(c/totalCount*100):0;
+    const p=prev?(prev[d]||0):null;
+    const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
+    const title=(`${EMAIL_DIR_LABEL[d]} Email \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    return `<tr>
+      <td class="disp-name">${EMAIL_DIR_LABEL[d]}</td>
+      <td class="num clickable" onclick='openEmailDrilldown("${d}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
+        <div class="cell-main">${c.toLocaleString()}</div>${deltaSub(c,p,countFmt)}
+      </td>
+      <td class="num"><div class="cell-main">${pct.toFixed(1)}%</div>${deltaSub(pct,prevPct,pctFmt)}</td>
+    </tr>`;
+  }).join('');
+
+  const activeDays=new Set(emails.map(c=>ymd(new Date(c.properties.hs_timestamp)))).size;
+  const totalDaysInRange=dayRangeArray(from,to).length;
+  let avgDayLine='';
+  if(activeDays===0){
+    avgDayLine=`<div class="chart-note">No activity in this range (0 of ${totalDaysInRange} days had any email \u2014 no per-day average to show).</div>`;
+  }else{
+    const perDirAvg=activeDirs.map(d=>`${EMAIL_DIR_LABEL[d]} ${((cur[d]||0)/activeDays).toFixed(1)}`).join(', ');
+    const totalPerDay=totalCount/activeDays;
+    avgDayLine=`<div class="chart-note">Per active day (everything below is \u00f7 <strong>${activeDays} active day${activeDays===1?'':'s'}</strong>, out of ${totalDaysInRange} days in the range): `+
+      `${totalPerDay.toFixed(1)} emails \u2014 ${perDirAvg}</div>`;
+  }
+
+  return `<table>
+    <thead><tr><th>Direction</th><th class="num">Count</th><th class="num">% of total</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">No emails in this range</td></tr>'}</tbody>
+    <tfoot><tr class="total-row">
+      <td>Total</td>
+      <td class="num"><div class="cell-main">${totalCount.toLocaleString()}</div>${deltaSub(totalCount,prevTotalCount,countFmt)}</td>
+      <td class="num"><div class="cell-main">100%</div></td>
+    </tr></tfoot>
+  </table>
+  ${avgDayLine}`;
+}
+
+function renderEmailChart(from,to,ownerFilter){
+  const days=dayRangeArray(from,to);
+  const spanDays=days.length;
+  const isBar=spanDays<=7;
+  const emails=filterEmails(startOfDay(from),endOfDay(to),ownerFilter);
+
+  const buckets={}; days.forEach(d=>buckets[d]={EMAIL:0,INCOMING_EMAIL:0});
+  emails.forEach(c=>{
+    const day=ymd(new Date(c.properties.hs_timestamp));
+    if(!buckets[day]) return;
+    const d=c.properties.hs_email_direction;
+    if(buckets[day][d]!==undefined) buckets[day][d]++;
+  });
+
+  const seriesDefs=[
+    {key:'EMAIL',label:'Outbound',color:'#1d4ed8'},
+    {key:'INCOMING_EMAIL',label:'Inbound',color:'#c44a1e'},
+  ].filter(s=>days.some(d=>buckets[d][s.key]>0));
+
+  const datasets=seriesDefs.map(s=>({
+    label:s.label,
+    data:days.map(d=>buckets[d][s.key]||0),
+    backgroundColor:isBar?s.color:s.color+'aa',
+    borderColor:s.color,
+    fill:!isBar,
+    stack:'email',
+    tension:0.25,
+    pointRadius:spanDays>60?0:2,
+  }));
+
+  document.getElementById('email-chart-note').textContent=
+    `${emails.length.toLocaleString()} total emails across ${spanDays} day${spanDays===1?'':'s'} · `+
+    (isBar?'bar chart (range \u2264 7 days)':'area chart (range > 7 days)');
+
+  const ctx=document.getElementById('email-chart').getContext('2d');
+  if(EMAIL_CHART) EMAIL_CHART.destroy();
+  EMAIL_CHART=new Chart(ctx,{
+    type:isBar?'bar':'line',
+    data:{labels:days,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{stacked:true, grid:{display:false}},
+        y:{stacked:true, beginAtZero:true, grid:{color:'#ede9e3'}, title:{display:true,text:'Emails',font:{size:11}}},
+      },
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}},
+        tooltip:{callbacks:{ footer:(items)=>'Total: '+items.reduce((a,i)=>a+i.parsed.y,0) }},
+      },
+    },
+  });
+  return emails;
+}
+
+function renderEmail(){
+  const dateKey=document.getElementById('sel-date').value;
+  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const cmpKey=document.getElementById('sel-compare').value;
+  const ownerFilter=document.getElementById('sel-am').value;
+
+  let prevRange=null;
+  if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
+  else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
+
+  let tag=label+(isPartial?' (in progress)':'');
+  if(prevRange) tag+=` vs ${prevRange.label}`;
+  document.getElementById('email-range-tag').textContent=tag;
+
+  const emails=renderEmailChart(from,to,ownerFilter);
+  const prevEmails=prevRange?filterEmails(startOfDay(prevRange.from),endOfDay(prevRange.to),ownerFilter):null;
+
+  const contentEl=document.getElementById('email-content');
+  if(EMAIL_VIEW==='combined'){
+    contentEl.innerHTML=renderEmailTable(emails,prevEmails,ownerFilter,from,to);
+  }else{
+    const idsToShow = ownerFilter==='all' ? AM_IDS : [ownerFilter];
+    contentEl.innerHTML=`<div class="am-cols">${idsToShow.map(id=>{
+      const idEmails=filterEmails(startOfDay(from),endOfDay(to),id);
+      const idPrevEmails=prevRange?filterEmails(startOfDay(prevRange.from),endOfDay(prevRange.to),id):null;
+      return `<div class="am-block"><h3>${AMS[id]}</h3>${renderEmailTable(idEmails,idPrevEmails,id,from,to)}</div>`;
+    }).join('')}</div>`;
+  }
+}
+
+async function openEmailDrilldown(direction,ownerFilter,from,to,title){
+  let emails=filterEmails(startOfDay(from),endOfDay(to),ownerFilter);
+  if(direction!=='ALL') emails=emails.filter(c=>c.properties.hs_email_direction===direction);
+
+  document.getElementById('dd-title').textContent=title;
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-overlay').classList.add('on');
+  document.getElementById('dd-drawer').classList.add('on');
+
+  if(!emails.length){
+    body.innerHTML='<div class="dd-empty">No emails match this selection.</div>';
+    return;
+  }
+  emails.sort((a,b)=>new Date(b.properties.hs_timestamp)-new Date(a.properties.hs_timestamp));
+  body.innerHTML='<div class="dd-empty">Loading contact names…</div>';
+
+  const contactIds=emails.map(c=>c.properties.hs_email_associated_contact_id);
+  const nameMap=await resolveContactNames(contactIds);
+
+  body.innerHTML=emails.map(c=>{
+    const p=c.properties;
+    const dt=new Date(p.hs_timestamp).toLocaleString('en-US',{timeZone:'America/New_York'});
+    const owner=AMS[p.hubspot_owner_id]||p.hubspot_owner_id;
+    const dirLabel=EMAIL_DIR_LABEL[p.hs_email_direction]||p.hs_email_direction;
+    const contactId=p.hs_email_associated_contact_id;
+    const contactName=contactId?(nameMap[contactId]||'(name not found)'):'(no contact linked)';
+    const contactUrl=contactId?`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-1/${contactId}`:null;
+    const emailUrl=`https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-49/${p.hs_object_id||c.id}`;
+    const subject=escapeHtml(p.hs_email_subject||'(no subject)');
+    return `<div class="dd-row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span>${dt} ET · ${owner} · ${dirLabel}</span>
+        <a href="${emailUrl}" target="_blank" rel="noopener">Open ↗</a>
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${contactUrl?`<a href="${contactUrl}" target="_blank" rel="noopener">${escapeHtml(contactName)}</a>`:escapeHtml(contactName)}</div>
+      <div style="font-size:11px;color:var(--text3);font-style:italic">${subject}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
