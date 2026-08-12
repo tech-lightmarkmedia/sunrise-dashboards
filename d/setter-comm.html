@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Setter Communication Activity (v1.6)</title>
+<title>Sunrise Capital — Setter Communication Activity (v1.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Setter Communication Activity</h1>
-    <span class="vpill">v1.6</span>
+    <span class="vpill">v1.7</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -251,7 +251,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
         <button data-view="sidebyside" onclick="setSmsView('sidebyside')">Side by Side</button>
       </div>
       <div id="sms-content"></div>
-      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits. <strong>Automated messages are excluded</strong> — native HubSpot Workflow sends outright, plus templated text (5+ exact repeats across all setters) hiding inside "Manual"-tagged messages. Requires the worker's extracted <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields to be cached (added 2026-08-11) — filters silently pass everything through until the next SMS rebuild.</div>
+      <div class="chart-note" style="margin-top:10px">Direction (Outbound/Inbound) is <strong>inferred from the message text</strong>, not a native HubSpot field — see the Guide for how, and its limits. <strong>Automated messages and reaction events are excluded</strong> — native HubSpot Workflow sends, templated text (5+ exact repeats across all setters) hiding inside "Manual"-tagged messages, and emoji reaction add/remove events (~0.07% of records, all Inbound). Requires the worker's extracted <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields to be cached (added 2026-08-11) — filters silently pass everything through until the next SMS rebuild.</div>
     </div>
   </div>
 
@@ -330,6 +330,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <h3>SMS Activity</h3>
     <p>Volume of text messages sent and received through HubSpot (logged via Aloware), by day, for each setter. Unlike calls, SMS has no disposition and no duration — there's nothing to disposition a text with, and "talk time" doesn't apply — so this section only tracks <strong>count</strong>, split by direction.</p>
     <p><strong>Automated messages are excluded, via two layers.</strong> First, a real HubSpot field: every SMS has a Creator Type of "HubSpot Workflow" or "Manual." The worker extracts this server-side from <code>hs_communication_body</code> (the HTML field — its plain-text counterpart, <code>hs_body_preview</code>, runs everything together with no separator between the Creator Type value and the message text, which caused a real bug in an earlier version of this filter) into a clean <code>hs_creator_type</code> field, and drops the raw HTML before caching — the full HTML for ~55K records made the SMS cache large enough to hit Cloudflare's resource limit on its own, confirmed live 2026-08-11. "HubSpot Workflow" is excluded outright.</p>
+    <p><strong>A third layer excludes emoji reaction events.</strong> Confirmed live 2026-08-11: a contact tapping a reaction (e.g. 👍) on a message, or removing it, gets logged as its own separate Inbound SMS "message" — not an actual reply. The pattern is "{emoji} to '{original message}'" (add) or "Removed {emoji} from '{original message}'" (remove), checked against <code>hs_extracted_message_text</code> specifically, anchored at the start of that field. Small — 40 of 54,772 records checked (~0.07%), all Inbound — but real and unambiguous in every sample checked, so it's excluded to keep Inbound counts reflecting actual replies rather than reaction telemetry.</p>
     <p>Second — and this is the part that isn't a clean field lookup — <strong>"Manual" does not mean a human typed it in the moment.</strong> Confirmed live 2026-08-11 that Aloware's own automated drip/cadence sequences also get logged as "Manual," since HubSpot only distinguishes its own native Workflow feature from everything else. So "Manual" messages still go through frequency-based template detection: the message text (with the phone/line/creator-type metadata stripped out, and a personalized greeting like "Hi Michael," normalized so the same template with a different name still matches) repeated <strong>5 or more times across all setters combined</strong> is treated as a template and excluded. Frequency is counted cross-setter, not per person, because shared templates were confirmed between Kayla/Cierra and between Alex/Aidan — counted individually, a shared template split evenly between two people might not hit the threshold.</p>
     <p>This is a text-matching heuristic layered on top of a real field, not a guaranteed classification — it can't catch a template sent fewer than 5 times total, and it depends on the worker's <code>hs_creator_type</code>/<code>hs_extracted_message_text</code> fields being present in the cache (added 2026-08-11; older cached records without them pass through both filters untouched rather than being incorrectly excluded).</p>
     <p><strong>Direction is inferred, not a real HubSpot field.</strong> A live property check on the communications object turned up nothing resembling a direction property. Instead, direction is guessed from the logged message text: a message reading "{name} has sent an SMS <em>to</em> {number}" is treated as Outbound (the setter sent it); a message starting with a phone number and "has sent an SMS" (no "to") is treated as Inbound. Anything that matches neither pattern is bucketed as "Unknown" rather than guessed into one side or the other. If HubSpot or Aloware ever changes how these messages get logged, this classification can silently break — if "Unknown" ever becomes a large share of the total, that's the signal to check the raw message text again before trusting the Outbound/Inbound split.</p>
@@ -546,6 +547,24 @@ function buildSmsTemplateSet(smsRecords){
   return templates;
 }
 
+// Confirmed live 2026-08-11: emoji reaction add/remove events (a contact
+// tapping 👍 on a message, or removing it) get logged as their own separate
+// inbound SMS "message" — not a real reply. Text pattern: "{emoji} to
+// '{original message}'" (add) or "Removed {emoji} from '{original
+// message}'" (remove), both against hs_extracted_message_text specifically
+// (the isolated message field, not the full raw preview — an earlier,
+// wrong attempt at this matched against the full preview text and produced
+// false positives on ordinary sentences containing the words "to" or
+// "removed"). Small (~0.07% of records, 40 of 54,772 checked) but real and
+// unambiguous in every sample checked — excluded so Inbound counts reflect
+// actual replies, not reaction telemetry.
+function isReactionEvent(msgText){
+  if(!msgText) return false;
+  if(/^Removed\s+\S+\s+from\s+[\u201c"]/u.test(msgText)) return true;
+  if(/^\S+\s+to\s+[\u201c"]/u.test(msgText)) return true;
+  return false;
+}
+
 async function loadSms(){
   const r=await fetch(CACHE_ORIGIN+'/cached-sms');
   if(!r.ok) throw new Error(`/cached-sms -> ${r.status}`);
@@ -560,6 +579,7 @@ async function loadSms(){
       if(creatorType && /hubspot workflow/i.test(creatorType)) return false; // layer 1
       const msgText=p.hs_extracted_message_text;
       if(msgText && templateSet.has(msgText)) return false; // layer 2
+      if(isReactionEvent(msgText)) return false; // layer 3
       return true;
     })
     .map(c=>{
