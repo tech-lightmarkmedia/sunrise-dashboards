@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Account Manager Communication Activity (v3.4)</title>
+<title>Sunrise Capital — Account Manager Communication Activity (v3.6)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -133,7 +133,7 @@ th.sorted{color:var(--accent);font-weight:700}
 <header>
   <div class="hdr">
     <h1>Account Manager Communication Activity</h1>
-    <span class="vpill">v3.4</span>
+    <span class="vpill">v3.6</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -145,14 +145,21 @@ th.sorted{color:var(--accent);font-weight:700}
   <div class="fg">
     <label for="sel-date">Range</label>
     <select id="sel-date" onchange="onDateChange()">
+      <option value="today" disabled>Today (no data until tomorrow's rebuild)</option>
       <option value="yesterday">Yesterday</option>
       <option value="this_week">This Week</option>
       <option value="last_week" selected>Last Week</option>
       <option value="prev_14">Previous 14 Days</option>
       <option value="prev_30">Previous 30 Days</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
       <option value="this_quarter">This Quarter</option>
       <option value="last_quarter">Last Quarter</option>
+      <option value="this_year">This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12_months">Last 12 Months</option>
       <option value="last_180">Last 180 Days</option>
+      <option value="all_time">All Time</option>
       <option value="custom">Custom</option>
     </select>
   </div>
@@ -318,7 +325,8 @@ th.sorted{color:var(--accent);font-weight:700}
     <p>Both are shown per disposition because average alone can mislead — a handful of long calls pull the average up, and dispositions like "No answer" are mechanically near-zero seconds. Median is less sensitive to outliers and is usually the more representative number for a typical call under that disposition.</p>
 
     <h3>Data source and freshness</h3>
-    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers the trailing <strong>180 days</strong> and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back further than 180 days on this dashboard.</p>
+    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers the trailing <strong>180 days</strong> and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back further than 180 days on this dashboard — <strong>All Time</strong> and <strong>Last 12 Months</strong> are both bounded by the same 180-day cache window, not by their literal names.</p>
+    <p><strong>Every range excludes today.</strong> Since the cache only updates once nightly, "today" never has partial data trickling in during the day — it has none at all until tomorrow's rebuild. So "This Week," "This Month," "This Quarter," "This Year," and every rolling window (Previous 14/30 Days, Last 12 Months, Last 180 Days, All Time) all run through <em>yesterday</em>, not the literal current moment — the range tag says so explicitly ("through yesterday"). "Today" itself is disabled in the dropdown rather than offered as a selectable option, since it would only ever show zero activity.</p>
 
     <h3>Date ranges and comparison</h3>
     <ul>
@@ -410,43 +418,92 @@ function startOfWeek(d){
 }
 function startOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1)}
 function endOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3+3,0,23,59,59,999)}
+function startOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1)}
+function endOfMonth(d){return new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59,999)}
+function startOfYear(d){return new Date(d.getFullYear(),0,1)}
+function endOfYear(d){return new Date(d.getFullYear(),11,31,23,59,59,999)}
+
+// The cache rebuilds once nightly — it never has any data for "today," not
+// partial data, none. So every range whose upper bound would otherwise be
+// "right now" is capped at the end of yesterday instead. This only affects
+// where the boundary sits; which calendar week/month/quarter/year we're in
+// is still determined from the real current date (etNow()), just capped.
+function dataNow(){
+  return endOfDay(addDays(etNow(),-1));
+}
+
+function dateRangeNoteSuffix(key,isPartial,excludesToday){
+  if(key==='today') return ' \u2014 cache has no data for today yet (rebuilds nightly, 2 AM ET)';
+  if(isPartial && excludesToday) return ' (through yesterday \u2014 today has no cached data yet)';
+  if(excludesToday) return ' (through yesterday)';
+  return '';
+}
 
 function resolveDateKey(key){
   const now=etNow();
-  let from,to,label='',isPartial=false;
-  if(key==='yesterday'){
+  const today=dataNow(); // end of yesterday — the latest moment the cache can have data for
+  let from,to,label='',isPartial=false,excludesToday=false;
+  if(key==='today'){
+    from=startOfDay(now); to=endOfDay(now); label='Today';
+    // Deliberately NOT capped — this is the one case where showing an
+    // honestly-empty range is more correct than silently substituting
+    // yesterday under a "Today" label. The render layer's existing
+    // "No calls in this range" messaging covers this.
+  } else if(key==='yesterday'){
     const y=addDays(now,-1);
     from=startOfDay(y); to=endOfDay(y); label='Yesterday';
   } else if(key==='this_week'){
-    from=startOfWeek(now); to=now; label='This Week'; isPartial=true;
+    from=startOfWeek(now); to=today; label='This Week'; isPartial=true; excludesToday=true;
   } else if(key==='last_week'){
     const sow=startOfWeek(now);
     from=addDays(sow,-7); to=endOfDay(addDays(sow,-1)); label='Last Week';
   } else if(key==='prev_14'){
-    to=now; from=addDays(now,-14); label='Previous 14 Days';
+    to=today; from=addDays(today,-14); label='Previous 14 Days'; excludesToday=true;
   } else if(key==='prev_30'){
-    to=now; from=addDays(now,-30); label='Previous 30 Days';
+    to=today; from=addDays(today,-30); label='Previous 30 Days'; excludesToday=true;
+  } else if(key==='this_month'){
+    from=startOfMonth(now); to=today; label='This Month'; isPartial=true; excludesToday=true;
+  } else if(key==='last_month'){
+    const som=startOfMonth(now);
+    from=startOfMonth(addDays(som,-1)); to=endOfMonth(addDays(som,-1)); label='Last Month';
   } else if(key==='this_quarter'){
-    from=startOfQuarter(now); to=now; label='This Quarter'; isPartial=true;
+    from=startOfQuarter(now); to=today; label='This Quarter'; isPartial=true; excludesToday=true;
   } else if(key==='last_quarter'){
     const soq=startOfQuarter(now);
     from=startOfQuarter(addDays(soq,-1)); to=endOfDay(addDays(soq,-1)); label='Last Quarter';
+  } else if(key==='this_year'){
+    from=startOfYear(now); to=today; label='This Year'; isPartial=true; excludesToday=true;
+  } else if(key==='last_year'){
+    const soy=startOfYear(now);
+    from=startOfYear(addDays(soy,-1)); to=endOfYear(addDays(soy,-1)); label='Last Year';
+  } else if(key==='last_12_months'){
+    to=today; from=addDays(today,-365); label='Last 12 Months'; excludesToday=true;
   } else if(key==='last_180'){
-    to=now; from=addDays(now,-180); label='Last 180 Days';
+    to=today; from=addDays(today,-180); label='Last 180 Days'; excludesToday=true;
+  } else if(key==='all_time'){
+    // Bounded only by what's actually cached (180-day rolling window today).
+    // Written as a genuinely early date rather than mirroring last_180's math,
+    // so this starts working correctly on its own if the cache window is
+    // ever extended, without needing to touch this code again.
+    to=today; from=new Date(2020,0,1); label='All Time \u2014 limited by what\u2019s cached'; excludesToday=true;
   } else if(key==='custom'){
     const f=document.getElementById('d-from').value;
     const t=document.getElementById('d-to').value;
-    from=f?startOfDay(new Date(f)):addDays(now,-180);
-    to=t?endOfDay(new Date(t)):now;
+    from=f?startOfDay(new Date(f)):addDays(today,-180);
+    to=t?endOfDay(new Date(t)):today;
     label='Custom';
+    if(!t) excludesToday=true;
   }
-  return {from,to,label,isPartial};
+  return {from,to,label,isPartial,excludesToday};
 }
 
 function autoPreviousPeriod(baseKey,baseFrom,baseTo){
   const now=etNow();
   let prevFrom,prevTo,prevLabel='';
-  if(baseKey==='yesterday'){
+  if(baseKey==='today'){
+    const d=addDays(now,-1);
+    prevFrom=startOfDay(d); prevTo=endOfDay(d); prevLabel='Yesterday';
+  } else if(baseKey==='yesterday'){
     const d=addDays(now,-2);
     prevFrom=startOfDay(d); prevTo=endOfDay(d); prevLabel='Day before';
   } else if(baseKey==='this_week'){
@@ -460,6 +517,14 @@ function autoPreviousPeriod(baseKey,baseFrom,baseTo){
     prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-14); prevLabel='Prior 14 days';
   } else if(baseKey==='prev_30'){
     prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-30); prevLabel='Prior 30 days';
+  } else if(baseKey==='this_month'){
+    const som=startOfMonth(now); const lastSom=startOfMonth(addDays(som,-1));
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSom; prevTo=new Date(lastSom.getTime()+elapsed); prevLabel='Last month (same elapsed)';
+  } else if(baseKey==='last_month'){
+    const som=startOfMonth(now); const lastSom=startOfMonth(addDays(som,-1));
+    const prevPrevSom=startOfMonth(addDays(lastSom,-1));
+    prevFrom=prevPrevSom; prevTo=endOfMonth(prevPrevSom); prevLabel='Month before that';
   } else if(baseKey==='this_quarter'){
     const soq=startOfQuarter(now); const lastSoq=startOfQuarter(addDays(soq,-1));
     const elapsed=baseTo-baseFrom;
@@ -468,8 +533,24 @@ function autoPreviousPeriod(baseKey,baseFrom,baseTo){
     const soq=startOfQuarter(now); const prevQStart=startOfQuarter(addDays(soq,-1));
     const prevPrevStart=startOfQuarter(addDays(prevQStart,-1));
     prevFrom=prevPrevStart; prevTo=endOfDay(addDays(prevQStart,-1)); prevLabel='Quarter before that';
+  } else if(baseKey==='this_year'){
+    const soy=startOfYear(now); const lastSoy=startOfYear(addDays(soy,-1));
+    const elapsed=baseTo-baseFrom;
+    prevFrom=lastSoy; prevTo=new Date(lastSoy.getTime()+elapsed); prevLabel='Last year (same elapsed)';
+  } else if(baseKey==='last_year'){
+    const soy=startOfYear(now); const lastSoy=startOfYear(addDays(soy,-1));
+    const prevPrevSoy=startOfYear(addDays(lastSoy,-1));
+    prevFrom=prevPrevSoy; prevTo=endOfYear(prevPrevSoy); prevLabel='Year before that';
   } else if(baseKey==='last_180'){
     prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-180); prevLabel='Prior 180 days';
+  } else if(baseKey==='last_12_months'){
+    prevTo=addDays(baseFrom,-1); prevFrom=addDays(prevTo,-365); prevLabel='Prior 12 months';
+  } else if(baseKey==='all_time'){
+    // No meaningful "prior period" for an open-ended range — comparison
+    // should be turned off by the caller for this preset, but if it isn't,
+    // fall through to the generic same-length-shift below rather than error.
+    const elapsed=baseTo-baseFrom;
+    prevTo=new Date(baseFrom.getTime()-1); prevFrom=new Date(prevTo.getTime()-elapsed); prevLabel='Prior period (same length)';
   } else { // custom
     const elapsed=baseTo-baseFrom;
     prevTo=new Date(baseFrom.getTime()-1); prevFrom=new Date(prevTo.getTime()-elapsed); prevLabel='Prior period (same length)';
@@ -877,7 +958,7 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
 
 function renderSection(section,direction){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
   const cmpKey=document.getElementById('sel-compare').value;
   const ownerFilter=document.getElementById('sel-am').value;
   const view=VIEW_STATE[section];
@@ -887,7 +968,7 @@ function renderSection(section,direction){
   else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
 
   const tagEl=document.getElementById(`${section}-range-tag`);
-  let tag=label+(isPartial?' (in progress)':'');
+  let tag=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
   if(prevRange) tag+=` vs ${prevRange.label}`;
   tagEl.textContent=tag;
 
@@ -951,10 +1032,10 @@ function dayRangeArray(from,to){
 
 function renderTeleChart(){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
   const ownerFilter=document.getElementById('sel-am').value;
 
-  document.getElementById('tele-range-tag').textContent=label+(isPartial?' (in progress)':'');
+  document.getElementById('tele-range-tag').textContent=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
 
   const days=dayRangeArray(from,to);
   const spanDays=days.length;
@@ -1052,9 +1133,9 @@ const WORKDAY_SECONDS=8*60*60;
 
 function renderRealityCheck(){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
   const ownerFilter=document.getElementById('sel-am').value;
-  document.getElementById('reality-range-tag').textContent=label+(isPartial?' (in progress)':'');
+  document.getElementById('reality-range-tag').textContent=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
 
   const totalDaysInRange=dayRangeArray(from,to).length;
   const fromMs=startOfDay(from).getTime(), toMs=endOfDay(to).getTime();
@@ -1232,7 +1313,7 @@ function renderSmsChart(from,to,ownerFilter){
 
 function renderSms(){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
   const cmpKey=document.getElementById('sel-compare').value;
   const ownerFilter=document.getElementById('sel-am').value;
 
@@ -1240,7 +1321,7 @@ function renderSms(){
   if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
   else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
 
-  let tag=label+(isPartial?' (in progress)':'');
+  let tag=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
   if(prevRange) tag+=` vs ${prevRange.label}`;
   document.getElementById('sms-range-tag').textContent=tag;
 
@@ -1408,7 +1489,7 @@ function renderEmailChart(from,to,ownerFilter){
 
 function renderEmail(){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
   const cmpKey=document.getElementById('sel-compare').value;
   const ownerFilter=document.getElementById('sel-am').value;
 
@@ -1416,7 +1497,7 @@ function renderEmail(){
   if(cmpKey==='previous_period') prevRange=autoPreviousPeriod(dateKey,from,to);
   else if(cmpKey==='same_period_last_year') prevRange=samePeriodLastYear(from,to);
 
-  let tag=label+(isPartial?' (in progress)':'');
+  let tag=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
   if(prevRange) tag+=` vs ${prevRange.label}`;
   document.getElementById('email-range-tag').textContent=tag;
 
@@ -1578,8 +1659,8 @@ function setInvestorSort(colKey){
 
 function renderInvestorActivity(){
   const dateKey=document.getElementById('sel-date').value;
-  const {from,to,label,isPartial}=resolveDateKey(dateKey);
-  document.getElementById('investor-range-tag').textContent=label+(isPartial?' (in progress)':'');
+  const {from,to,label,isPartial,excludesToday}=resolveDateKey(dateKey);
+  document.getElementById('investor-range-tag').textContent=label+dateRangeNoteSuffix(dateKey,isPartial,excludesToday);
 
   let rows = INVESTOR_AM_FILTER==='all' ? ALL_INVESTOR_ROSTER : ALL_INVESTOR_ROSTER.filter(r=>r.amOwnerId===INVESTOR_AM_FILTER);
 
