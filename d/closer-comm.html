@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Closer Communication Activity (v1.0)</title>
+<title>Sunrise Capital — Closer Communication Activity (v1.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Closer Communication Activity</h1>
-    <span class="vpill">v1.0</span>
+    <span class="vpill">v1.1</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -869,7 +869,7 @@ function renderDispoTable(calls,prevCalls,direction,ownerFilter,from,to){
       prevSum=p.durations.reduce((a,b)=>a+b,0);
     }
 
-    const title=(`${dispoLabel(id)} — ${direction==='OUTBOUND'?'Outbound':'Inbound'} — ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    const title=(`${dispoLabel(id)} — ${direction==='OUTBOUND'?'Outbound':'Inbound'} — ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All Closers'}`).replace(/'/g,'\u2019');
     const countCell = `<td class="num clickable" onclick='openDrilldown("${direction}","${id}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
           <div class="cell-main">${c.count.toLocaleString()}</div>${deltaSub(c.count,prevCountVal,countFmt)}
         </td>`;
@@ -1196,7 +1196,7 @@ function renderSmsTable(sms,prevSms,ownerFilter,from,to){
     const pct=totalCount?(c/totalCount*100):0;
     const p=prev?(prev[d]||0):null;
     const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
-    const title=(`${dirLabel[d]} SMS \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    const title=(`${dirLabel[d]} SMS \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All Closers'}`).replace(/'/g,'\u2019');
     return `<tr>
       <td class="disp-name">${dirLabel[d]}</td>
       <td class="num clickable" onclick='openSmsDrilldown("${d}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
@@ -1373,7 +1373,7 @@ function renderEmailTable(emails,prevEmails,ownerFilter,from,to){
     const pct=totalCount?(c/totalCount*100):0;
     const p=prev?(prev[d]||0):null;
     const prevPct=prev?(prevTotalCount?(p/prevTotalCount*100):0):null;
-    const title=(`${EMAIL_DIR_LABEL[d]} Email \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All AMs'}`).replace(/'/g,'\u2019');
+    const title=(`${EMAIL_DIR_LABEL[d]} Email \u2014 ${AM_IDS.includes(ownerFilter)?AMS[ownerFilter]:'All Closers'}`).replace(/'/g,'\u2019');
     return `<tr>
       <td class="disp-name">${EMAIL_DIR_LABEL[d]}</td>
       <td class="num clickable" onclick='openEmailDrilldown("${d}","${ownerFilter}",new Date(${from.getTime()}),new Date(${to.getTime()}),${JSON.stringify(title)})'>
