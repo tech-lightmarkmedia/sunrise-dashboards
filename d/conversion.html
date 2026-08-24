@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.1)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.2)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.1</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.2</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -1121,7 +1121,36 @@ function onCompareChange(prefix){
 }
 
 // ── HubSpot API helper ────────────────────────────────────
+// ── Global request gate ───────────────────────────────────
+// Every api() call passes through this semaphore, so no matter how many
+// sections load in parallel (each with its own runWithConcurrency at 3),
+// the TOTAL simultaneous in-flight requests never exceed API_MAX_INFLIGHT.
+// Confirmed via stack trace: load() fires all sections at once; each calls
+// ensureChunksLoaded → runWithConcurrency(3), so 4-5 sections stacked =
+// 12-15 parallel streams, blowing past HubSpot's ~100 req/10s and 429ing
+// everything into empty results (the 0-cohort bug in the Call Time section).
+const API_MAX_INFLIGHT=4;
+let _apiInflight=0;
+const _apiQueue=[];
+function _apiAcquire(){
+  if(_apiInflight<API_MAX_INFLIGHT){ _apiInflight++; return Promise.resolve(); }
+  return new Promise(res=>_apiQueue.push(res));
+}
+function _apiRelease(){
+  _apiInflight--;
+  if(_apiQueue.length){ _apiInflight++; _apiQueue.shift()(); }
+}
+
 async function api(path, body, retryCount=0){
+  await _apiAcquire();
+  try{
+    return await _apiRaw(path, body, retryCount);
+  } finally {
+    _apiRelease();
+  }
+}
+
+async function _apiRaw(path, body, retryCount=0){
   const url=(WORKER_URL+path).replace(/([^:])\/{2,}/g,'$1/');
   const r=await fetch(url, {
     method: body?'POST':'GET',
@@ -1131,10 +1160,11 @@ async function api(path, body, retryCount=0){
 
   // 429 = rate limit. HubSpot's secondly limit is 100 req/10s on a Private App.
   // Parallel chunk loads can blow past this. Retry with exponential backoff.
+  // Retry calls _apiRaw (not api) so it stays inside the already-held gate slot.
   if(r.status===429 && retryCount<5){
     const waitMs=Math.min(1000*Math.pow(2, retryCount), 8000); // 1s, 2s, 4s, 8s, 8s
     await new Promise(res=>setTimeout(res, waitMs));
-    return api(path, body, retryCount+1);
+    return _apiRaw(path, body, retryCount+1);
   }
 
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'HTTP '+r.status);}
