@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.8)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.8</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.9</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -1289,7 +1289,25 @@ function monthsInRange(from, to){
 // Tracks chunks that errored partway. UI surfaces these.
 const FAILED_CHUNKS=[];
 
+// In-flight dedup: when multiple sections load concurrently (activity, bookings,
+// pairing, calltime all call ensureChunksLoaded), they race to fetch the SAME
+// month chunks. fetchChunk guards on MONTH_CACHE, but that's only written AFTER
+// the fetch completes — so a chunk requested by two sections at once gets fetched
+// twice. With 4 sections over overlapping ranges, popular chunks fetch 2-4×, which
+// is the dominant first-load slowness (duplicate network + extra 429 retries).
+// This map lets a second caller await the first caller's in-flight promise.
+const INFLIGHT_CHUNKS={};
+
 async function fetchChunk(objectName, propsList, chunkKey, fromMs, toMs){
+  const cacheKey=`${objectName}:${chunkKey}`;
+  if(MONTH_CACHE[cacheKey]) return MONTH_CACHE[cacheKey];
+  if(INFLIGHT_CHUNKS[cacheKey]) return INFLIGHT_CHUNKS[cacheKey];
+  const p=_fetchChunkRaw(objectName, propsList, chunkKey, fromMs, toMs);
+  INFLIGHT_CHUNKS[cacheKey]=p;
+  try{ return await p; } finally { delete INFLIGHT_CHUNKS[cacheKey]; }
+}
+
+async function _fetchChunkRaw(objectName, propsList, chunkKey, fromMs, toMs){
   const cacheKey=`${objectName}:${chunkKey}`;
   if(MONTH_CACHE[cacheKey]) return MONTH_CACHE[cacheKey];
 
