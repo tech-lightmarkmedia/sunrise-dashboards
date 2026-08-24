@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.6)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.6</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.7</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -2001,8 +2001,17 @@ function chunksForRange(rangeKey){
     fromCandidates.push(r.prevFrom);
     toCandidates.push(r.prevTo);
   }
-  const minFrom=new Date(Math.min(...fromCandidates.map(d=>d.getTime())));
+  let minFrom=new Date(Math.min(...fromCandidates.map(d=>d.getTime())));
   const maxTo=new Date(Math.min(Math.max(...toCandidates.map(d=>d.getTime())), Date.now()));
+  // Call Time section: closers have NO call-era data before 2026 (the same
+  // reason Fund 4 is excluded). Fetching pre-2026 call/meeting chunks for this
+  // section pulls thousands of records that can't contribute a single closer
+  // call — pure request overhead that fed the 429 storm. Floor its fetch at
+  // 2026-01-01. Only calltime; other sections legitimately need older data.
+  if(rangeKey==='calltime'){
+    const floor=new Date('2026-01-01T00:00:00Z').getTime();
+    if(minFrom.getTime()<floor) minFrom=new Date(floor);
+  }
   return {
     callWeeks: weeksInRange(minFrom, maxTo),
     meetingMonths: monthsInRange(minFrom, maxTo),
@@ -3719,19 +3728,12 @@ function renderCallTime(range){
   const avgMin=(sec,n)=> n>0 ? Math.round(sec/n/60) : 0;
   const avg=(v,n)=> n>0 ? (v/n).toFixed(1) : '0.0';
 
-  const view=(document.getElementById('sel-calltime-view')?.value)||'summary';
-
   const cohortCard=(label, rec, cls)=>{
     const totalSec=rec.setterSec+rec.closerSec;
-    let timeRows;
-    if(view==='summary'){
-      timeRows=`
+    const timeRows=`
         <tr><td>Setter time (intro)</td><td>${fmtHrs(rec.setterSec)}</td><td>${avgMin(rec.setterSec,rec.n)}m</td></tr>
         <tr><td>Closer time (disco+decision)</td><td>${fmtHrs(rec.closerSec)}</td><td>${avgMin(rec.closerSec,rec.n)}m</td></tr>
         <tr class="ct-total"><td>Total time</td><td>${fmtHrs(totalSec)}</td><td>${avgMin(totalSec,rec.n)}m</td></tr>`;
-    } else {
-      timeRows=`<tr class="ct-total"><td>Total call time</td><td>${fmtHrs(totalSec)}</td><td>${avgMin(totalSec,rec.n)}m</td></tr>`;
-    }
     return `
       <div class="ct-card ${cls}">
         <div class="ct-card-head">${label}<span class="ct-n">${rec.n} contact${rec.n===1?'':'s'}</span></div>
@@ -3760,10 +3762,6 @@ function renderCallTime(range){
     <div class="sec-header">
       <span class="sec-title">Call Time to Conversion — Fund 5</span>
       <span id="sec-controls-calltime"></span>
-      <select id="sel-calltime-view" onchange="render()" style="margin-left:auto">
-        <option value="summary"${view==='summary'?' selected':''}>Summary (setter / closer)</option>
-        <option value="total"${view==='total'?' selected':''}>Total only</option>
-      </select>
     </div>
     <div class="ct-intro">
       Contacts who had a real closer call <em>and</em> a Main Sales Pipeline deal, split by whether their
