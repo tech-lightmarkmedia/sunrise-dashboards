@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.3)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.3</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.4</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -2263,8 +2263,13 @@ async function loadCallTimeSection(){
     await ensureChunksLoaded(chunks.callWeeks, chunks.meetingMonths);
     if(!INVESTMENTS_LOADED){
       await fetchAllInvestments();
-      rebuildNormalizedFromCache();
     }
+    // Rebuild CALLS/MEETINGS from cache UNCONDITIONALLY. ensureChunksLoaded may
+    // have added new call chunks (e.g. closer-owned calls this section needs)
+    // that another section's earlier rebuild didn't include. If investments were
+    // already loaded by a racing section, the old code skipped the rebuild and
+    // rendered against a stale CALLS missing the closer chunks → zero cohorts.
+    rebuildNormalizedFromCache();
     SECTION_STATE.calltime='ready';
     render();
   }catch(e){
