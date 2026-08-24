@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -286,6 +286,29 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
 .pairing-table .pcell-sub{font-size:10px;color:var(--text3);line-height:1.2}
 .pairing-table .pcell.empty .pcell-headline{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text3);font-weight:300}
 .range-controls#range-controls-pairing select{min-width:130px}
+/* Call Time to Conversion */
+.ct-intro{font-size:12px;color:var(--text2);padding:12px 4px 4px;line-height:1.5}
+.ct-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+.ct-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.ct-card.funded{border-left:4px solid var(--inv)}
+.ct-card.notFunded{border-left:4px solid #d97706}
+.ct-card-head{font-family:'DM Serif Display',serif;font-size:15px;color:var(--text);display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.ct-n{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text3);font-weight:500}
+.ct-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}
+.ct-table th{text-align:right;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;padding:2px 6px}
+.ct-table th:first-child{text-align:left}
+.ct-table td{padding:5px 6px;text-align:right;color:var(--text)}
+.ct-table td:first-child{text-align:left;color:var(--text2)}
+.ct-table tr.ct-total td{border-top:1px solid var(--border);font-weight:600;color:var(--text)}
+.ct-counts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding-top:6px;border-top:1px dashed var(--border)}
+.ct-count{text-align:center}
+.ct-count span{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em}
+.ct-count b{display:block;font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);line-height:1.3}
+.ct-count i{display:block;font-size:10px;color:var(--text3);font-style:normal}
+.ct-drill{margin-top:12px;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.ct-drill:hover{background:#fffdf8;color:var(--text)}
+.ct-caveats{font-size:11px;color:var(--text3);line-height:1.5;padding:12px 4px 0}
+.ct-excl{color:var(--text3);font-style:italic}
 
 /* Pairing matrix legend */
 .pairing-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 0 4px;font-size:11px;color:var(--text2)}
@@ -318,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.1</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -540,6 +563,31 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
       </select>
     </div>
   </div>
+  <div class="range-controls" id="range-controls-calltime" data-range="calltime">
+    <div class="fg">
+      <label>Call time range</label>
+      <select id="ct-sel-date" onchange="onDateChange('ct-')">
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This Week</option>
+        <option value="last_week">Last Week</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="this_quarter">This Quarter</option>
+        <option value="last_quarter">Last Quarter</option>
+        <option value="this_year">This Year</option>
+        <option value="last_year">Last Year</option>
+        <option value="last_12">Last 12 months</option>
+        <option value="all" selected>All Time</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="cdates" id="ct-cdates">
+      <input type="date" id="ct-d-from" />
+      <span>to</span>
+      <input type="date" id="ct-d-to" />
+      <button onclick="applyFilters()" class="apply-btn">Apply</button>
+    </div>
+  </div>
 </div>
 
 <div id="ov" style="display:none">
@@ -556,6 +604,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
   <section class="dash-section range-bookings" id="section-bookings"></section>
   <section class="dash-section range-investments" id="section-investments"></section>
   <section class="dash-section range-pairing" id="section-pairing"></section>
+  <section class="dash-section range-investments" id="section-calltime"></section>
 </div>
 
 <!-- Drill-down panel — slides in from the right when a count cell is clicked. -->
@@ -729,6 +778,16 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
     <p><strong>Recent ranges have many in-flight records.</strong> If you set a section to "This Month" or "Last Month," a substantial fraction of the records will be inside the 90-day maturity window and excluded from the rate. The "X in flight" subtext shows how many. The conversion rate stays honest but may be based on a small denominator. Last Quarter or longer is the comfort zone.</p>
     <p><strong>Setter attribution gap on historical data.</strong> Many older deals (2023-2024) have a null <code>setter_owner</code>. Discoveries booked from those deals land in the Unattributed setter-funnel column.</p>
     <p><strong>Cycle time is funded-subset only.</strong> Median and p75 days describe the contacts who did fund. They're silent on the contacts who didn't — those are summarized in the conversion rate.</p>
+
+    <h2>Call Time to Conversion — Fund 5</h2>
+    <p>Answers a single question: <strong>do contacts who came on board accumulate more call time than those who didn't?</strong> Two cohorts side by side — contacts whose first funding was into Fund 5, versus contacts who had the calls but never funded (matured past 90 days). Each cohort shows call talk-time and stage call counts.</p>
+    <p><strong>Who's in a cohort (the anchor).</strong> A contact is included only if they had a real <em>closer</em> call (a call owned by a closer with duration &gt; 0 — an actual conversation happened) <em>and</em> an associated Main Sales Pipeline deal (they entered the acquisition funnel). Contacts who fail either test are excluded, with the counts shown under the cards.</p>
+    <p><strong>Funded cohort</strong> — first-ever funding was into Fund 5. <strong>Not-funded cohort</strong> — never funded, and their earliest closer call is older than the 90-day maturity window, so they can fairly be called "didn't convert." Recent not-yet-funded contacts are counted as in-flight and excluded, not lumped into "didn't fund."</p>
+    <p><strong>Time is real talk-time, split by role via call owner.</strong> Discovery and decision are <em>meeting</em> types, but every discovery/decision meeting is a fixed 30-minute slot — that's a booking length, not talk time. Real duration lives on <em>call</em> records, which aren't typed by stage. Since setters run intro calls and closers run discovery + decision, the call's <strong>owner</strong> is used as the role: setter-owned call time = intro-stage work; closer-owned = discovery + decision. Discovery time is <strong>not</strong> separated from decision time (both are closer-owned) — that split would require inferring each call's stage, which isn't in the data.</p>
+    <p><strong>Stage counts come from meetings, which <em>are</em> typed.</strong> The Intro / Discovery / Decision counts under each card are meeting counts (reliably typed), so the three-way stage split survives on the count side even though it can't on the time side. "I/D/Dec" in the drill-down is intro/discovery/decision counts per contact.</p>
+    <p><strong>Fund 4 is excluded by design.</strong> All 942 Fund 4 investments funded between 2023-11 and 2025-12 — zero in the 2026 disposition-tracking era — so there's no call data to measure for them. Including Fund 4 would add an empty cohort, not a signal.</p>
+    <p><strong>Pre-2026 logging caveat.</strong> Call logging wasn't enforced before 2026, so any contact whose activity predates that shows thin call time — a logging gap, not an absence of calls. Even within Fund 5, roughly half the fundings predate 2026, so early-Fund-5 contacts may read low. Treat this as a directional comparison, not a precise stopwatch.</p>
+    <p><strong>Summary vs Total view.</strong> Summary splits time into setter (intro) and closer (disco+decision); Total collapses to one number. Counts are shown in both.</p>
 
     <h2>Glossary</h2>
     <p><strong>Front-anchored conversion</strong> — measures conversion by anchoring on when the source record happened (booking, completion), not when the funding happened. Answers "of the work I did in this window, what converted?" rather than "of the dollars I raised in this window, what work did they trace back to?"</p>
@@ -991,6 +1050,7 @@ function getDateRange(rangeKey='activity'){
     bookings:    {sel:'bk-sel-date',  cmp:'bk-sel-compare',  dFrom:'bk-d-from',  dTo:'bk-d-to',  cmpFrom:'bk-cmp-d-from',  cmpTo:'bk-cmp-d-to'},
     investments: {sel:'inv-sel-date', cmp:'inv-sel-compare', dFrom:'inv-d-from', dTo:'inv-d-to', cmpFrom:'inv-cmp-d-from', cmpTo:'inv-cmp-d-to'},
     pairing:     {sel:'pr-sel-date',  cmp:'pr-sel-compare',  dFrom:'pr-d-from',  dTo:'pr-d-to',  cmpFrom:'pr-cmp-d-from',  cmpTo:'pr-cmp-d-to'},
+    calltime:    {sel:'ct-sel-date',  cmp:'ct-sel-compare',  dFrom:'ct-d-from',  dTo:'ct-d-to',  cmpFrom:'ct-cmp-d-from',  cmpTo:'ct-cmp-d-to'},
   };
   const ids=prefixes[rangeKey];
   const baseKey=document.getElementById(ids.sel).value;
@@ -1507,6 +1567,7 @@ async function fetchAllInvestments(){
       // setter-v43 attribution behavior so all three dashboards agree.
       setter: r.properties.setter || null,
       closer: r.properties.closer || null,
+      fund: r.properties.fund_invested || null,
     };
   }).filter(i=>i.ts && i.contactId);
 
@@ -1593,6 +1654,11 @@ async function fetchAllInvestments(){
       }
     }
 
+    // Fund of the first funding: the fund on the earliest same-day record that
+    // has one. Used by the Call Time to Conversion section to select the
+    // Fund-5 first-funder cohort. Records are already sorted earliest-first.
+    const firstFund=(records.find(r=>r.fund)||{}).fund || null;
+
     INVESTMENT_EVENTS.push({
       contactId,
       ts:firstTs,
@@ -1602,6 +1668,7 @@ async function fetchAllInvestments(){
       attribution_source,
       closer_owner,
       closer_attribution_source,
+      firstFund,
     });
   }
 
@@ -1771,6 +1838,7 @@ function rebuildNormalizedFromCache(){
     ts:new Date(r.properties.hs_timestamp).getTime(),
     ownerId:r.properties.hubspot_owner_id,
     disposition:r.properties.hs_call_disposition,
+    durationSec:r.properties.hs_call_duration ? Number(r.properties.hs_call_duration)/1000 : 0,
     contactId:CONTACT_ASSOC_MAP[`calls:${r.id}`] || null
   })).filter(c=>c.ts && c.ownerId);
 
@@ -1949,6 +2017,7 @@ async function forceRefresh(){
   SECTION_STATE.bookings='idle';
   SECTION_STATE.investments='idle';
   SECTION_STATE.pairing='idle';
+  SECTION_STATE.calltime='idle';
 
   await load();
 }
@@ -1958,7 +2027,7 @@ async function forceRefresh(){
  * whether its data has been loaded. render() reads this to draw "Loading…"
  * placeholders for sections that aren't ready yet.
  */
-const SECTION_STATE={activity:'idle', bookings:'idle', investments:'idle', pairing:'idle'};
+const SECTION_STATE={activity:'idle', bookings:'idle', investments:'idle', pairing:'idle', calltime:'idle'};
 
 async function load(){
   if(LOADING){
@@ -1980,7 +2049,7 @@ async function load(){
   // - Bookings: needs meetings only (no calls)
   // - Investments: needs the global investment+deal data only (no calls/meetings)
   const sectionNeedsLoad={};
-  for(const rk of ['activity','bookings','investments','pairing']){
+  for(const rk of ['activity','bookings','investments','pairing','calltime']){
     let missing=false;
     if(rk==='activity'){
       const c=chunksForRange('activity');
@@ -1991,6 +2060,13 @@ async function load(){
       missing = c.meetingMonths.some(mk=>!MONTH_CACHE[`meetings:${mk}`]);
     } else if(rk==='investments'){
       missing = !INVESTMENTS_LOADED;
+    } else if(rk==='calltime'){
+      // Needs calls + meetings in its range (talk time + stage counts) AND
+      // investments globally (Fund 5 first-funder cohort).
+      const c=chunksForRange('calltime');
+      missing = c.callWeeks.some(wk=>!MONTH_CACHE[`calls:${wk}`])
+            || c.meetingMonths.some(mk=>!MONTH_CACHE[`meetings:${mk}`])
+            || !INVESTMENTS_LOADED;
     } else if(rk==='pairing'){
       // Pairing needs meetings in its date range (for completed-discovery cohort)
       // AND investments globally loaded (for FUNDED_CONTACT_INDEX). It piggybacks on
@@ -2020,6 +2096,7 @@ async function load(){
     if(sectionNeedsLoad.bookings) tasks.push(loadBookingsSection());
     if(sectionNeedsLoad.investments) tasks.push(loadInvestmentsSection());
     if(sectionNeedsLoad.pairing) tasks.push(loadPairingSection());
+    if(sectionNeedsLoad.calltime) tasks.push(loadCallTimeSection());
     const results=await Promise.allSettled(tasks);
 
     // Final status line — count failures across sections plus any chunk failures.
@@ -2136,6 +2213,28 @@ async function loadPairingSection(){
     render();
   }catch(e){
     SECTION_STATE.pairing='error';
+    render();
+    throw e;
+  }
+}
+
+/**
+ * Load chunks for Call Time to Conversion. Needs BOTH calls and meetings in its
+ * range (talk time from calls, stage counts from meetings) AND investments loaded
+ * globally (Fund 5 first-funder cohort + deal data for the MSP-deal anchor).
+ */
+async function loadCallTimeSection(){
+  try{
+    const chunks=chunksForRange('calltime');
+    await ensureChunksLoaded(chunks.callWeeks, chunks.meetingMonths);
+    if(!INVESTMENTS_LOADED){
+      await fetchAllInvestments();
+      rebuildNormalizedFromCache();
+    }
+    SECTION_STATE.calltime='ready';
+    render();
+  }catch(e){
+    SECTION_STATE.calltime='error';
     render();
     throw e;
   }
@@ -3429,6 +3528,273 @@ function render(){
   // renderPairing computes readiness from data presence (MEETINGS + INVESTMENTS_LOADED)
   // and shows a loading skeleton until both are ready.
   renderPairing(ranges.pairing);
+
+  // Call Time to Conversion (Fund 5) — standalone section, own range + compute.
+  renderCallTime(getDateRange('calltime'));
+}
+
+/**
+ * ── Call Time to Conversion (Fund 5) ──────────────────────────────────────
+ * Bronson's ask: how much call time do contacts who came on board accumulate,
+ * vs. those who didn't — split into setter work (intro calls) and closer work
+ * (discovery + decision calls)?
+ *
+ * COHORT ANCHOR (who's included at all):
+ *   - contact has >=1 CLOSER-owned call with duration>0 (a real closer
+ *     conversation happened), AND
+ *   - contact has >=1 associated Main Sales Pipeline deal (reached the funnel).
+ *
+ * TWO COHORTS:
+ *   - Funded:     first-ever funding was into Fund 5 (INVESTMENT_EVENTS.firstFund).
+ *   - Not-funded: never funded, and their anchoring closer call is older than
+ *                 MATURITY_DAYS (so recent in-flight contacts aren't unfairly
+ *                 counted as "didn't convert").
+ *
+ * TWO MEASURES per cohort:
+ *   - Stage COUNTS (from MEETINGS, reliably typed): intro / discovery / decision.
+ *   - Talk TIME (from CALLS, real hs_call_duration; role via owner):
+ *       setter time (setter-owned calls) = intro-stage work,
+ *       closer time (closer-owned calls) = discovery + decision work,
+ *       total time.
+ *
+ * WHY OWNER, NOT MEETING-TYPE, FOR TIME: discovery/decision are MEETING types,
+ * but meetings are fixed 30-min slots (verified) — no real duration. Real talk
+ * time lives on CALL records, which aren't typed by stage. Setters run intros,
+ * closers run discovery+decision, so call OWNER is a faithful role proxy with no
+ * inference. Discovery-vs-decision time is NOT separated (both closer-owned) —
+ * deferred pending feedback. Stage COUNTS still come from meetings, which ARE
+ * typed, so the count side keeps the three-way split.
+ *
+ * FUND 5 ONLY: Fund 4 (942 investments, all funded 2023-11 → 2025-12, zero in
+ * the 2026 disposition-tracking era) has no call-era data to measure, so it is
+ * excluded by design — including it would add an empty cohort, not a signal.
+ */
+function renderCallTime(range){
+  const sectionEl=document.getElementById('section-calltime');
+  if(!sectionEl) return;
+
+  const dataReady = INVESTMENTS_LOADED && CALLS.length>0;
+  if(!dataReady){
+    sectionEl.innerHTML=`
+      <div class="sec-header"><span class="sec-title">Call Time to Conversion — Fund 5</span>
+        <span class="sec-status loading">loading…</span></div>
+      <div style="padding:24px;text-align:center"><div class="spin" style="margin:0 auto"></div></div>`;
+    return;
+  }
+
+  const nowMs=Date.now();
+  const maturityMs=MATURITY_DAYS*24*60*60*1000;
+  const fromMs=range.from.getTime(), toMs=range.to.getTime();
+
+  // ── First-funding index: contactId → {ts, fund} (Fund 5 first-funders) ──
+  const firstFundByContact={};
+  INVESTMENT_EVENTS.forEach(e=>{
+    firstFundByContact[e.contactId]={ts:e.ts, fund:e.firstFund};
+  });
+
+  // ── Per-contact call aggregation ──
+  // For every contact, sum call duration by role (setter-owned vs closer-owned),
+  // and track the timestamp of their earliest closer call (the anchor). Only
+  // calls whose ts falls in the section's date range count toward the measures,
+  // but the ANCHOR (did a real closer call ever happen, and how long ago) uses
+  // the earliest closer call regardless of range — that's what defines cohort
+  // membership. Range filters the measured time/counts, not membership.
+  const SETTER_SET=new Set(SETTER_IDS), CLOSER_SET=new Set(CLOSER_IDS);
+  const byContact={};
+  CALLS.forEach(c=>{
+    if(!c.contactId) return;
+    const isSetter=SETTER_SET.has(c.ownerId);
+    const isCloser=CLOSER_SET.has(c.ownerId);
+    if(!isSetter && !isCloser) return;
+    const b=byContact[c.contactId] || (byContact[c.contactId]={
+      setterSec:0, closerSec:0, earliestCloserTs:null, hasCloserCall:false});
+    if(isCloser && c.durationSec>0){
+      b.hasCloserCall=true;
+      if(b.earliestCloserTs===null || c.ts<b.earliestCloserTs) b.earliestCloserTs=c.ts;
+    }
+    // Measured time: only calls inside the section's date range.
+    if(c.ts>=fromMs && c.ts<=toMs){
+      if(isSetter) b.setterSec+=c.durationSec;
+      else if(isCloser) b.closerSec+=c.durationSec;
+    }
+  });
+
+  // ── Per-contact stage counts from MEETINGS (typed intro/disco/decision) ──
+  // Counts are range-filtered on the meeting timestamp.
+  const stageByContact={};
+  MEETINGS.forEach(m=>{
+    if(!m.contactId) return;
+    if(m.ts<fromMs || m.ts>toMs) return;
+    if(m.type!=='intro' && m.type!=='discovery' && m.type!=='decision') return;
+    const s=stageByContact[m.contactId] || (stageByContact[m.contactId]={intro:0,discovery:0,decision:0});
+    s[m.type]++;
+  });
+
+  // ── Cohort assignment ──
+  // Anchor requires: a real closer call happened AND a Main Sales Pipeline deal.
+  const agg={
+    funded:  {n:0, setterSec:0, closerSec:0, intro:0, discovery:0, decision:0, contactIds:[]},
+    notFunded:{n:0, setterSec:0, closerSec:0, intro:0, discovery:0, decision:0, contactIds:[]},
+  };
+  let excludedNoDeal=0, excludedInFlight=0, excludedOtherFund=0;
+
+  Object.keys(byContact).forEach(cid=>{
+    const b=byContact[cid];
+    if(!b.hasCloserCall) return;                       // no real closer conversation
+    const deals=DEALS_BY_CONTACT[cid]||[];
+    const hasMainDeal=deals.some(d=>d.pipeline===MAIN_PIPELINE_ID);
+    if(!hasMainDeal){ excludedNoDeal++; return; }       // never entered the MSP funnel
+
+    const ff=firstFundByContact[cid];
+    const isFunded = !!ff;
+    const bucket = (rec)=>{
+      rec.n++; rec.setterSec+=b.setterSec; rec.closerSec+=b.closerSec;
+      const s=stageByContact[cid]||{intro:0,discovery:0,decision:0};
+      rec.intro+=s.intro; rec.discovery+=s.discovery; rec.decision+=s.decision;
+      rec.contactIds.push(cid);
+    };
+
+    if(isFunded){
+      // Funded cohort = FIRST funding into Fund 5 only.
+      if(ff.fund!=='Fund 5'){ excludedOtherFund++; return; }
+      bucket(agg.funded);
+    } else {
+      // Not-funded cohort = never funded AND anchor closer call is matured
+      // (older than MATURITY_DAYS) so we can fairly call them "didn't convert".
+      if(b.earliestCloserTs!==null && (nowMs-b.earliestCloserTs) < maturityMs){
+        excludedInFlight++; return;
+      }
+      bucket(agg.notFunded);
+    }
+  });
+
+  // ── Formatting helpers ──
+  const fmtHrs=sec=>{ const h=sec/3600; return h>=1 ? h.toFixed(1)+'h' : Math.round(sec/60)+'m'; };
+  const avgMin=(sec,n)=> n>0 ? Math.round(sec/n/60) : 0;
+  const avg=(v,n)=> n>0 ? (v/n).toFixed(1) : '0.0';
+
+  const view=(document.getElementById('sel-calltime-view')?.value)||'summary';
+
+  const cohortCard=(label, rec, cls)=>{
+    const totalSec=rec.setterSec+rec.closerSec;
+    let timeRows;
+    if(view==='summary'){
+      timeRows=`
+        <tr><td>Setter time (intro)</td><td>${fmtHrs(rec.setterSec)}</td><td>${avgMin(rec.setterSec,rec.n)}m</td></tr>
+        <tr><td>Closer time (disco+decision)</td><td>${fmtHrs(rec.closerSec)}</td><td>${avgMin(rec.closerSec,rec.n)}m</td></tr>
+        <tr class="ct-total"><td>Total time</td><td>${fmtHrs(totalSec)}</td><td>${avgMin(totalSec,rec.n)}m</td></tr>`;
+    } else {
+      timeRows=`<tr class="ct-total"><td>Total call time</td><td>${fmtHrs(totalSec)}</td><td>${avgMin(totalSec,rec.n)}m</td></tr>`;
+    }
+    return `
+      <div class="ct-card ${cls}">
+        <div class="ct-card-head">${label}<span class="ct-n">${rec.n} contact${rec.n===1?'':'s'}</span></div>
+        <table class="ct-table">
+          <thead><tr><th></th><th>Total</th><th>Avg/contact</th></tr></thead>
+          <tbody>
+            ${timeRows}
+          </tbody>
+        </table>
+        <div class="ct-counts">
+          <div class="ct-count"><span>Intro calls</span><b>${rec.intro}</b><i>${avg(rec.intro,rec.n)}/contact</i></div>
+          <div class="ct-count"><span>Discovery calls</span><b>${rec.discovery}</b><i>${avg(rec.discovery,rec.n)}/contact</i></div>
+          <div class="ct-count"><span>Decision calls</span><b>${rec.decision}</b><i>${avg(rec.decision,rec.n)}/contact</i></div>
+        </div>
+        <button class="ct-drill" onclick="drillCallTime('${cls}')">View ${rec.n} contact${rec.n===1?'':'s'} →</button>
+      </div>`;
+  };
+
+  // Stash cohort membership for drilldown
+  CALLTIME_COHORTS={funded:agg.funded.contactIds, notFunded:agg.notFunded.contactIds,
+                    byContact, stageByContact, firstFundByContact};
+
+  SECTION_STATE.calltime='ready';
+
+  sectionEl.innerHTML=`
+    <div class="sec-header">
+      <span class="sec-title">Call Time to Conversion — Fund 5</span>
+      <span id="sec-controls-calltime"></span>
+      <select id="sel-calltime-view" onchange="render()" style="margin-left:auto">
+        <option value="summary"${view==='summary'?' selected':''}>Summary (setter / closer)</option>
+        <option value="total"${view==='total'?' selected':''}>Total only</option>
+      </select>
+    </div>
+    <div class="ct-intro">
+      Contacts who had a real closer call <em>and</em> a Main Sales Pipeline deal, split by whether their
+      first funding was into <strong>Fund 5</strong>. Time is real call talk-time (setter-owned = intro work,
+      closer-owned = discovery+decision). Stage counts come from typed meetings.
+    </div>
+    <div class="ct-grid">
+      ${cohortCard('Came on board (Fund 5)', agg.funded, 'funded')}
+      ${cohortCard('Did not fund (matured)', agg.notFunded, 'notFunded')}
+    </div>
+    <div class="ct-caveats">
+      <strong>Read with care:</strong>
+      Call-logging wasn't enforced before 2026, so contacts whose activity predates that show thin call time —
+      that's a logging gap, not an absence of calls. Meeting duration isn't used (every disco/decision meeting is a
+      fixed 30-min slot); time is summed from call records only. Discovery vs. decision time is not separated (both
+      closer-owned). Fund 4 is excluded — all Fund 4 fundings predate the 2026 tracking era, so there is no call
+      data to measure.
+      ${excludedNoDeal||excludedInFlight||excludedOtherFund?`<br><span class="ct-excl">Excluded from cohorts: ${excludedNoDeal} had a closer call but no MSP deal · ${excludedInFlight} not-yet-funded within ${MATURITY_DAYS}d (in flight) · ${excludedOtherFund} first-funded into a fund other than Fund 5.</span>`:''}
+    </div>`;
+
+  // Re-attach the stored range control into this section's header (same pattern
+  // the pairing section uses).
+  const controlsHost=document.getElementById('sec-controls-calltime');
+  const controls=document.getElementById('range-controls-calltime');
+  if(controlsHost && controls) controlsHost.appendChild(controls);
+}
+
+// Drilldown state + handler for the call-time cohorts. Drives the shared
+// drilldown panel DOM directly (openDrilldown is metric-cell specific and can't
+// render a custom cohort table).
+let CALLTIME_COHORTS=null;
+async function drillCallTime(which){
+  if(!CALLTIME_COHORTS) return;
+  const ids=CALLTIME_COHORTS[which==='funded'?'funded':'notFunded'];
+  const title=which==='funded'?'Came on board (Fund 5)':'Did not fund (matured)';
+
+  const panel=document.getElementById('dd-panel');
+  const backdrop=document.getElementById('dd-backdrop');
+  const body=document.getElementById('dd-body');
+  document.getElementById('dd-title').textContent=`${title} — ${ids.length} contacts`;
+  document.getElementById('dd-sub').textContent='Setter time = intro-stage calls · Closer time = discovery+decision calls · I/D/Dec = stage call counts';
+  body.innerHTML='<div class="dd-loading"><div class="spin"></div><div>Loading records…</div></div>';
+  panel.classList.add('open'); panel.setAttribute('aria-hidden','false');
+  backdrop.classList.add('open'); DD_OPEN=true;
+
+  await fetchContactNames(ids);
+
+  // Sort by total call time desc — most-worked contacts first.
+  const sorted=[...ids].sort((a,b)=>{
+    const ba=CALLTIME_COHORTS.byContact[a]||{setterSec:0,closerSec:0};
+    const bb=CALLTIME_COHORTS.byContact[b]||{setterSec:0,closerSec:0};
+    return (bb.setterSec+bb.closerSec)-(ba.setterSec+ba.closerSec);
+  });
+
+  const rows=sorted.map(cid=>{
+    const b=CALLTIME_COHORTS.byContact[cid]||{setterSec:0,closerSec:0};
+    const s=CALLTIME_COHORTS.stageByContact[cid]||{intro:0,discovery:0,decision:0};
+    const ff=CALLTIME_COHORTS.firstFundByContact[cid];
+    const name=CONTACT_NAME_CACHE[cid]||cid;
+    const totalMin=Math.round((b.setterSec+b.closerSec)/60);
+    const tag = ff ? `<span class="dd-tag funded">Fund 5 · $${(INVESTMENT_EVENTS.find(e=>e.contactId===cid)?.totalAmount||0).toLocaleString()}</span>`
+                   : `<span class="dd-tag unfunded">Not funded</span>`;
+    return `<tr>
+      <td><a href="https://app.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-1/${cid}" target="_blank">${name}</a></td>
+      <td>${tag}</td>
+      <td>${Math.round(b.setterSec/60)}m</td>
+      <td>${Math.round(b.closerSec/60)}m</td>
+      <td><b>${totalMin}m</b></td>
+      <td>${s.intro}/${s.discovery}/${s.decision}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML=`
+    <table class="dd-table">
+      <thead><tr><th>Contact</th><th>Status</th><th>Setter time</th><th>Closer time</th><th>Total</th><th>I/D/Dec</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6">No contacts in this cohort.</td></tr>'}</tbody>
+    </table>`;
 }
 
 /**
