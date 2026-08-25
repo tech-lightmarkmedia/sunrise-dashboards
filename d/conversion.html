@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.9)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.10)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.9</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.10</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -1053,7 +1053,13 @@ function getDateRange(rangeKey='activity'){
     calltime:    {sel:'ct-sel-date',  cmp:'ct-sel-compare',  dFrom:'ct-d-from',  dTo:'ct-d-to',  cmpFrom:'ct-cmp-d-from',  cmpTo:'ct-cmp-d-to'},
   };
   const ids=prefixes[rangeKey];
-  const baseKey=document.getElementById(ids.sel).value;
+  // Null-guard: the range-controls element is moved between a hidden store and
+  // the section during render, so at load()/refresh time the select may not be
+  // mounted yet. Reading .value off null threw and aborted the entire load
+  // (chunksForRange → getDateRange). Fall back to the default key ('all') when
+  // the select isn't in the DOM, rather than crashing the refresh.
+  const selEl=document.getElementById(ids.sel);
+  const baseKey=selEl ? selEl.value : 'all';
   const base=resolveDateKey(baseKey, ids.dFrom, ids.dTo);
   // Compare element is optional — sections without a compare dropdown (e.g., the
   // pairing matrix) are treated as cmpKey='none', producing no comparison data.
