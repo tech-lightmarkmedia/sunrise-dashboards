@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.9</title>
+<title>Sunrise Capital — L10 Dashboard v1.10</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -101,7 +101,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.9</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.10</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -571,7 +571,7 @@ function renderFundCompare(){
 
   document.getElementById('fundcompare-cards').innerHTML = html;
   document.getElementById('fundcompare-sub').textContent =
-    'Each fund measured from its Nov 1 open (Fund 4: Nov 2023 · Fund 5: Nov 2025). Same relative months of each raise, side by side. New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
+    'Each fund anchored to its Nov 1 open (month 1 = November; Fund 4 opened Nov 2023, Fund 5 Nov 2025). The picker selects the same relative months of each raise; per-card dates show the actual window. New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
 }
 async function drillQuarter(type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
