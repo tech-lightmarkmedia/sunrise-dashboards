@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Conversion Dashboard (v19.10)</title>
+<title>Sunrise Capital — Conversion Dashboard (v19.11)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -341,7 +341,7 @@ a.dd-row-name:hover{text-decoration:underline;text-underline-offset:2px;text-dec
            see Guide → "What this dashboard measures" for the full breakdown. -->
       <div class="subtitle">New-investor acquisition funnel · First-time fundings only</div>
     </div>
-    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.10</span>
+    <span style="font-size:10px;color:#9e9789;font-weight:600;letter-spacing:.05em;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:10px;margin-left:4px">v19.11</span>
   </div>
   <div class="hdr-right">
     <button class="help-btn" onclick="openHelp()" title="Open the dashboard guide">ⓘ Guide</button>
@@ -1761,114 +1761,89 @@ async function runWithConcurrency(tasks, concurrency=3){
   return results;
 }
 
-async function ensureChunksLoaded(callWeeks, meetingMonths){
-  const callsToFetch=callWeeks.filter(wk=>!MONTH_CACHE[`calls:${wk}`]);
-  const meetingsToFetch=meetingMonths.filter(mk=>!MONTH_CACHE[`meetings:${mk}`]);
-  const totalNew=callsToFetch.length+meetingsToFetch.length;
+// v19.11: load calls + meetings from the R2 nightly cache instead of live
+// HubSpot searches. The worker (v2.5.34) now serves /cached-calls (Jan 1 2026
+// forward, closer-owned included) and /cached-meetings (all-time), each record
+// carrying hs_associated_contact_id. So this one-time pair of R2 reads replaces
+// the entire per-chunk live-search + per-chunk association-fetch machinery, and
+// the "contact links" phase and the assoc-race self-heal are gone with it
+// (a single read can't race). Records are bucketed into the SAME MONTH_CACHE
+// chunk keys the rest of the code already expects (calls:${weekKey}, meetings:
+// ${monthKey}), so every downstream "is this range loaded?" check, the pairing
+// section, and rebuildNormalizedFromCache all work unchanged — only the data
+// SOURCE changes (R2 blob, bucketed) not the cache shape.
+let R2_CACHE_LOADED=false;
+let R2_CACHE_LOADING=null; // in-flight promise, so parallel section loads share one R2 read
 
-  if(totalNew===0){
+async function ensureChunksLoaded(callWeeks, meetingMonths){
+  if(R2_CACHE_LOADED){
     rebuildNormalizedFromCache();
     return;
   }
-
-  let done=0;
-  function progress(){
-    done++;
-    lm(`Loading data… ${done}/${totalNew} chunks`);
+  // If another section already kicked off the R2 load, await the same promise
+  // instead of starting a second (all sections fire in parallel via
+  // Promise.allSettled — without this they'd each fetch and race).
+  if(R2_CACHE_LOADING){
+    await R2_CACHE_LOADING;
+    rebuildNormalizedFromCache();
+    return;
   }
-
-  const fetchTasks=[
-    ...callsToFetch.map(wk=>()=>{
-      const [from,to]=weekRangeFromKey(wk);
-      return fetchChunk('calls', CALL_PROPS, wk, from.getTime(), to.getTime()).then(progress);
-    }),
-    ...meetingsToFetch.map(mk=>()=>{
-      const [from,to]=monthRangeFromKey(mk);
-      return fetchChunk('meetings', MEETING_PROPS, mk, from.getTime(), to.getTime()).then(progress);
-    }),
-  ];
-  await runWithConcurrency(fetchTasks, 3);
-
-  lm('Loading contact links…');
-  // Build the assoc-task list from BOTH:
-  //   1. Newly-fetched chunks (always need assocs)
-  //   2. Previously-cached chunks where the assoc fetch never completed
-  //      (chunks NOT in CHUNK_ASSOC_FETCHED). This recovers from prior silent
-  //      failures — without this, a chunk that failed assocs once would stay
-  //      broken across sessions until the cache was manually cleared.
-  const callAssocsToRun = callWeeks.filter(wk =>
-    MONTH_CACHE[`calls:${wk}`] && !CHUNK_ASSOC_FETCHED.has(`calls:${wk}`));
-  const meetingAssocsToRun = meetingMonths.filter(mk =>
-    MONTH_CACHE[`meetings:${mk}`] && !CHUNK_ASSOC_FETCHED.has(`meetings:${mk}`));
-
-  if(callAssocsToRun.length + meetingAssocsToRun.length > 0){
-    console.log(`[ensureChunksLoaded] running assoc fetch on ${callAssocsToRun.length} call chunks + ${meetingAssocsToRun.length} meeting chunks (incl. retries for previously-failed)`);
-  }
-
-  const assocTasks=[
-    ...callAssocsToRun.map(wk=>()=>fetchChunkAssocs('calls', wk, MONTH_CACHE[`calls:${wk}`]||[])),
-    ...meetingAssocsToRun.map(mk=>()=>fetchChunkAssocs('meetings', mk, MONTH_CACHE[`meetings:${mk}`]||[])),
-  ];
-  await runWithConcurrency(assocTasks, 3);
-
-  // Resolve deals for every contact linked to a newly-cached OR newly-assoc'd meeting chunk.
-  const newMeetingContactIds=new Set();
-  const meetingChunksToCheckForNewContacts = [...new Set([...meetingsToFetch, ...meetingAssocsToRun])];
-  meetingChunksToCheckForNewContacts.forEach(mk=>{
-    (MONTH_CACHE[`meetings:${mk}`]||[]).forEach(m=>{
-      const cid=CONTACT_ASSOC_MAP[`meetings:${m.id}`];
-      if(cid) newMeetingContactIds.add(cid);
-    });
-  });
-  if(newMeetingContactIds.size>0){
-    await fetchDealsForContacts([...newMeetingContactIds]);
-  }
-
-  // ─── Self-heal pass for the meeting-assoc race condition ───
-  // Initial-load race: when activity + bookings sections both call this
-  // function in parallel for overlapping meeting chunks, meeting assoc
-  // results sometimes don't make it into CONTACT_ASSOC_MAP — the chunks
-  // get marked as "done" in CHUNK_ASSOC_FETCHED but no actual entries are
-  // written. Symptom: MEETINGS array fully built but every record has
-  // contactId === null, breaking attribution everywhere downstream.
-  //
-  // We detect this by sampling cached meeting chunks: if ≥80% of meetings
-  // in a cached chunk have NO entry in CONTACT_ASSOC_MAP, the chunk's
-  // assocs failed to land. Force a refetch by removing it from
-  // CHUNK_ASSOC_FETCHED and re-running fetchChunkAssocs. Up to one heal
-  // pass per ensureChunksLoaded call to avoid infinite loops.
-  const broken=[];
-  for(const mk of meetingMonths){
-    const records=MONTH_CACHE[`meetings:${mk}`];
-    if(!records || records.length===0) continue;
-    if(!CHUNK_ASSOC_FETCHED.has(`meetings:${mk}`)) continue; // not yet attempted, will be tried
-    const sampleSize=Math.min(records.length, 50);
-    const sample=records.slice(0, sampleSize);
-    const withAssoc=sample.filter(r=>CONTACT_ASSOC_MAP[`meetings:${r.id}`]).length;
-    if(withAssoc/sampleSize < 0.20){
-      broken.push(mk);
-    }
-  }
-  if(broken.length>0){
-    console.warn(`[ensureChunksLoaded] self-heal: ${broken.length} meeting chunks have <20% assoc rate — forcing retry on:`, broken);
-    broken.forEach(mk=>CHUNK_ASSOC_FETCHED.delete(`meetings:${mk}`));
-    const healTasks=broken.map(mk=>()=>fetchChunkAssocs('meetings', mk, MONTH_CACHE[`meetings:${mk}`]||[]));
-    await runWithConcurrency(healTasks, 3);
-    // After heal, refresh the deal cascade for any newly-discovered contacts
-    const healedContactIds=new Set();
-    broken.forEach(mk=>{
-      (MONTH_CACHE[`meetings:${mk}`]||[]).forEach(m=>{
-        const cid=CONTACT_ASSOC_MAP[`meetings:${m.id}`];
-        if(cid) healedContactIds.add(cid);
-      });
-    });
-    if(healedContactIds.size>0){
-      console.log(`[ensureChunksLoaded] self-heal: fetching deals for ${healedContactIds.size} newly-associated contacts`);
-      await fetchDealsForContacts([...healedContactIds]);
-    }
-  }
-
+  R2_CACHE_LOADING=(async()=>{
+    await _loadR2Cache();
+    R2_CACHE_LOADED=true;
+  })();
+  await R2_CACHE_LOADING;
   rebuildNormalizedFromCache();
+}
+
+async function _loadR2Cache(){
+  lm('Loading data…');
+  const [callsResp, meetingsResp] = await Promise.all([
+    api('/cached-calls').catch(e=>{ console.warn('cached-calls read failed', e); return null; }),
+    api('/cached-meetings').catch(e=>{ console.warn('cached-meetings read failed', e); return null; }),
+  ]);
+  const callRecs = (callsResp && (callsResp.results||callsResp)) || [];
+  const meetingRecs = (meetingsResp && (meetingsResp.results||meetingsResp)) || [];
+
+  const touchedCallKeys=new Set();
+  for(const r of callRecs){
+    const tsRaw = r.properties?.hs_timestamp;
+    if(!tsRaw) continue;
+    const d = new Date(Number(tsRaw) || Date.parse(tsRaw));
+    if(isNaN(d)) continue;
+    const key = `calls:${weekKey(d)}`;
+    (MONTH_CACHE[key] || (MONTH_CACHE[key]=[])).push(r);
+    touchedCallKeys.add(key);
+    const cid = r.properties?.hs_associated_contact_id;
+    if(cid) CONTACT_ASSOC_MAP[`calls:${r.id}`] = String(cid);
+  }
+  touchedCallKeys.forEach(k=>CHUNK_ASSOC_FETCHED.add(k));
+
+  const touchedMeetingKeys=new Set();
+  for(const r of meetingRecs){
+    const tsRaw = r.properties?.hs_timestamp || r.properties?.hs_createdate;
+    if(!tsRaw) continue;
+    const d = new Date(Number(tsRaw) || Date.parse(tsRaw));
+    if(isNaN(d)) continue;
+    const key = `meetings:${monthKey(d)}`;
+    (MONTH_CACHE[key] || (MONTH_CACHE[key]=[])).push(r);
+    touchedMeetingKeys.add(key);
+    const cid = r.properties?.hs_associated_contact_id;
+    if(cid) CONTACT_ASSOC_MAP[`meetings:${r.id}`] = String(cid);
+  }
+  touchedMeetingKeys.forEach(k=>CHUNK_ASSOC_FETCHED.add(k));
+
+  // Deal cascade: deals aren't in the call/meeting cache, so this stays a live
+  // (batched, deduped) fetch — the main remaining live cost.
+  const meetingContactIds=new Set();
+  meetingRecs.forEach(m=>{
+    const cid=CONTACT_ASSOC_MAP[`meetings:${m.id}`];
+    if(cid) meetingContactIds.add(cid);
+  });
+  if(meetingContactIds.size>0){
+    lm('Loading deals…');
+    await fetchDealsForContacts([...meetingContactIds]);
+  }
 }
 
 function rebuildNormalizedFromCache(){
