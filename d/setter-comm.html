@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Setter Communication Activity (v2.0)</title>
+<title>Sunrise Capital — Setter Communication Activity (v2.1)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
 <header>
   <div class="hdr">
     <h1>Setter Communication Activity</h1>
-    <span class="vpill">v2.0</span>
+    <span class="vpill">v2.1</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -302,7 +302,7 @@ tr.total-row td{font-weight:700;border-top:2px solid var(--border);background:va
     <p>Both are shown per disposition because average alone can mislead — a handful of long calls pull the average up, and dispositions like "No answer" are mechanically near-zero seconds. Median is less sensitive to outliers and is usually the more representative number for a typical call under that disposition.</p>
 
     <h3>Data source and freshness</h3>
-    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers the trailing <strong>180 days</strong> and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back further than 180 days on this dashboard — <strong>All Time</strong> and <strong>Last 12 Months</strong> are both bounded by the same 180-day cache window, not by their literal names.</p>
+    <p>Calls are read from the worker's <code>/cached-calls</code> R2 cache, which covers <strong>January 1, 2026 forward</strong> (a fixed floor — Jan 1 2026 is when closers were required to always disposition their calls, so earlier data is unreliable) and rebuilds nightly at 2 AM Eastern. This dashboard does not fetch live from HubSpot, so a call logged in the last few hours may not appear until the next rebuild. There is no way to look back before Jan 1 2026 on this dashboard — <strong>All Time</strong> and <strong>Last 12 Months</strong> are both bounded by that fixed Jan-1-2026 floor, not by their literal names.</p>
     <p><strong>Every range excludes today.</strong> Since the cache only updates once nightly, "today" never has partial data trickling in during the day — it has none at all until tomorrow's rebuild. So "This Week," "This Month," "This Quarter," "This Year," and every rolling window (Previous 14/30 Days, Last 12 Months, Last 180 Days, All Time) all run through <em>yesterday</em>, not the literal current moment — the range tag says so explicitly ("through yesterday"). "Today" itself is disabled in the dropdown rather than offered as a selectable option, since it would only ever show zero activity.</p>
 
     <h3>Date ranges and comparison</h3>
