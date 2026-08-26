@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.10</title>
+<title>Sunrise Capital — L10 Dashboard v1.11</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -101,7 +101,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.10</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.11</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -149,10 +149,22 @@ main{padding:20px 28px;max-width:900px}
   <div class="section-head" id="fundcompare-head">
     Fund vs. Fund — Raise Comparison
     <span class="sh-spacer"></span>
-    <span style="font-size:12px;color:var(--text3)">months of raise:</span>
-    <select id="fc-start" onchange="renderFundCompare()"></select>
-    <span style="font-size:12px;color:var(--text3)">through</span>
-    <select id="fc-end" onchange="renderFundCompare()"></select>
+    <select id="fc-range" onchange="onFcRangeChange()">
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="this_month">This Month</option>
+      <option value="last_month">Last Month</option>
+      <option value="this_quarter">This Quarter</option>
+      <option value="last_quarter">Last Quarter</option>
+      <option value="this_year" selected>This Year</option>
+      <option value="last_year">Last Year</option>
+      <option value="last_12">Last 12 months</option>
+      <option value="all">All Time</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <input type="date" id="fc-d-from" style="display:none" onchange="renderFundCompare()" />
+    <input type="date" id="fc-d-to" style="display:none" onchange="renderFundCompare()" />
   </div>
   <div class="fc-sub" id="fundcompare-sub"></div>
   <div class="fc-grid" id="fundcompare-cards"></div>
@@ -188,9 +200,8 @@ main{padding:20px 28px;max-width:900px}
     <p>This section fetches live from HubSpot on every load/refresh rather than reading the nightly cache, since investment_type is a newly added property not yet included in the cache's property list.</p>
 
     <h3>Fund vs. Fund — Raise Comparison</h3>
-    <p>Compares Fund 4 and Fund 5 at the <strong>same stage of each raise</strong>, not the same calendar dates. Each fund is anchored to its Nov 1 open (Fund 4: Nov 1 2023 · Fund 5: Nov 1 2025), and "month N" counts from that open (month 1 = November).</p>
-    <p>The two dropdowns pick a relative-month range applied to both funds on their own timelines. The default is <strong>month 3 through month 10</strong> — the year-to-date-equivalent slice, since Jan 1 is month 3 of a Nov-opening raise and late August is roughly month 10.</p>
-    <p>Each fund card shows <strong>New money</strong> (type_of_investment = "New") and <strong>Return money</strong> (Repeat + Bolt-On) as dollars and investment counts, a combined Total, and an <strong>Investors</strong> count — distinct associated contacts (by HubSpot contact association, falling back to funding email where no association exists). Investment amounts are dated by funds_received.</p>
+    <p>Compares Fund 4 and Fund 5 at the <strong>same stage of each raise</strong>. Pick a date range from the standard picker — it applies directly to <strong>Fund 5</strong> (the active raise). <strong>Fund 4</strong> shows the same window shifted back exactly <strong>2 years</strong>. Since both funds opened Nov 1 (Fund 4: 2023, Fund 5: 2025), the 2-year shift lands on the identical point in Fund 4's raise, so you're always comparing like-for-like age. Default is This Year.</p>
+    <p>Each fund card shows <strong>New money</strong> (type_of_investment = "New") and <strong>Return money</strong> (Repeat + Bolt-On) as dollars and investment counts, a combined Total, and an <strong>Investors</strong> count — distinct associated contacts (by HubSpot contact association, falling back to funding email where no association exists). Investment amounts are dated by funds_received; per-card dates show each fund's actual window.</p>
 
     <h3>Data Sources</h3>
     <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments and the Fund 5 investment-type breakdown fetched live from HubSpot. Use ↻ Refresh to reload.</p>
@@ -492,73 +503,83 @@ function renderFund5Types() {
 }
 
 // ── Fund vs. Fund raise comparison ────────────────────────
-// Relative model: each fund is measured from its own Nov 1 open, so the same
-// relative months of each raise are compared side by side (holds raise-stage
-// constant). Month 1 = the fund's open month (Nov). The picker selects a
-// relative-month range applied to both funds on their own timelines.
-const FUND_OPENS = { 'Fund 4': new Date(2023, 10, 1), 'Fund 5': new Date(2025, 10, 1) }; // month 10 = November (0-indexed)
+// Model: pick a calendar date range (standard picker). That window is applied
+// DIRECTLY to Fund 5 (absolute). Fund 4 is shown for the SAME window shifted
+// back exactly 2 years. Because both funds opened Nov 1 (Fund 4: 2023, Fund 5:
+// 2025), a 2-year shift lands on the identical stage of Fund 4's raise — so
+// this compares the two funds at the same age without any month-counting.
 
-// Default window = "YTD-equivalent": since each fund opens Nov 1, Jan 1 is
-// month 3 of the raise and today (~Aug 26) is ~month 10. So the default is
-// months 3 through 10 of each raise.
-const FC_DEFAULT_START = 3, FC_DEFAULT_END = 10;
+// Ported from conversion.html so preset boundaries match the rest of the suite.
+function fcAddDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function fcStartOfDay(d){const x=new Date(d);x.setHours(0,0,0,0);return x;}
+function fcEndOfDay(d){const x=new Date(d);x.setHours(23,59,59,999);return x;}
+function fcStartOfWeek(d){const x=fcStartOfDay(d);const day=x.getDay();const diff=(day===0?-6:1-day);x.setDate(x.getDate()+diff);return x;} // Monday-based
+function fcStartOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1);}
+function fcStartOfQuarter(d){const q=Math.floor(d.getMonth()/3);return new Date(d.getFullYear(),q*3,1);}
 
-// Given a fund open date and a relative month N (1-based, month 1 = open month),
-// return the absolute Date at the START of that month of the raise.
-function fcMonthStart(openDate, n){
-  return new Date(openDate.getFullYear(), openDate.getMonth() + (n - 1), 1);
-}
-// End boundary = start of the month AFTER endN (exclusive upper bound).
-function fcMonthEnd(openDate, endN){
-  return new Date(openDate.getFullYear(), openDate.getMonth() + endN, 1);
-}
-
-function fcPopulatePickers(){
-  const startSel = document.getElementById('fc-start');
-  const endSel = document.getElementById('fc-end');
-  if (startSel.options.length) return; // populate once
-  for (let m = 1; m <= 24; m++){
-    startSel.add(new Option('month ' + m, String(m)));
-    endSel.add(new Option('month ' + m, String(m)));
+function fcResolveRange(key){
+  const now=new Date();
+  let from,to,label='';
+  if(key==='yesterday'){const y=fcAddDays(now,-1);from=fcStartOfDay(y);to=fcEndOfDay(y);label='Yesterday';}
+  else if(key==='this_week'){from=fcStartOfWeek(now);to=now;label='This Week';}
+  else if(key==='last_week'){const sow=fcStartOfWeek(now);from=fcAddDays(sow,-7);to=fcEndOfDay(fcAddDays(sow,-1));label='Last Week';}
+  else if(key==='this_month'){from=fcStartOfMonth(now);to=now;label='This Month';}
+  else if(key==='last_month'){const som=fcStartOfMonth(now);from=fcStartOfMonth(fcAddDays(som,-1));to=fcEndOfDay(fcAddDays(som,-1));label='Last Month';}
+  else if(key==='this_quarter'){from=fcStartOfQuarter(now);to=now;label='This Quarter';}
+  else if(key==='last_quarter'){const soq=fcStartOfQuarter(now);from=fcStartOfQuarter(fcAddDays(soq,-1));to=fcEndOfDay(fcAddDays(soq,-1));label='Last Quarter';}
+  else if(key==='this_year'){from=new Date(now.getFullYear(),0,1);to=now;label='This Year';}
+  else if(key==='last_year'){from=new Date(now.getFullYear()-1,0,1);to=new Date(now.getFullYear()-1,11,31,23,59,59,999);label='Last Year';}
+  else if(key==='last_12'){to=now;from=fcAddDays(now,-365);label='Last 12 months';}
+  else if(key==='all'){from=new Date(2025,10,1);to=now;label='All Time';} // Fund 5 opened Nov 1 2025; no point going earlier for the F5-driven window
+  else if(key==='custom'){
+    const f=document.getElementById('fc-d-from').value;
+    const t=document.getElementById('fc-d-to').value;
+    from=f?fcStartOfDay(new Date(f)):new Date(2025,10,1);
+    to=t?fcEndOfDay(new Date(t)):now;
+    label='Custom';
   }
-  startSel.value = String(FC_DEFAULT_START);
-  endSel.value = String(FC_DEFAULT_END);
+  return {from,to,label};
+}
+
+// Shift a date back exactly 2 years (setFullYear clamps Feb 29 → Feb 28, same
+// behavior as conversion.html's year-over-year comparison).
+function fcShift2yr(d){const x=new Date(d);x.setFullYear(x.getFullYear()-2);return x;}
+
+function onFcRangeChange(){
+  const key=document.getElementById('fc-range').value;
+  const show=(key==='custom')?'inline-block':'none';
+  document.getElementById('fc-d-from').style.display=show;
+  document.getElementById('fc-d-to').style.display=show;
+  renderFundCompare();
 }
 
 function renderFundCompare(){
-  fcPopulatePickers();
-  let startN = parseInt(document.getElementById('fc-start').value, 10);
-  let endN = parseInt(document.getElementById('fc-end').value, 10);
-  if (endN < startN){ endN = startN; document.getElementById('fc-end').value = String(endN); }
+  const key=document.getElementById('fc-range').value;
+  const r=fcResolveRange(key);
+  const f5From=r.from.getTime(), f5To=r.to.getTime();
+  const f4From=fcShift2yr(r.from).getTime(), f4To=fcShift2yr(r.to).getTime();
 
-  const funds = ['Fund 4', 'Fund 5'];
-  let html = '';
+  const windows={ 'Fund 5':[f5From,f5To], 'Fund 4':[f4From,f4To] };
+  const fmtDate=ms=>new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
-  funds.forEach(fund => {
-    const open = FUND_OPENS[fund];
-    const winStart = fcMonthStart(open, startN).getTime();
-    const winEnd = fcMonthEnd(open, endN).getTime(); // exclusive
-
-    const inWin = INVESTMENTS.filter(i => {
-      const p = i.properties || {};
-      if ((p.fund_invested || '') !== fund) return false;
-      const d = new Date(p.funds_received || 0).getTime();
-      return d >= winStart && d < winEnd;
+  let html='';
+  ['Fund 4','Fund 5'].forEach(fund=>{
+    const [wFrom,wTo]=windows[fund];
+    const inWin=INVESTMENTS.filter(i=>{
+      const p=i.properties||{};
+      if((p.fund_invested||'')!==fund) return false;
+      const d=new Date(p.funds_received||0).getTime();
+      return d>=wFrom && d<=wTo;
     });
+    const isNew=i=>(i.properties?.type_of_investment||'')==='New';
+    const newInvs=inWin.filter(isNew);
+    const retInvs=inWin.filter(i=>!isNew(i));
+    const sum=invs=>invs.reduce((s,i)=>s+parseFloat(i.properties?.investment_amount||0),0);
+    const investorKey=i=>INV_TO_CONTACT[i.id] || ('email:'+((i.properties?.email_address||'').toLowerCase().trim()||('id:'+i.id)));
+    const investors=new Set(inWin.map(investorKey));
+    const winLabel=`${fmtDate(wFrom)} – ${fmtDate(wTo)}`;
 
-    const isNew = i => (i.properties?.type_of_investment || '') === 'New';
-    const newInvs = inWin.filter(isNew);
-    const retInvs = inWin.filter(i => !isNew(i));
-    const sum = invs => invs.reduce((s,i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
-
-    // Investor count = distinct associated contacts (contactId via INV_TO_CONTACT),
-    // fallback to email_address for records with no resolved association.
-    const investorKey = i => INV_TO_CONTACT[i.id] || ('email:' + (i.properties?.email_address || '').toLowerCase().trim() || ('id:' + i.id));
-    const investors = new Set(inWin.map(investorKey));
-
-    const winLabel = `Month ${startN}–${endN} of raise · ${fcMonthStart(open,startN).toLocaleDateString('en-US',{month:'short',year:'numeric'})} – ${new Date(winEnd-1).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`;
-
-    html += `
+    html+=`
       <div class="fc-card">
         <div class="fc-fund">${fund}</div>
         <div class="fc-window">${winLabel}</div>
@@ -569,9 +590,9 @@ function renderFundCompare(){
       </div>`;
   });
 
-  document.getElementById('fundcompare-cards').innerHTML = html;
-  document.getElementById('fundcompare-sub').textContent =
-    'Each fund anchored to its Nov 1 open (month 1 = November; Fund 4 opened Nov 2023, Fund 5 Nov 2025). The picker selects the same relative months of each raise; per-card dates show the actual window. New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
+  document.getElementById('fundcompare-cards').innerHTML=html;
+  document.getElementById('fundcompare-sub').textContent=
+    'Pick a date range: it applies to Fund 5 directly; Fund 4 shows the same window shifted back 2 years (both funds opened Nov 1, so this is the same stage of each raise). New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
 }
 async function drillQuarter(type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
