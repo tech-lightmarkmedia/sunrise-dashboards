@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.8</title>
+<title>Sunrise Capital — L10 Dashboard v1.9</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -50,6 +50,19 @@ main{padding:20px 28px;max-width:900px}
 .type-label{font-size:11px;color:var(--text3);line-height:1.3;margin-bottom:6px;min-height:28px}
 .type-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--text);line-height:1.1}
 .type-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.fc-sub{font-size:11px;color:var(--text3);margin:2px 0 10px}
+.fc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:8px}
+.fc-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.fc-fund{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin-bottom:2px}
+.fc-window{font-size:11px;color:var(--text3);margin-bottom:14px}
+.fc-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border)}
+.fc-row:last-child{border-bottom:none}
+.fc-row.fc-total{border-top:2px solid var(--border);margin-top:4px;padding-top:8px}
+.fc-rlabel{font-size:12px;color:var(--text2)}
+.fc-rval{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text)}
+.fc-rcount{font-size:11px;color:var(--text3);margin-left:8px}
+.fc-inv{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline}
+.fc-inv .fc-rlabel{text-transform:uppercase;letter-spacing:.3px;font-size:11px;color:var(--text3)}
 .type-unknown{border-color:var(--accent)}
 .type-unknown .type-val{color:var(--accent)}
 /* Drill drawer */
@@ -88,7 +101,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.8</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.9</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -132,6 +145,17 @@ main{padding:20px 28px;max-width:900px}
     <span class="sh-spacer"></span>
   </div>
   <div class="type-grid" id="fund5-type-cards"></div>
+
+  <div class="section-head" id="fundcompare-head">
+    Fund vs. Fund — Raise Comparison
+    <span class="sh-spacer"></span>
+    <span style="font-size:12px;color:var(--text3)">months of raise:</span>
+    <select id="fc-start" onchange="renderFundCompare()"></select>
+    <span style="font-size:12px;color:var(--text3)">through</span>
+    <select id="fc-end" onchange="renderFundCompare()"></select>
+  </div>
+  <div class="fc-sub" id="fundcompare-sub"></div>
+  <div class="fc-grid" id="fundcompare-cards"></div>
 </main>
 
 <div id="drill-drawer">
@@ -162,6 +186,11 @@ main{padding:20px 28px;max-width:900px}
     <p>Breaks down all Fund 5 investment records (all-time, not date-windowed) by the <code>investment_type</code> property — the legal/account structure the money came through (Individual, Joint, Entity, Trust & Solo 401k, A Self-Directed IRA, Individual (Joint Tenants), An Entity or a Trust).</p>
     <p><strong>Unknown</strong> means the record has no investment_type value set yet — either it was created after the property was added and never filled in, or it's one of the records flagged during backfill as needing manual review because the linked contact's deals disagreed on which value was correct. Click into Unknown to see which records still need attention.</p>
     <p>This section fetches live from HubSpot on every load/refresh rather than reading the nightly cache, since investment_type is a newly added property not yet included in the cache's property list.</p>
+
+    <h3>Fund vs. Fund — Raise Comparison</h3>
+    <p>Compares Fund 4 and Fund 5 at the <strong>same stage of each raise</strong>, not the same calendar dates. Each fund is anchored to its Nov 1 open (Fund 4: Nov 1 2023 · Fund 5: Nov 1 2025), and "month N" counts from that open (month 1 = November).</p>
+    <p>The two dropdowns pick a relative-month range applied to both funds on their own timelines. The default is <strong>month 3 through month 10</strong> — the year-to-date-equivalent slice, since Jan 1 is month 3 of a Nov-opening raise and late August is roughly month 10.</p>
+    <p>Each fund card shows <strong>New money</strong> (type_of_investment = "New") and <strong>Return money</strong> (Repeat + Bolt-On) as dollars and investment counts, a combined Total, and an <strong>Investors</strong> count — distinct associated contacts (by HubSpot contact association, falling back to funding email where no association exists). Investment amounts are dated by funds_received.</p>
 
     <h3>Data Sources</h3>
     <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments and the Fund 5 investment-type breakdown fetched live from HubSpot. Use ↻ Refresh to reload.</p>
@@ -462,7 +491,88 @@ function renderFund5Types() {
   document.getElementById('fund5-type-cards').innerHTML = html;
 }
 
-// ── Drill-down handlers ───────────────────────────────────
+// ── Fund vs. Fund raise comparison ────────────────────────
+// Relative model: each fund is measured from its own Nov 1 open, so the same
+// relative months of each raise are compared side by side (holds raise-stage
+// constant). Month 1 = the fund's open month (Nov). The picker selects a
+// relative-month range applied to both funds on their own timelines.
+const FUND_OPENS = { 'Fund 4': new Date(2023, 10, 1), 'Fund 5': new Date(2025, 10, 1) }; // month 10 = November (0-indexed)
+
+// Default window = "YTD-equivalent": since each fund opens Nov 1, Jan 1 is
+// month 3 of the raise and today (~Aug 26) is ~month 10. So the default is
+// months 3 through 10 of each raise.
+const FC_DEFAULT_START = 3, FC_DEFAULT_END = 10;
+
+// Given a fund open date and a relative month N (1-based, month 1 = open month),
+// return the absolute Date at the START of that month of the raise.
+function fcMonthStart(openDate, n){
+  return new Date(openDate.getFullYear(), openDate.getMonth() + (n - 1), 1);
+}
+// End boundary = start of the month AFTER endN (exclusive upper bound).
+function fcMonthEnd(openDate, endN){
+  return new Date(openDate.getFullYear(), openDate.getMonth() + endN, 1);
+}
+
+function fcPopulatePickers(){
+  const startSel = document.getElementById('fc-start');
+  const endSel = document.getElementById('fc-end');
+  if (startSel.options.length) return; // populate once
+  for (let m = 1; m <= 24; m++){
+    startSel.add(new Option('month ' + m, String(m)));
+    endSel.add(new Option('month ' + m, String(m)));
+  }
+  startSel.value = String(FC_DEFAULT_START);
+  endSel.value = String(FC_DEFAULT_END);
+}
+
+function renderFundCompare(){
+  fcPopulatePickers();
+  let startN = parseInt(document.getElementById('fc-start').value, 10);
+  let endN = parseInt(document.getElementById('fc-end').value, 10);
+  if (endN < startN){ endN = startN; document.getElementById('fc-end').value = String(endN); }
+
+  const funds = ['Fund 4', 'Fund 5'];
+  let html = '';
+
+  funds.forEach(fund => {
+    const open = FUND_OPENS[fund];
+    const winStart = fcMonthStart(open, startN).getTime();
+    const winEnd = fcMonthEnd(open, endN).getTime(); // exclusive
+
+    const inWin = INVESTMENTS.filter(i => {
+      const p = i.properties || {};
+      if ((p.fund_invested || '') !== fund) return false;
+      const d = new Date(p.funds_received || 0).getTime();
+      return d >= winStart && d < winEnd;
+    });
+
+    const isNew = i => (i.properties?.type_of_investment || '') === 'New';
+    const newInvs = inWin.filter(isNew);
+    const retInvs = inWin.filter(i => !isNew(i));
+    const sum = invs => invs.reduce((s,i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
+
+    // Investor count = distinct associated contacts (contactId via INV_TO_CONTACT),
+    // fallback to email_address for records with no resolved association.
+    const investorKey = i => INV_TO_CONTACT[i.id] || ('email:' + (i.properties?.email_address || '').toLowerCase().trim() || ('id:' + i.id));
+    const investors = new Set(inWin.map(investorKey));
+
+    const winLabel = `Month ${startN}–${endN} of raise · ${fcMonthStart(open,startN).toLocaleDateString('en-US',{month:'short',year:'numeric'})} – ${new Date(winEnd-1).toLocaleDateString('en-US',{month:'short',year:'numeric'})}`;
+
+    html += `
+      <div class="fc-card">
+        <div class="fc-fund">${fund}</div>
+        <div class="fc-window">${winLabel}</div>
+        <div class="fc-row"><span class="fc-rlabel">New money</span><span><span class="fc-rval">${$(sum(newInvs))}</span><span class="fc-rcount">${newInvs.length} inv</span></span></div>
+        <div class="fc-row"><span class="fc-rlabel">Return money</span><span><span class="fc-rval">${$(sum(retInvs))}</span><span class="fc-rcount">${retInvs.length} inv</span></span></div>
+        <div class="fc-row fc-total"><span class="fc-rlabel">Total</span><span><span class="fc-rval">${$(sum(inWin))}</span><span class="fc-rcount">${inWin.length} inv</span></span></div>
+        <div class="fc-inv"><span class="fc-rlabel">Investors</span><span class="fc-rval">${investors.size}</span></div>
+      </div>`;
+  });
+
+  document.getElementById('fundcompare-cards').innerHTML = html;
+  document.getElementById('fundcompare-sub').textContent =
+    'Each fund measured from its Nov 1 open (Fund 4: Nov 2023 · Fund 5: Nov 2025). Same relative months of each raise, side by side. New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
+}
 async function drillQuarter(type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
   const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
@@ -616,6 +726,7 @@ async function loadData() {
     renderQuarter();
     renderActivity();
     renderFund5Types();
+    renderFundCompare();
     status('Updated ' + new Date().toLocaleTimeString());
     document.getElementById('status-pill').textContent = `${INVESTMENTS.length} investments`;
     
@@ -624,6 +735,9 @@ async function loadData() {
     fetchAssociations().then(() => {
       associationsReady = true;
       console.log('[l10] Associations ready.');
+      // Re-render the fund comparison now that INV_TO_CONTACT is populated, so
+      // the investor-count column resolves by contactId instead of email fallback.
+      renderFundCompare();
     });
   } catch(e) {
     status('Error: ' + e.message);
@@ -636,7 +750,19 @@ async function fetchAssociations() {
   // Union RELEVANT_INVESTMENTS with FUND5_INVESTMENTS since the Fund 5 breakdown
   // spans all-time, not just the current/previous quarter.
   INV_TO_CONTACT = {};
-  const invIds = [...new Set([...RELEVANT_INVESTMENTS.map(i => i.id), ...FUND5_INVESTMENTS.map(i => i.id)])];
+  // Union RELEVANT_INVESTMENTS + FUND5_INVESTMENTS + all Fund 4/Fund 5 records.
+  // The last group is needed for the Fund vs. Fund comparison's investor count
+  // (distinct associated contacts) — Fund 4's comparison window is outside the
+  // current/previous quarter, so its records aren't in RELEVANT_INVESTMENTS.
+  const fundCompareInvs = INVESTMENTS.filter(i => {
+    const f = i.properties?.fund_invested || '';
+    return f === 'Fund 4' || f === 'Fund 5';
+  });
+  const invIds = [...new Set([
+    ...RELEVANT_INVESTMENTS.map(i => i.id),
+    ...FUND5_INVESTMENTS.map(i => i.id),
+    ...fundCompareInvs.map(i => i.id)
+  ])];
   for (let i = 0; i < invIds.length; i += 100) {
     try {
       const d = await api('/crm/v4/associations/2-59402465/contacts/batch/read',
