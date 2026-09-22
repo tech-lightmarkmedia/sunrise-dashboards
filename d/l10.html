@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sunrise Capital — L10 Dashboard v1.12</title>
+<title>Sunrise Capital — L10 Dashboard v1.13</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;--text:#1a1814;--text2:#6b6558;--text3:#9e9789;--accent:#c44a1e;--accent-bg:#fdf3ee;--green:#059669;--red:#c44a1e}
@@ -26,6 +26,10 @@ main{padding:20px 28px;max-width:900px}
 
 /* KPI cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px}
+.row-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin:16px 0 8px}
+.row-label:first-child{margin-top:0}
+.row-label.combined{color:var(--accent)}
+.kpi-grid.two-up{grid-template-columns:repeat(2,1fr)}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
 .kpi-val{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);line-height:1.1}
@@ -101,7 +105,7 @@ main{padding:20px 28px;max-width:900px}
 <body>
 
 <header>
-  <h1>IR Team — L10<span class="vpill">v1.12</span></h1>
+  <h1>IR Team — L10<span class="vpill">v1.13</span></h1>
   <div class="header-right">
     <span id="status-pill"></span>
     <button class="hbtn" onclick="toggleGuide()">Guide</button>
@@ -119,10 +123,25 @@ main{padding:20px 28px;max-width:900px}
     <span style="font-size:12px;color:var(--text3)">vs.</span>
     <select id="q-compare" onchange="onQuarterSelectionChange()"></select>
   </div>
-  <div class="kpi-grid" id="quarter-cards">
-    <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val clickable-val" id="q-total" onclick="drillQuarter('total')">—</div><div class="kpi-delta" id="q-total-delta"></div><div class="kpi-sub" id="q-total-sub"></div></div>
-    <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val clickable-val" id="q-new" onclick="drillQuarter('new')">—</div><div class="kpi-delta" id="q-new-delta"></div><div class="kpi-sub" id="q-new-sub"></div></div>
-    <div class="kpi-card"><div class="kpi-label">Repeat Money</div><div class="kpi-val clickable-val" id="q-repeat" onclick="drillQuarter('repeat')">—</div><div class="kpi-delta" id="q-repeat-delta"></div><div class="kpi-sub" id="q-repeat-sub"></div></div>
+  <div class="row-label">All Non-Income Funds</div>
+  <div class="kpi-grid" id="quarter-cards-nonsif">
+    <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val clickable-val" id="q-nonsif-total" onclick="drillQuarter('nonsif','total')">—</div><div class="kpi-delta" id="q-nonsif-total-delta"></div><div class="kpi-sub" id="q-nonsif-total-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val clickable-val" id="q-nonsif-new" onclick="drillQuarter('nonsif','new')">—</div><div class="kpi-delta" id="q-nonsif-new-delta"></div><div class="kpi-sub" id="q-nonsif-new-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Repeat Money</div><div class="kpi-val clickable-val" id="q-nonsif-repeat" onclick="drillQuarter('nonsif','repeat')">—</div><div class="kpi-delta" id="q-nonsif-repeat-delta"></div><div class="kpi-sub" id="q-nonsif-repeat-sub"></div></div>
+  </div>
+
+  <div class="row-label">Sunrise Income Fund</div>
+  <div class="kpi-grid" id="quarter-cards-sif">
+    <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val clickable-val" id="q-sif-total" onclick="drillQuarter('sif','total')">—</div><div class="kpi-delta" id="q-sif-total-delta"></div><div class="kpi-sub" id="q-sif-total-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val clickable-val" id="q-sif-new" onclick="drillQuarter('sif','new')">—</div><div class="kpi-delta" id="q-sif-new-delta"></div><div class="kpi-sub" id="q-sif-new-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Repeat Money</div><div class="kpi-val clickable-val" id="q-sif-repeat" onclick="drillQuarter('sif','repeat')">—</div><div class="kpi-delta" id="q-sif-repeat-delta"></div><div class="kpi-sub" id="q-sif-repeat-sub"></div></div>
+  </div>
+
+  <div class="row-label combined">Combined — All Funds</div>
+  <div class="kpi-grid" id="quarter-cards-all">
+    <div class="kpi-card"><div class="kpi-label">Total Raise</div><div class="kpi-val clickable-val" id="q-all-total" onclick="drillQuarter('all','total')">—</div><div class="kpi-delta" id="q-all-total-delta"></div><div class="kpi-sub" id="q-all-total-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">New Money</div><div class="kpi-val clickable-val" id="q-all-new" onclick="drillQuarter('all','new')">—</div><div class="kpi-delta" id="q-all-new-delta"></div><div class="kpi-sub" id="q-all-new-sub"></div></div>
+    <div class="kpi-card"><div class="kpi-label">Repeat Money</div><div class="kpi-val clickable-val" id="q-all-repeat" onclick="drillQuarter('all','repeat')">—</div><div class="kpi-delta" id="q-all-repeat-delta"></div><div class="kpi-sub" id="q-all-repeat-sub"></div></div>
   </div>
 
   <div class="section-head">
@@ -134,10 +153,24 @@ main{padding:20px 28px;max-width:900px}
       <option value="30">Last 30 Days</option>
     </select>
   </div>
-  <div class="activity-grid" id="activity-cards">
+  <div class="row-label">All Non-Income Funds</div>
+  <div class="activity-grid" id="activity-cards-nonsif">
     <div class="activity-card"><div class="kpi-label">Discovery Calls Set</div><div class="activity-val clickable-val" id="a-disco" onclick="drillActivity('disco')">—</div></div>
     <div class="activity-card"><div class="kpi-label">Commitments Made</div><div class="activity-val clickable-val" id="a-commit-count" onclick="drillActivity('commits')">—</div><div class="activity-detail" id="a-commit-detail"></div></div>
     <div class="activity-card"><div class="kpi-label">Investments Funded</div><div class="activity-val clickable-val" id="a-invest-count" onclick="drillActivity('invests')">—</div><div class="activity-detail" id="a-invest-detail"></div></div>
+  </div>
+
+  <div class="row-label">Sunrise Income Fund</div>
+  <div class="activity-grid two-up" id="activity-cards-sif">
+    <div class="activity-card"><div class="kpi-label">Commitments Made</div><div class="activity-val clickable-val" id="a-sif-commit-count" onclick="drillActivity('sifcommits')">—</div><div class="activity-detail" id="a-sif-commit-detail"></div></div>
+    <div class="activity-card"><div class="kpi-label">Investments Funded</div><div class="activity-val clickable-val" id="a-sif-invest-count" onclick="drillActivity('sifinvests')">—</div><div class="activity-detail" id="a-sif-invest-detail"></div></div>
+  </div>
+
+  <div class="row-label combined">Combined — All Funds</div>
+  <div class="activity-grid" id="activity-cards-all">
+    <div class="activity-card"><div class="kpi-label">Discovery Calls Set</div><div class="activity-val clickable-val" id="a-all-disco" onclick="drillActivity('disco')">—</div></div>
+    <div class="activity-card"><div class="kpi-label">Commitments Made</div><div class="activity-val clickable-val" id="a-all-commit-count" onclick="drillActivity('allcommits')">—</div><div class="activity-detail" id="a-all-commit-detail"></div></div>
+    <div class="activity-card"><div class="kpi-label">Investments Funded</div><div class="activity-val clickable-val" id="a-all-invest-count" onclick="drillActivity('allinvests')">—</div><div class="activity-detail" id="a-all-invest-detail"></div></div>
   </div>
 
   <div class="section-head">
@@ -145,6 +178,22 @@ main{padding:20px 28px;max-width:900px}
     <span class="sh-spacer"></span>
   </div>
   <div class="type-grid" id="fund5-type-cards"></div>
+
+  <div class="section-head">
+    Sunrise Income Fund — Pipeline Stage
+    <span class="sh-spacer"></span>
+    <select id="sif-flow-window" onchange="renderSifPipeline()">
+      <option value="7">Last 7 Days</option>
+      <option value="14">Last 14 Days</option>
+      <option value="30" selected>Last 30 Days</option>
+      <option value="90">Last 90 Days</option>
+      <option value="365">Last 12 Months</option>
+    </select>
+  </div>
+  <div class="row-label">Current State — where deals sit right now</div>
+  <div class="kpi-grid" id="sif-current-cards"></div>
+  <div class="row-label">Flow — entered stage in selected window</div>
+  <div class="kpi-grid" id="sif-flow-cards"></div>
 
   <div class="section-head" id="fundcompare-head">
     Fund vs. Fund — Raise Comparison
@@ -184,24 +233,37 @@ main{padding:20px 28px;max-width:900px}
 
     <h3>Quarter vs. Quarter</h3>
     <p>Use the two dropdowns to select any period and comparison from the trailing 12 quarters. Defaults to the current quarter vs. the previous quarter.</p>
+    <p>Shown as three rows: <strong>All Non-Income Funds</strong>, <strong>Sunrise Income Fund</strong>, and <strong>Combined</strong>. All three read HubSpot Investment records and split on the fund_invested property, so the two fund rows always add to the combined row.</p>
     <p><strong>Total Raise:</strong> Total funded capital (from HubSpot Investment records, anchored on funds_received date) for the selected period. The delta shows the change vs. the comparison period at the same elapsed point.</p>
     <p><strong>New Money:</strong> Capital from investments classified as "New" (type_of_investment = New).</p>
     <p><strong>Repeat Money:</strong> Capital from Repeat and Bolt-On investments.</p>
+    <p><strong>A note on the Income Fund row:</strong> every Income Fund investor is an existing investor who first funded a growth fund, so Income Fund capital is repeat capital by nature. The New/Repeat split still reads type_of_investment exactly as it is written on the record — nothing is assumed — so if Income Fund is opened to new investors later, that money appears in New Money with no change to this dashboard.</p>
     <p>The comparison uses same-point-in-quarter logic: if the selected period is the current quarter and today is Day 35, the comparison uses the first 35 days of the comparison quarter. For completed quarters, the full quarter is compared against the same number of days in the comparison quarter.</p>
 
     <h3>Recent Activity</h3>
+    <p>Also split into <strong>All Non-Income Funds</strong>, <strong>Sunrise Income Fund</strong>, and <strong>Combined</strong>. The Income Fund row has no Discovery Calls card because that pipeline has no discovery-call stage — Income Fund investors are existing investors and do not go through a discovery call.</p>
     <p><strong>Discovery Calls Set:</strong> Meetings with call_and_meeting_type = "Discovery Call - Main" or "Discovery Call - Setters" created in the window. Uses meeting creation date (when booked).</p>
-    <p><strong>Commitments Made:</strong> Deals entering the InvestNext commit pipeline stage in the window. Shows count and total dollar amount.</p>
-    <p><strong>Investments Funded:</strong> Investment records with funds_received in the window. Shows count and total dollar amount.</p>
+    <p><strong>Commitments Made:</strong> For non-Income funds, deals entering the InvestNext commit pipeline stage in the window. For the Income Fund, deals entering its own Commitment Made stage. Shows count and total dollar amount.</p>
+    <p><strong>Investments Funded:</strong> For non-Income funds, Investment records with funds_received in the window. For the Income Fund, deals entering Closed Won — Income Fund investment records are already reported in the quarter comparison above, so using the deal stage here avoids counting the same money twice on one screen.</p>
+    <p><strong>Why the two rows measure differently:</strong> the non-Income row counts Investment records and the Income Fund row counts deals. The combined row adds them, so treat it as a volume indicator rather than a reconciliation of the two sources.</p>
 
     <h3>Fund 5 — Investment Type</h3>
     <p>Breaks down all Fund 5 investment records (all-time, not date-windowed) by the <code>investment_type</code> property — the legal/account structure the money came through (Individual, Joint, Entity, Trust & Solo 401k, A Self-Directed IRA, Individual (Joint Tenants), An Entity or a Trust).</p>
     <p><strong>Unknown</strong> means the record has no investment_type value set yet — either it was created after the property was added and never filled in, or it's one of the records flagged during backfill as needing manual review because the linked contact's deals disagreed on which value was correct. Click into Unknown to see which records still need attention.</p>
     <p>This section fetches live from HubSpot on every load/refresh rather than reading the nightly cache, since investment_type is a newly added property not yet included in the cache's property list.</p>
 
+    <h3>Sunrise Income Fund — Pipeline Stage</h3>
+    <p>Income Fund deals live in their own HubSpot pipeline with their own stages — Prospect Engaged, Prospect Contacted, Presentation Scheduled, Commitment Made, Documents Signed, Funds Received, Closed Won. The Main Sales Pipeline's discovery and decision stages do not exist here, which is why the Income Fund never appears in the discovery-call or conversion numbers.</p>
+    <p>The same three stages are shown two different ways, because they answer different questions:</p>
+    <p><strong>Current State</strong> counts each deal once, at whichever stage it sits on right now. This is a snapshot with no date window — it answers "how much is committed but not yet closed." Because it reads the deal's present stage, a deal appears in exactly one card.</p>
+    <p><strong>Flow</strong> counts deals that <em>entered</em> each stage inside the selected window, read from the stage-entry timestamps. Those timestamps persist after a deal moves on, so one deal can appear in more than one Flow card — that is correct, since it did pass through each stage. This answers "what moved in the last N days." The window selector applies only to this row.</p>
+    <p><strong>Funded reads Closed Won, not Funds Received.</strong> Deals pass through Funds Received on the way to Closed Won, which is where funded deals come to rest. Counting Funds Received in the Current State row would show near-zero, since deals do not stay there. A deal in transit at Funds Received will briefly appear in no Current State card.</p>
+    <p>Dollar figures come from the deal <code>amount</code> property. Every card is clickable and opens the underlying deals.</p>
+
     <h3>Fund vs. Fund — Raise Comparison</h3>
     <p>Compares Fund 4 and Fund 5 at the <strong>same stage of each raise</strong>. Pick a date range from the standard picker — it applies directly to <strong>Fund 5</strong> (the active raise). <strong>Fund 4</strong> shows the same window shifted back exactly <strong>2 years</strong>. Since both funds opened Nov 1 (Fund 4: 2023, Fund 5: 2025), the 2-year shift lands on the identical point in Fund 4's raise, so you're always comparing like-for-like age. Default is This Year.</p>
     <p>Each fund card shows <strong>New money</strong> (type_of_investment = "New") and <strong>Return money</strong> (Repeat + Bolt-On) as dollars and investment counts, a combined Total, and an <strong>Investors</strong> count — distinct associated contacts (by HubSpot contact association, falling back to funding email where no association exists). Investment amounts are dated by funds_received; per-card dates show each fund's actual window.</p>
+    <p>The Sunrise Income Fund is intentionally not in this comparison. The 2-year shift exists because Fund 4 and Fund 5 launched two years apart; the Income Fund runs concurrently with Fund 5, so there is no equivalent shift and no like-for-like raise to compare it against.</p>
 
     <h3>Data Sources</h3>
     <p>Investments and meetings from the nightly R2 cache (rebuilt 2 AM ET). Commitments and the Fund 5 investment-type breakdown fetched live from HubSpot. Use ↻ Refresh to reload.</p>
@@ -214,7 +276,23 @@ const HS_DELAY = 120;
 const COMMIT_STAGE_PROP = 'hs_v2_date_entered_1202837318';
 const DISCOVERY_TYPES = new Set(['Discovery Call - Main', 'Discovery Call - Setters']);
 
-let INVESTMENTS = [], MEETINGS = [], COMMIT_DEALS = [];
+// ── Sunrise Income Fund (v1.13) ───────────────────────────
+// SIF investments are tagged on the Investment object; SIF deals live in their
+// own pipeline with their own stage IDs (the Main pipeline's DCB/Decision
+// stages do not exist here). All SIF investors are existing investors, so SIF
+// money is repeat capital by definition — it never appears as a first funding.
+const SIF_FUND_NAME = 'Sunrise Income Fund';
+const SIF_PIPELINE_ID = '917379108';
+// Funded reads Closed Won, not Funds Received: deals pass through Funds
+// Received on their way to Closed Won, which is where funded deals rest.
+const SIF_STAGES = [
+  {key: 'commit', label: 'Commitment Made',  id: '1399863320'},
+  {key: 'docs',   label: 'Documents Signed', id: '1399863321'},
+  {key: 'funded', label: 'Closed Won',       id: '1399863322'}
+];
+const SIF_ENTRY_PROP = id => `hs_v2_date_entered_${id}`;
+
+let INVESTMENTS = [], MEETINGS = [], COMMIT_DEALS = [], SIF_DEALS = [];
 let INV_TO_CONTACT = {}, MEET_TO_CONTACT = {}, DEAL_TO_CONTACT = {};
 let CONTACT_NAMES = {};
 const HS_PORTAL = '23126809';
@@ -229,8 +307,10 @@ const DRILL_PAGE_SIZE = 100;
 let drillRecords = [], drillType = '', drillPage = 0, drillTitle = '';
 
 // Store filtered sets for drill-downs
-let QTR_INVS = [], QTR_NEW = [], QTR_REPEAT = [];
+let QTR_SCOPED = {};
 let ACT_DISCOS = [], ACT_COMMITS = [], ACT_INVESTS = [];
+let ACT_SIF_COMMITS = [], ACT_SIF_INVESTS = [];
+let SIF_CURRENT = {}, SIF_FLOW = {};
 
 // Fund 5 investment-type breakdown (live-fetched, not cached — investment_type
 // is a newly added property not yet in the R2 cache's property list)
@@ -346,6 +426,30 @@ async function fetchCommitDeals() {
   COMMIT_DEALS = d.results || [];
 }
 
+async function fetchSifDeals() {
+  // Whole SIF pipeline, no date floor — it's a small pipeline and the
+  // current-state row is a snapshot, so a 30-day fetch floor (as the main
+  // commit fetch uses) would silently under-report deals sitting in stage.
+  // Windowing for the flow row happens client-side.
+  SIF_DEALS = [];
+  const props = ['dealstage', 'amount', 'dealname', 'pipeline',
+    ...SIF_STAGES.map(s => SIF_ENTRY_PROP(s.id))];
+  let after;
+  do {
+    const body = {
+      filterGroups: [{filters: [
+        {propertyName: 'pipeline', operator: 'EQ', value: SIF_PIPELINE_ID}
+      ]}],
+      properties: props,
+      limit: 100,
+      ...(after ? {after} : {})
+    };
+    const d = await api('/crm/v3/objects/deals/search', body);
+    SIF_DEALS.push(...(d.results || []));
+    after = d.paging?.next?.after;
+  } while (after);
+}
+
 async function fetchFund5Types() {
   FUND5_INVESTMENTS = [];
   let after;
@@ -390,9 +494,6 @@ function renderQuarter() {
     const d = new Date(i.properties?.funds_received || 0).getTime();
     return d >= period.start.getTime() && d <= periodEnd.getTime();
   });
-  QTR_INVS = pInvs;
-  QTR_NEW = pInvs.filter(i => (i.properties?.type_of_investment || '') === 'New');
-  QTR_REPEAT = pInvs.filter(i => { const t = i.properties?.type_of_investment || ''; return t === 'Repeat' || t === 'Bolt-On'; });
 
   const cInvs = INVESTMENTS.filter(i => {
     const d = new Date(i.properties?.funds_received || 0).getTime();
@@ -406,9 +507,14 @@ function renderQuarter() {
     return t === 'Repeat' || t === 'Bolt-On';
   });
 
-  const pTotal = sumAmt(pInvs), cTotal = sumAmt(cInvs);
-  const pNew = sumAmt(filterType(pInvs, 'New')), cNew = sumAmt(filterType(cInvs, 'New'));
-  const pRepeat = sumAmt(filterRepeat(pInvs)), cRepeat = sumAmt(filterRepeat(cInvs));
+  // v1.13: split by fund scope. SIF money would otherwise fold silently into
+  // the headline totals with no way to see it.
+  const isSif = i => (i.properties?.fund_invested || '') === SIF_FUND_NAME;
+  const scopeFilter = {
+    nonsif: invs => invs.filter(i => !isSif(i)),
+    sif:    invs => invs.filter(isSif),
+    all:    invs => invs
+  };
 
   function setCard(prefix, current, previous, prevLabel) {
     document.getElementById(prefix).textContent = $(current);
@@ -430,9 +536,20 @@ function renderQuarter() {
     document.getElementById(prefix + '-sub').textContent = subText;
   }
 
-  setCard('q-total', pTotal, cTotal, compare.label);
-  setCard('q-new', pNew, cNew, compare.label);
-  setCard('q-repeat', pRepeat, cRepeat, compare.label);
+  QTR_SCOPED = {};
+  ['nonsif', 'sif', 'all'].forEach(scope => {
+    const p = scopeFilter[scope](pInvs);
+    const c = scopeFilter[scope](cInvs);
+    // Stash per scope so the drill drawer opens the row that was clicked.
+    QTR_SCOPED[scope] = {
+      total: p,
+      'new': filterType(p, 'New'),
+      repeat: filterRepeat(p)
+    };
+    setCard(`q-${scope}-total`,  sumAmt(p), sumAmt(c), compare.label);
+    setCard(`q-${scope}-new`,    sumAmt(filterType(p, 'New')), sumAmt(filterType(c, 'New')), compare.label);
+    setCard(`q-${scope}-repeat`, sumAmt(filterRepeat(p)), sumAmt(filterRepeat(c)), compare.label);
+  });
 }
 
 // ── Render activity ───────────────────────────────────────
@@ -440,39 +557,115 @@ function renderActivity() {
   const days = parseInt(document.getElementById('window-select').value) || 7;
   const now = Date.now();
   const from = now - days * 864e5;
+  const inWin = ts => ts >= from && ts <= now;
+  const sumDeal = ds => ds.reduce((s, d) => s + parseFloat(d.properties?.amount || 0), 0);
 
-  // Discovery calls set
+  // ── Row 1: All Non-Income Funds ──
+  // Discovery calls set — Main pipeline only; SIF has no discovery stage.
   const discos = MEETINGS.filter(m => {
     const p = m.properties || {};
     const rawType = p.call_and_meeting_type || p.hs_activity_type || '';
     if (!DISCOVERY_TYPES.has(rawType)) return false;
-    const created = new Date(p.hs_createdate || 0).getTime();
-    return created >= from && created <= now;
+    return inWin(new Date(p.hs_createdate || 0).getTime());
   });
   ACT_DISCOS = discos;
   document.getElementById('a-disco').textContent = discos.length;
 
-  // Commitments
-  const commits = COMMIT_DEALS.filter(d => {
-    const dt = new Date(d.properties?.[COMMIT_STAGE_PROP] || 0).getTime();
-    return dt >= from && dt <= now;
-  });
+  // Commitments — InvestNext commit stage, a non-SIF pipeline.
+  const commits = COMMIT_DEALS.filter(d =>
+    inWin(new Date(d.properties?.[COMMIT_STAGE_PROP] || 0).getTime()));
   ACT_COMMITS = commits;
-  const commitDollars = commits.reduce((s, d) => s + parseFloat(d.properties?.amount || 0), 0);
+  const commitDollars = sumDeal(commits);
   document.getElementById('a-commit-count').textContent = commits.length;
   document.getElementById('a-commit-detail').innerHTML = commitDollars > 0
     ? `<strong>${$(commitDollars)}</strong> committed` : '';
 
-  // Investments funded
+  // Investments funded — Investment records, SIF excluded so the combined
+  // row below can add the two rows without double-counting.
   const funded = INVESTMENTS.filter(i => {
-    const dt = new Date(i.properties?.funds_received || 0).getTime();
-    return dt >= from && dt <= now;
+    if ((i.properties?.fund_invested || '') === SIF_FUND_NAME) return false;
+    return inWin(new Date(i.properties?.funds_received || 0).getTime());
   });
   ACT_INVESTS = funded;
   const fundedDollars = funded.reduce((s, i) => s + parseFloat(i.properties?.investment_amount || 0), 0);
   document.getElementById('a-invest-count').textContent = funded.length;
   document.getElementById('a-invest-detail').innerHTML = fundedDollars > 0
     ? `<strong>${$(fundedDollars)}</strong> funded` : '';
+
+  // ── Row 2: Sunrise Income Fund ──
+  // Deal-stage based, not Investment records: SIF investment records are
+  // already reported in the quarter comparison above.
+  const sifStageInWin = stageId => SIF_DEALS.filter(d =>
+    inWin(new Date(d.properties?.[SIF_ENTRY_PROP(stageId)] || 0).getTime()));
+
+  const sifCommits = sifStageInWin('1399863320');
+  ACT_SIF_COMMITS = sifCommits;
+  const sifCommitDollars = sumDeal(sifCommits);
+  document.getElementById('a-sif-commit-count').textContent = sifCommits.length;
+  document.getElementById('a-sif-commit-detail').innerHTML = sifCommitDollars > 0
+    ? `<strong>${$(sifCommitDollars)}</strong> committed` : '';
+
+  const sifFunded = sifStageInWin('1399863322');
+  ACT_SIF_INVESTS = sifFunded;
+  const sifFundedDollars = sumDeal(sifFunded);
+  document.getElementById('a-sif-invest-count').textContent = sifFunded.length;
+  document.getElementById('a-sif-invest-detail').innerHTML = sifFundedDollars > 0
+    ? `<strong>${$(sifFundedDollars)}</strong> funded` : '';
+
+  // ── Row 3: Combined ──
+  // Discovery matches row 1 (SIF contributes none). Commitments and funded
+  // add both rows; note the two rows measure on different bases — row 1 from
+  // Investment records, row 2 from SIF deal stages.
+  document.getElementById('a-all-disco').textContent = discos.length;
+
+  const allCommitCount = commits.length + sifCommits.length;
+  const allCommitDollars = commitDollars + sifCommitDollars;
+  document.getElementById('a-all-commit-count').textContent = allCommitCount;
+  document.getElementById('a-all-commit-detail').innerHTML = allCommitDollars > 0
+    ? `<strong>${$(allCommitDollars)}</strong> committed` : '';
+
+  const allFundedCount = funded.length + sifFunded.length;
+  const allFundedDollars = fundedDollars + sifFundedDollars;
+  document.getElementById('a-all-invest-count').textContent = allFundedCount;
+  document.getElementById('a-all-invest-detail').innerHTML = allFundedDollars > 0
+    ? `<strong>${$(allFundedDollars)}</strong> funded` : '';
+}
+
+// ── Render SIF pipeline stage section (v1.13) ─────────────
+// Two readings of the same pipeline:
+//   Current state — each deal counted once at its present dealstage. A
+//     snapshot, so no window applies.
+//   Flow — deals that entered each stage inside the selected window, from the
+//     stage-entry timestamps. These persist after a deal moves on, so a deal
+//     can appear in more than one flow card. That's correct for "what moved."
+function renderSifPipeline() {
+  const days = parseInt(document.getElementById('sif-flow-window').value) || 30;
+  const now = Date.now();
+  const from = now - days * 864e5;
+  const sumDeal = ds => ds.reduce((s, d) => s + parseFloat(d.properties?.amount || 0), 0);
+
+  SIF_CURRENT = {}; SIF_FLOW = {};
+  let curHtml = '', flowHtml = '';
+
+  SIF_STAGES.forEach(st => {
+    const cur = SIF_DEALS.filter(d => String(d.properties?.dealstage || '') === st.id);
+    SIF_CURRENT[st.key] = cur;
+    curHtml += `<div class="kpi-card"><div class="kpi-label">${st.label}</div>`
+      + `<div class="kpi-val clickable-val" onclick="drillSif('current','${st.key}')">${cur.length}</div>`
+      + `<div class="kpi-sub">${cur.length ? $(sumDeal(cur)) : ''}</div></div>`;
+
+    const flow = SIF_DEALS.filter(d => {
+      const ts = new Date(d.properties?.[SIF_ENTRY_PROP(st.id)] || 0).getTime();
+      return ts >= from && ts <= now;
+    });
+    SIF_FLOW[st.key] = flow;
+    flowHtml += `<div class="kpi-card"><div class="kpi-label">${st.label}</div>`
+      + `<div class="kpi-val clickable-val" onclick="drillSif('flow','${st.key}')">${flow.length}</div>`
+      + `<div class="kpi-sub">${flow.length ? $(sumDeal(flow)) : ''}</div></div>`;
+  });
+
+  document.getElementById('sif-current-cards').innerHTML = curHtml;
+  document.getElementById('sif-flow-cards').innerHTML = flowHtml;
 }
 
 // ── Render Fund 5 investment-type breakdown ───────────────
@@ -598,12 +791,13 @@ function renderFundCompare(){
   document.getElementById('fundcompare-sub').textContent=
     'Pick a date range: it applies to Fund 5 directly; Fund 4 shows the same window shifted back 2 years (both funds opened Nov 1, so this is the same stage of each raise). New = type_of_investment "New"; Return = Repeat + Bolt-On. Investors = distinct associated contacts.';
 }
-async function drillQuarter(type) {
+async function drillQuarter(scope, type) {
   if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
-  const invs = type === 'total' ? QTR_INVS : type === 'new' ? QTR_NEW : QTR_REPEAT;
+  const invs = (QTR_SCOPED[scope] || {})[type] || [];
   const periodLabel = parseQuarterKey(document.getElementById('q-period').value).label;
-  const titles = {total: `Total Raise — ${periodLabel}`, 'new': `New Money — ${periodLabel}`, repeat: `Repeat Money — ${periodLabel}`};
-  drillTitle = titles[type] || 'Investments';
+  const scopeLabels = {nonsif: 'All Non-Income Funds', sif: SIF_FUND_NAME, all: 'All Funds'};
+  const typeLabels = {total: 'Total Raise', 'new': 'New Money', repeat: 'Repeat Money'};
+  drillTitle = `${typeLabels[type] || 'Investments'} — ${scopeLabels[scope] || ''} — ${periodLabel}`;
   drillType = 'investment';
   drillRecords = invs.map(i => {
     const p = i.properties || {};
@@ -638,7 +832,7 @@ async function drillActivity(type) {
         name: p.dealname || 'Deal ' + d.id, amount: parseFloat(p.amount || 0), date: p[COMMIT_STAGE_PROP] || ''};
     });
   } else if (type === 'invests') {
-    drillTitle = 'Investments Funded';
+    drillTitle = 'Investments Funded — All Non-Income Funds';
     drillType = 'investment';
     drillRecords = ACT_INVESTS.map(i => {
       const p = i.properties || {};
@@ -646,7 +840,74 @@ async function drillActivity(type) {
       return {id: i.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : (p.email_address || 'Unknown'),
         amount: parseFloat(p.investment_amount || 0), fund: p.fund_invested || '', type: p.type_of_investment || '', date: p.funds_received || ''};
     });
+  } else if (type === 'sifcommits' || type === 'sifinvests') {
+    const isCommit = type === 'sifcommits';
+    const deals = isCommit ? ACT_SIF_COMMITS : ACT_SIF_INVESTS;
+    const stageId = isCommit ? '1399863320' : '1399863322';
+    drillTitle = `${isCommit ? 'Commitments Made' : 'Investments Funded'} — ${SIF_FUND_NAME}`;
+    drillType = 'deal';
+    drillRecords = deals.map(d => {
+      const p = d.properties || {};
+      const cid = DEAL_TO_CONTACT[d.id];
+      return {id: d.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : 'Unknown',
+        name: p.dealname || 'Deal ' + d.id, amount: parseFloat(p.amount || 0), date: p[SIF_ENTRY_PROP(stageId)] || ''};
+    });
+  } else if (type === 'allcommits') {
+    drillTitle = 'Commitments Made — All Funds';
+    drillType = 'deal';
+    drillRecords = [
+      ...ACT_COMMITS.map(d => {
+        const p = d.properties || {};
+        const cid = DEAL_TO_CONTACT[d.id];
+        return {id: d.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : 'Unknown',
+          name: p.dealname || 'Deal ' + d.id, amount: parseFloat(p.amount || 0), date: p[COMMIT_STAGE_PROP] || ''};
+      }),
+      ...ACT_SIF_COMMITS.map(d => {
+        const p = d.properties || {};
+        const cid = DEAL_TO_CONTACT[d.id];
+        return {id: d.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : 'Unknown',
+          name: p.dealname || 'Deal ' + d.id, amount: parseFloat(p.amount || 0), date: p[SIF_ENTRY_PROP('1399863320')] || ''};
+      })
+    ];
+  } else if (type === 'allinvests') {
+    // Mixed basis: non-SIF from Investment records, SIF from deal stages.
+    drillTitle = 'Investments Funded — All Funds';
+    drillType = 'investment';
+    drillRecords = [
+      ...ACT_INVESTS.map(i => {
+        const p = i.properties || {};
+        const cid = INV_TO_CONTACT[i.id];
+        return {id: i.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : (p.email_address || 'Unknown'),
+          amount: parseFloat(p.investment_amount || 0), fund: p.fund_invested || '', type: p.type_of_investment || '', date: p.funds_received || ''};
+      }),
+      ...ACT_SIF_INVESTS.map(d => {
+        const p = d.properties || {};
+        const cid = DEAL_TO_CONTACT[d.id];
+        return {id: d.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : 'Unknown',
+          amount: parseFloat(p.amount || 0), fund: SIF_FUND_NAME, type: 'Deal — Closed Won',
+          date: p[SIF_ENTRY_PROP('1399863322')] || ''};
+      })
+    ];
   }
+  renderDrillPage();
+  document.getElementById('drill-drawer').classList.add('open');
+}
+
+async function drillSif(row, stageKey) {
+  if (!associationsReady) { status('Loading details…'); while (!associationsReady) await new Promise(r=>setTimeout(r,200)); status('Updated ' + new Date().toLocaleTimeString()); }
+  const st = SIF_STAGES.find(s => s.key === stageKey);
+  const deals = (row === 'current' ? SIF_CURRENT : SIF_FLOW)[stageKey] || [];
+  const rowLabel = row === 'current' ? 'Current State' : 'Entered Stage';
+  drillTitle = `${SIF_FUND_NAME} — ${st ? st.label : stageKey} (${rowLabel})`;
+  drillType = 'deal';
+  drillPage = 0;
+  drillRecords = deals.map(d => {
+    const p = d.properties || {};
+    const cid = DEAL_TO_CONTACT[d.id];
+    return {id: d.id, contactId: cid, contactName: cid ? (CONTACT_NAMES[cid] || 'Contact ' + cid) : 'Unknown',
+      name: p.dealname || 'Deal ' + d.id, amount: parseFloat(p.amount || 0),
+      date: st ? (p[SIF_ENTRY_PROP(st.id)] || '') : ''};
+  });
   renderDrillPage();
   document.getElementById('drill-drawer').classList.add('open');
 }
@@ -727,7 +988,7 @@ async function loadData() {
   try {
     status('Loading…');
     associationsReady = false;
-    await Promise.all([fetchCachedData(), fetchCommitDeals(), fetchFund5Types()]);
+    await Promise.all([fetchCachedData(), fetchCommitDeals(), fetchFund5Types(), fetchSifDeals()]);
     
     // Filter to relevant subsets
     const thirtyDaysAgo = Date.now() - 30 * 864e5;
@@ -751,12 +1012,13 @@ async function loadData() {
     renderQuarter();
     renderActivity();
     renderFund5Types();
+    renderSifPipeline();
     renderFundCompare();
     status('Updated ' + new Date().toLocaleTimeString());
     document.getElementById('status-pill').textContent = `${INVESTMENTS.length} investments`;
     
     // Load associations in the background
-    console.log(`[l10] Rendering complete. Loading associations in background (${RELEVANT_MEETINGS.length} meetings, ${RELEVANT_INVESTMENTS.length} investments, ${COMMIT_DEALS.length} commits, ${FUND5_INVESTMENTS.length} Fund 5 investments)…`);
+    console.log(`[l10] Rendering complete. Loading associations in background (${RELEVANT_MEETINGS.length} meetings, ${RELEVANT_INVESTMENTS.length} investments, ${COMMIT_DEALS.length} commits, ${FUND5_INVESTMENTS.length} Fund 5 investments, ${SIF_DEALS.length} SIF deals)…`);
     fetchAssociations().then(() => {
       associationsReady = true;
       console.log('[l10] Associations ready.');
@@ -811,7 +1073,11 @@ async function fetchAssociations() {
   }
 
   DEAL_TO_CONTACT = {};
-  const dealIds = COMMIT_DEALS.map(d => d.id);
+  // v1.13: include SIF pipeline deals so their drill-downs resolve contact names.
+  const dealIds = [...new Set([
+    ...COMMIT_DEALS.map(d => d.id),
+    ...SIF_DEALS.map(d => d.id)
+  ])];
   for (let i = 0; i < dealIds.length; i += 100) {
     try {
       const d = await api('/crm/v4/associations/deals/contacts/batch/read',
