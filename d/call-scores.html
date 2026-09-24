@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Sunrise Capital — Call Scores · Sandler (v1.0)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#edeae3;--border:#ddd9d0;
+  --text:#1a1814;--text2:#6b6558;--text3:#9e9789;
+  --accent:#1d4ed8;--accent-bg:#eff6ff;
+  --green:#065f46;--green-bg:#ecfdf5;
+  --red:#991b1b;--red-bg:#fef2f2;
+  --amber:#92400e;--amber-bg:#fef3c7;
+  /* rep identity (validated categorical order) */
+  --kayla:#2a78d6;--cierra:#eb6834;--bronson:#1baf7a;--kelvin:#eda100;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+header{background:var(--text);color:#f5f3ef;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hdr{display:flex;align-items:center;gap:12px}
+h1{font-family:'DM Serif Display',serif;font-size:19px;font-weight:400}
+.vpill{background:#333;color:#c9c2b4;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+#ts{font-size:11px;color:#9e9789}
+.help-btn{font-family:'DM Sans',sans-serif;font-size:12px;background:#333;color:#f5f3ef;border:1px solid #444;border-radius:6px;padding:6px 12px;cursor:pointer}
+.help-btn:hover{background:#444}
+
+#bar{background:#fffdf8;border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+select,input[type=date],input[type=search]{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;background:white;color:var(--text)}
+select:focus,input:focus{outline:none;border-color:var(--accent)}
+.chk{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer}
+#reset{font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text2);margin-left:auto}
+
+main{padding:24px 28px;max-width:1400px;margin:0 auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.tile .k{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.tile .v{font-family:'DM Serif Display',serif;font-size:30px;margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .sub{font-size:11.5px;color:var(--text2);margin-top:2px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;overflow:hidden}
+.section-hd{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.section-hd h2{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400}
+.section-hd .tag{font-size:11px;color:var(--text2)}
+.section-body{padding:18px 20px;overflow-x:auto}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:24px}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}main{padding:16px}#bar,header{padding-left:16px;padding-right:16px}}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:8px 10px;color:var(--text2);font-weight:600;font-size:11px;border-bottom:2px solid var(--border);white-space:nowrap}
+th.sort{cursor:pointer;user-select:none}
+th.sort:hover{color:var(--text)}
+td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.ctr{text-align:center}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* heatmap */
+.hm td.cell{text-align:center;font-variant-numeric:tabular-nums;font-weight:600;border:2px solid #fff;border-radius:4px;min-width:62px;cursor:default}
+.hm th{text-align:center;white-space:normal;line-height:1.2;vertical-align:bottom}
+.hm th:first-child,.hm td:first-child{text-align:left}
+.hm td.na{color:var(--text3);font-weight:400;background:var(--surface2)}
+.legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);margin-top:12px;flex-wrap:wrap}
+.ramp{display:flex}.ramp span{width:26px;height:10px}
+
+/* call list */
+tr.call{cursor:pointer}
+tr.call:hover td{background:#faf8f4}
+tr.detail td{background:#faf8f4;padding:14px 18px}
+.pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px}
+.pill.flag{background:var(--red-bg);color:var(--red)}
+.pill.intro{background:var(--accent-bg);color:var(--accent)}
+.pill.disco{background:var(--green-bg);color:var(--green)}
+.sc{display:inline-block;min-width:26px;text-align:center;border-radius:4px;padding:1px 4px;font-variant-numeric:tabular-nums;font-size:11.5px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.dgrid h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:6px}
+.dgrid ul{padding-left:16px;font-size:12.5px;line-height:1.5}
+.dgrid p{font-size:12.5px;line-height:1.5}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.steps span{font-size:11px;color:var(--text2);background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 7px}
+a.hs{color:var(--accent);font-size:12px;font-weight:600;text-decoration:none}
+a.hs:hover{text-decoration:underline}
+.more{font-family:'DM Sans',sans-serif;font-size:12px;margin-top:12px;background:none;border:1px solid var(--border);border-radius:6px;padding:6px 12px;cursor:pointer}
+
+/* compliance */
+.cq td.q{font-style:italic;max-width:520px}
+.rv{font-family:'DM Sans',sans-serif;font-size:11px;border:1px solid var(--border);border-radius:6px;background:#fff;padding:3px 6px}
+.note{font-size:11.5px;color:var(--text2);margin-top:10px}
+
+/* trend chart */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart h3{font-size:13px;font-weight:600;margin-bottom:8px}
+.tip{position:absolute;pointer-events:none;background:var(--text);color:#f5f3ef;font-size:11.5px;padding:7px 10px;border-radius:6px;white-space:nowrap;display:none;z-index:5;line-height:1.5}
+.clegend{display:flex;gap:14px;font-size:11.5px;color:var(--text2);margin-top:6px}
+
+#guide{display:none;position:fixed;inset:0;background:rgba(26,24,20,.5);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+#guide.on{display:flex}
+#guide .box{background:#fff;border-radius:12px;max-width:760px;width:100%;padding:24px 28px;font-size:13px;line-height:1.6}
+#guide h2{font-family:'DM Serif Display',serif;font-weight:400;font-size:20px;margin-bottom:8px}
+#guide h3{font-size:13px;margin:14px 0 4px}
+#guide ul{padding-left:18px}
+#guide .x{float:right;font-size:20px;background:none;border:none;cursor:pointer;color:var(--text2)}
+.empty{padding:30px;text-align:center;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <h1>Call Scores · Sandler</h1>
+    <span class="vpill">v1.0</span>
+  </div>
+  <div class="hdr">
+    <span id="ts"></span>
+    <button class="help-btn" onclick="openGuide()" title="Open the dashboard guide">ⓘ Guide</button>
+  </div>
+</header>
+
+<div id="bar">
+  <div class="fg"><label for="fType">Call type</label>
+    <select id="fType"><option value="all">All</option><option value="intro">Intro Calls</option><option value="disco">Discovery Calls</option></select></div>
+  <div class="fg"><label for="fRep">Rep</label><select id="fRep"></select></div>
+  <div class="fg"><label for="fFrom">From</label><input type="date" id="fFrom"><label for="fTo">to</label><input type="date" id="fTo"></div>
+  <label class="chk"><input type="checkbox" id="fFlag"> Compliance-flagged only</label>
+  <div class="fg"><input type="search" id="fQ" placeholder="Search coaching / outcome…" size="22"></div>
+  <button id="reset">Reset</button>
+</div>
+
+<main>
+  <div class="tiles" id="tiles"></div>
+
+  <div class="section">
+    <div class="section-hd"><h2>Sandler steps by rep</h2><span class="tag">Average score per step, 0–5 · hover a cell for the call count</span></div>
+    <div class="section-body" id="heat"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd"><h2>Weekly trend</h2><span class="tag">Average overall score (0–100) per rep, by week of the call</span></div>
+    <div class="section-body"><div class="grid2" id="trend"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd"><h2>Calls</h2><span class="tag" id="callsTag"></span></div>
+    <div class="section-body" id="calls"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-hd"><h2>Compliance review queue</h2><span class="tag">AI-flagged lines that may promise returns or imply no risk — a person must review each</span></div>
+    <div class="section-body" id="comp"></div>
+  </div>
+</main>
+
+<div id="guide" onclick="if(event.target===this)closeGuide()">
+  <div class="box">
+    <button class="x" onclick="closeGuide()" aria-label="Close">×</button>
+    <h2>How this dashboard works</h2>
+    <p>Each Intro Call (Kayla, Cierra) and Discovery Call (Bronson, Kelvin) that followed a booked HubSpot meeting is pulled with its full transcript, then scored by Claude against the Sandler rubric below. Scores are an <b>AI first pass</b> — use them to spot patterns and pick calls to review, not as a final grade.</p>
+    <h3>Which calls are included</h3>
+    <ul>
+      <li>Meetings typed <i>Intro Call – Setters/Main</i> or <i>Discovery Call – Setters/Main</i>, outcome Completed (or still "Scheduled" after the meeting time).</li>
+      <li>Matched to the longest call by the meeting owner to the same contact, from 2 hours before to 4 hours after the start, 3+ minutes, with a transcript.</li>
+    </ul>
+    <h3>Sandler steps (0–5 each)</h3>
+    <ul>
+      <li><b>Bonding</b> — real rapport; the prospect is comfortable and talking.</li>
+      <li><b>Up-Front Contract</b> — purpose, time, what each side wants, "no" is OK, and what happens at the end.</li>
+      <li><b>Pain</b> — questions that go from surface reason to impact and feeling (pain funnel).</li>
+      <li><b>Budget</b> — investable amount, source of funds, willingness to commit.</li>
+      <li><b>Decision</b> — who else is involved, how they decide, timeline.</li>
+      <li><b>Next Step</b> — a dated, agreed next step, or a clean disqualification.</li>
+      <li><b>Fulfillment</b> (Discovery only) — present only against the pain uncovered.</li>
+      <li><b>Post-Sell</b> (Discovery only) — lock in the decision and head off back-outs.</li>
+      <li><b>Talk Control, No Premature Pitch, Sandler Techniques</b> — prospect talks more, no pitching before qualifying, use of reversing / negative reverse selling.</li>
+    </ul>
+    <p><b>Overall</b> = average of the scored items ÷ 5 × 100.</p>
+    <h3>Known limits (v1)</h3>
+    <ul>
+      <li>Calls cut off by a bad connection score low on the end-of-call steps.</li>
+      <li>Discovery Calls that ended in a clean disqualification were scored on Post-Sell instead of marked n/a.</li>
+      <li>"Reviewed" marks on the compliance queue are saved in <b>this browser only</b> until the automated pipeline adds a shared store.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+const STEPS=[["bonding_rapport","Bonding"],["upfront_contract","Up-Front Contract"],["pain","Pain"],["budget","Budget"],["decision","Decision"],["next_step_contract","Next Step"],["fulfillment","Fulfillment"],["post_sell","Post-Sell"],["talk_control","Talk Control"],["no_premature_presentation","No Premature Pitch"],["sandler_techniques","Sandler Techniques"]];
+const REPS={"Kayla Daughtrey":{c:"var(--kayla)",hex:"#2a78d6",type:"intro"},"Cierra Milao":{c:"var(--cierra)",hex:"#eb6834",type:"intro"},"Bronson Picket":{c:"var(--bronson)",hex:"#1baf7a",type:"disco"},"Kelvin Evans":{c:"var(--kelvin)",hex:"#eda100",type:"disco"}};
+const TYPE_LBL={intro:"Intro",disco:"Discovery"};
+/* sequential blue ramp, 0 → 5 */
+const RAMP=["#cde2fb","#9ec5f4","#6da7ec","#3987e5","#256abf","#184f95"];
+const HS=id=>"https://app.hubspot.com/calls/23126809/review/"+id;
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+let DATA=[],sortKey="date",sortDir=-1,shown=40,openId=null;
+
+function cellStyle(v){if(v==null)return"";const i=Math.max(0,Math.min(5,Math.round(v)));return`background:${RAMP[i]};color:${i>=3?"#fff":"#1a1814"}`}
+
+function filtered(){
+  const t=fType.value,r=fRep.value,a=fFrom.value,b=fTo.value,fl=fFlag.checked,q=fQ.value.trim().toLowerCase();
+  return DATA.filter(c=>(t==="all"||c.type===t)&&(r==="all"||c.rep===r)&&(!a||c.date>=a)&&(!b||c.date<=b)&&(!fl||c.flag)&&
+    (!q||(c.outcome+" "+c.coaching.join(" ")+" "+c.strengths.join(" ")).toLowerCase().includes(q)));
+}
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+
+function tiles(rows){
+  const o=avg(rows.map(c=>c.overall));
+  const fl=rows.filter(c=>c.flag);const rev=fl.filter(c=>lsGet("cs-rev-"+c.id)).length;
+  let worst=null;STEPS.forEach(([k,l])=>{const v=avg(rows.map(c=>c.s[k]).filter(x=>x!=null));if(v!=null&&(!worst||v<worst.v))worst={l,v}});
+  tilesEl.innerHTML=`
+   <div class="tile"><div class="k">Calls scored</div><div class="v">${rows.length}</div><div class="sub">${rows.filter(c=>c.type==="intro").length} Intro · ${rows.filter(c=>c.type==="disco").length} Discovery</div></div>
+   <div class="tile"><div class="k">Average overall</div><div class="v">${o==null?"—":Math.round(o)}</div><div class="sub">out of 100</div></div>
+   <div class="tile"><div class="k">Weakest step</div><div class="v" style="font-size:22px;margin-top:8px">${worst?esc(worst.l):"—"}</div><div class="sub">${worst?worst.v.toFixed(1)+" / 5 average":""}</div></div>
+   <div class="tile"><div class="k">Compliance flags</div><div class="v">${fl.length}</div><div class="sub">${rev} marked reviewed in this browser</div></div>`;
+}
+
+function heat(rows){
+  const reps=Object.keys(REPS).filter(r=>rows.some(c=>c.rep===r));
+  if(!reps.length){heatEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
+  let h='<table class="hm"><thead><tr><th>Rep</th><th>Calls</th><th>Overall</th>'+STEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
+  reps.forEach(r=>{const rc=rows.filter(c=>c.rep===r);
+    h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${REPS[r].c}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${TYPE_LBL[REPS[r].type]}</span></td><td class="num">${rc.length}</td><td class="num"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
+    STEPS.forEach(([k,l])=>{const vals=rc.map(c=>c.s[k]).filter(x=>x!=null);const v=avg(vals);
+      h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell" style="${cellStyle(v)}" title="${esc(r)} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls">${v.toFixed(1)}</td>`});
+    h+='</tr>'});
+  h+='</tbody></table><div class="legend">0<div class="ramp">'+RAMP.map(c=>`<span style="background:${c}"></span>`).join("")+'</div>5 &nbsp;·&nbsp; darker = stronger</div>';
+  heatEl.innerHTML=h;
+}
+
+function weekStart(d){const x=new Date(d+"T12:00:00Z");const w=(x.getUTCDay()+6)%7;x.setUTCDate(x.getUTCDate()-w);return x.toISOString().slice(0,10)}
+function trend(rows){
+  trendEl.innerHTML="";
+  [["intro","Intro Calls"],["disco","Discovery Calls"]].forEach(([t,title])=>{
+    const rr=rows.filter(c=>c.type===t);if(!rr.length)return;
+    const weeks=[...new Set(rows.map(c=>weekStart(c.date)))].sort(); /* shared axis across both charts */
+    const reps=Object.keys(REPS).filter(r=>REPS[r].type===t&&rr.some(c=>c.rep===r));
+    const series=reps.map(r=>({r,pts:weeks.map(w=>{const cs=rr.filter(c=>c.rep===r&&weekStart(c.date)===w);return cs.length?{w,v:avg(cs.map(c=>c.overall)),n:cs.length}:null})}));
+    const W=560,H=220,L=34,R=86,T=12,B=28,pw=W-L-R,ph=H-T-B;
+    const x=i=>L+(weeks.length===1?pw/2:i*pw/(weeks.length-1)),y=v=>T+ph-(v/100)*ph;
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title} weekly average overall score by rep">`;
+    [0,25,50,75,100].forEach(g=>{s+=`<line x1="${L}" x2="${L+pw}" y1="${y(g)}" y2="${y(g)}" stroke="#ece8e0" stroke-width="1"/><text x="${L-6}" y="${y(g)+3.5}" font-size="10" fill="#9e9789" text-anchor="end">${g}</text>`});
+    weeks.forEach((w,i)=>{s+=`<text x="${x(i)}" y="${H-8}" font-size="10" fill="#9e9789" text-anchor="middle">${w.slice(5).replace("-","/")}</text>`});
+    /* end labels: nudge apart so they never collide */
+    const lbls=series.map(se=>{const last=se.pts.map((p,i)=>p&&{p,i}).filter(Boolean).pop();return last?{r:se.r,i:last.i,v:last.p.v,ly:y(last.p.v)+4}:null}).filter(Boolean).sort((a,b)=>a.ly-b.ly);
+    for(let k=1;k<lbls.length;k++)if(lbls[k].ly-lbls[k-1].ly<13)lbls[k].ly=lbls[k-1].ly+13;
+    series.forEach(se=>{const col=REPS[se.r].hex;let d="",pen=false;
+      se.pts.forEach((p,i)=>{if(!p){pen=false;return}d+=(pen?"L":"M")+x(i)+" "+y(p.v)+" ";pen=true});
+      s+=`<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      se.pts.forEach((p,i)=>{if(p)s+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="${col}" stroke="#fff" stroke-width="2"/>`});
+      const lb=lbls.find(l=>l.r===se.r);
+      if(lb)s+=`<text x="${x(lb.i)+9}" y="${lb.ly}" font-size="11" fill="#1a1814">${esc(se.r.split(" ")[0])} ${Math.round(lb.v)}</text>`});
+    s+=`<line class="xh" x1="0" x2="0" y1="${T}" y2="${T+ph}" stroke="#9e9789" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>`;
+    s+=`<rect class="hit" x="${L-10}" y="${T}" width="${pw+20}" height="${ph}" fill="transparent"/></svg>`;
+    const box=document.createElement("div");box.className="chart";
+    box.innerHTML=`<h3>${title}</h3>${s}<div class="tip"></div><div class="clegend">${reps.map(r=>`<span><span class="dot" style="background:${REPS[r].c}"></span>${esc(r)}</span>`).join("")}</div>`;
+    trendEl.appendChild(box);
+    const svg=box.querySelector("svg"),tip=box.querySelector(".tip"),xh=svg.querySelector(".xh");
+    svg.querySelector(".hit").addEventListener("mousemove",ev=>{
+      const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+      let i=0,best=1e9;weeks.forEach((w,j)=>{const dd=Math.abs(x(j)-p.x);if(dd<best){best=dd;i=j}});
+      xh.setAttribute("x1",x(i));xh.setAttribute("x2",x(i));xh.style.display="";
+      tip.innerHTML=`<b>Week of ${weeks[i]}</b><br>`+series.map(se=>{const q=se.pts[i];return`<span class="dot" style="background:${REPS[se.r].hex}"></span>${esc(se.r)}: ${q?Math.round(q.v)+" <span style='color:#9e9789'>("+q.n+" calls)</span>":"—"}`}).join("<br>");
+      tip.style.display="block";const bx=box.getBoundingClientRect();let lx=ev.clientX-bx.left+14;if(lx+tip.offsetWidth>bx.width)lx=ev.clientX-bx.left-tip.offsetWidth-14;
+      tip.style.left=lx+"px";tip.style.top=(ev.clientY-bx.top-10)+"px"});
+    svg.querySelector(".hit").addEventListener("mouseleave",()=>{tip.style.display="none";xh.style.display="none"});
+  });
+  if(!trendEl.children.length)trendEl.innerHTML='<div class="empty">No calls match these filters.</div>';
+}
+
+function calls(rows){
+  const cols=[["date","Date"],["rep","Rep"],["type","Type"],["min","Min"],["overall","Overall"],["outcome","Outcome"],["flag","Flag"]];
+  const sorted=[...rows].sort((a,b)=>{const A=a[sortKey],B=b[sortKey];return (A>B?1:A<B?-1:0)*sortDir||(a.id>b.id?1:-1)});
+  callsTag.textContent=`${rows.length} calls · click a row for coaching notes`;
+  if(!rows.length){callsEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
+  let h='<table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
+  sorted.slice(0,shown).forEach(c=>{
+    h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td><span class="pill ${c.type}">${TYPE_LBL[c.type]}</span></td><td class="num">${c.min??""}</td><td class="num"><span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span></td><td>${esc(c.outcome)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}</td></tr>`;
+    if(openId===c.id){
+      h+=`<tr class="detail"><td colspan="7"><div class="steps">${STEPS.map(([k,l])=>c.s[k]==null?"":`<span>${l} <b>${c.s[k]}</b></span>`).join("")}</div>
+      <div class="dgrid"><div><h4>Coaching</h4><ul>${c.coaching.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><h4>Strengths</h4><ul>${c.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><h4>Best moment</h4><p>${c.best.t?`<b>${esc(c.best.t)}</b> — `:""}"${esc(c.best.q)}"</p><p style="color:var(--text2);margin-top:4px">${esc(c.best.why)}</p>
+      ${c.flag?`<h4 style="margin-top:12px;color:var(--red)">Compliance flag</h4><p><i>"${esc(c.flagQuote)}"</i></p>`:""}
+      <p style="margin-top:12px"><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">Open call in HubSpot ↗</a></p></div></div></td></tr>`}
+  });
+  h+='</tbody></table>'+(rows.length>shown?`<button class="more" id="more">Show ${Math.min(40,rows.length-shown)} more</button>`:"");
+  callsEl.innerHTML=h;
+  callsEl.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=["date","overall","min","flag"].includes(k)?-1:1}render()});
+  callsEl.querySelectorAll("tr.call").forEach(tr=>tr.onclick=()=>{openId=openId===tr.dataset.id?null:tr.dataset.id;calls(filtered())});
+  const m=document.getElementById("more");if(m)m.onclick=()=>{shown+=40;calls(filtered())};
+}
+
+function comp(rows){
+  const fl=rows.filter(c=>c.flag).sort((a,b)=>a.date<b.date?1:-1);
+  if(!fl.length){compEl.innerHTML='<div class="empty">No flagged calls in this view.</div>';return}
+  let h='<table class="cq"><thead><tr><th>Date</th><th>Rep</th><th>Flagged line</th><th>Status</th><th></th></tr></thead><tbody>';
+  fl.forEach(c=>{const st=lsGet("cs-rev-"+c.id)||"";
+    h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td class="q">"${esc(c.flagQuote)}"</td>
+    <td><select class="rv" data-id="${c.id}"><option value="">Not reviewed</option><option value="issue"${st==="issue"?" selected":""}>Issue — coach</option><option value="ok"${st==="ok"?" selected":""}>Not a problem</option></select></td>
+    <td><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`});
+  h+='</tbody></table><p class="note">Status is saved in this browser only (v1). Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>';
+  compEl.innerHTML=h;
+  compEl.querySelectorAll(".rv").forEach(s=>s.onchange=()=>{lsSet("cs-rev-"+s.dataset.id,s.value);tiles(filtered())});
+}
+
+function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows)}
+
+const $=id=>document.getElementById(id);
+const fType=$("fType"),fRep=$("fRep"),fFrom=$("fFrom"),fTo=$("fTo"),fFlag=$("fFlag"),fQ=$("fQ");
+const tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
+function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===t).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
+fType.onchange=()=>{repOptions();render()};
+[fRep,fFrom,fTo,fFlag].forEach(e=>e.onchange=render);fQ.oninput=render;
+$("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fFrom.value=fFrom.min;fTo.value=fTo.max;fFlag.checked=false;fQ.value="";render()};
+
+window.openGuide=()=>$("guide").classList.add("on");
+window.closeGuide=()=>$("guide").classList.remove("on");
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
+
+fetch("call-scores-data.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{
+  DATA=j.calls;const ds=DATA.map(c=>c.date).sort();
+  fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
+  $("ts").textContent=`Data through ${j.generated} · rubric ${j.rubricVersion}`;
+  repOptions();render();
+}).catch(e=>{tilesEl.innerHTML=`<div class="empty">Couldn't load call-scores-data.json (${esc(e.message)}).</div>`});
+})();
+</script>
+</body>
+</html>
