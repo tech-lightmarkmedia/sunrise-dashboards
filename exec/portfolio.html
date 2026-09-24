@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Review Builder v0.7.2</title>
+<title>Portfolio Review Builder v0.7.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <style>
@@ -277,7 +277,7 @@ body {
 
 <div class="header">
   <h1>Portfolio Review Builder</h1>
-  <span class="vpill">v0.7.2</span>
+  <span class="vpill">v0.7.3</span>
 </div>
 
 <!-- ── Phase 1: Upload ── -->
@@ -289,7 +289,7 @@ body {
     <input type="file" id="fileInput" accept=".xlsb,.xlsx,.xls">
   </div>
   <div style="text-align:center;margin-top:16px;">
-    <a id="viewLatestBtn" class="btn btn-secondary" href="https://sunrise-hubspot-proxy.billing-d58.workers.dev/exec-report" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">View Latest Report ↗</a>
+    <a id="viewLatestBtn" class="btn btn-secondary" href="/api/exec-report" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">View Latest Report ↗</a>
   </div>
 </div>
 
@@ -421,7 +421,7 @@ body {
   <!-- Build Bar -->
   <div class="build-bar">
     <span class="status" id="buildStatus"></span>
-    <a class="btn btn-secondary" id="viewReportBtn" href="https://sunrise-hubspot-proxy.billing-d58.workers.dev/exec-report" target="_blank" style="display:none;text-decoration:none;text-align:center;">View Report ↗</a>
+    <a class="btn btn-secondary" id="viewReportBtn" href="/api/exec-report" target="_blank" style="display:none;text-decoration:none;text-align:center;">View Report ↗</a>
     <button class="btn btn-secondary" onclick="goToUpload()">← Different file</button>
     <button class="btn btn-primary" id="publishBtn" onclick="publishWebReport()" style="background:#2E7D5B;">Publish Web Report</button>
     <button class="btn btn-primary" id="buildBtn" onclick="buildDeck()">Build Deck →</button>
@@ -444,7 +444,7 @@ body {
 // ═══════════════════════════════════════════════════════════════════
 // GLOBAL STATE
 // ═══════════════════════════════════════════════════════════════════
-const WORKER_BASE = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const WORKER_BASE = '/api';
 let WB = null;           // parsed workbook
 let DATA = null;         // computed portfolio data
 let SPOTLIGHTS = { winners: [], losers: [] };
@@ -1708,7 +1708,7 @@ function generatePropertyWhy(p) {
 // ═══════════════════════════════════════════════════════════════════
 // WEB REPORT — Generate + Publish to R2 via worker
 // ═══════════════════════════════════════════════════════════════════
-const PUBLISH_SECRET = 'sunrise-refresh-2026';
+// v0.7.3: no key — the Worker checks the Cloudflare Access login instead.
 
 function generateWebReport() {
   const d = DATA;
@@ -2000,7 +2000,7 @@ function generateWebReport() {
     <h1>Portfolio Performance Review</h1>
     <div class="sub">Budget vs Actual — April 2026 and Year-to-Date (January–April) · Published ${now}</div>
   </div>
-  <span style="font-size:11px;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:10px;color:#AABBCC;white-space:nowrap;margin-top:8px;">v0.7.2</span>
+  <span style="font-size:11px;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:10px;color:#AABBCC;white-space:nowrap;margin-top:8px;">v0.7.3</span>
 </div>
 
 <div class="container">
@@ -2359,7 +2359,7 @@ async function publishWebReport() {
   try {
     const html = generateWebReport();
 
-    const resp = await fetch(WORKER_BASE + '/exec-report?key=' + PUBLISH_SECRET, {
+    const resp = await fetch(WORKER_BASE + '/exec-report', {
       method: 'PUT',
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
       body: html,
