@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Web Traffic Dashboard (v13)</title>
+<title>Sunrise Capital — Web Traffic Dashboard (v14)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -129,7 +129,7 @@ tbody tr:hover{background:#faf8f4}
   <a href="/">
     <img src="/sunrise-logo-white.svg" alt="Sunrise Capital" onerror="this.style.display='none'">
     <h1>Web Traffic</h1>
-    <span class="vpill">v13</span>
+    <span class="vpill">v14</span>
   </a>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="ts"></span>
@@ -285,7 +285,7 @@ tbody tr:hover{background:#faf8f4}
 </div>
 
 <script>
-const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const WORKER_URL = '/api';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function ymd(d){ return d.toISOString().slice(0,10); }

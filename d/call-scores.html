@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.2)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.3)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -124,7 +124,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.2</span>
+    <span class="vpill">v1.3</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -144,6 +144,7 @@ a.hs:hover{text-decoration:underline}
 </div>
 
 <main>
+  <div id="saveMsg" style="display:none;background:var(--red-bg);color:var(--red);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px"></div>
   <div class="tiles" id="tiles"></div>
 
   <div class="section">
@@ -205,7 +206,7 @@ a.hs:hover{text-decoration:underline}
     <ul>
       <li>Calls cut off by a bad connection score low on the end-of-call steps.</li>
       <li>Discovery Calls that ended in a clean disqualification were scored on Post-Sell instead of marked n/a.</li>
-      <li>"Reviewed" marks on the compliance queue are saved in <b>this browser only</b> until the automated pipeline adds a shared store.</li>
+      <li>Data and compliance "reviewed" marks load from the Worker behind the dashboards login, so reviews are shared. If the Worker can't be reached the page falls back to an offline copy and shows a ⚠ in the header.</li>
     </ul>
   </div>
 </div>
@@ -228,6 +229,17 @@ const HS=id=>"https://app.hubspot.com/calls/23126809/review/"+id;
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+/* v1.3: data and review marks come from the Worker (same-origin, behind the dashboards login). */
+const API="/api";let REVIEW={},REVIEW_SHARED=false;
+const revGet=id=>REVIEW_SHARED?(REVIEW[id]?.status||""):(lsGet("cs-rev-"+id)||"");
+async function revSet(id,status){
+  if(!REVIEW_SHARED){lsSet("cs-rev-"+id,status);return}
+  try{const r=await fetch(API+"/call-scores-review",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({callId:id,status})});
+    const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||r.status);
+    if(j.entry)REVIEW[id]=j.entry;else delete REVIEW[id]}
+  catch(e){alertBox("Couldn't save the review status ("+e.message+"). Refresh and try again.")}
+}
+function alertBox(m){const n=document.getElementById("saveMsg");if(n){n.textContent=m;n.style.display="block";setTimeout(()=>n.style.display="none",6000)}}
 let DATA=[],sortKey="date",sortDir=-1,shown=40,openId=null;
 
 function cellStyle(v){if(v==null)return"";const i=Math.max(0,Math.min(5,Math.round(v)));return`background:${RAMP[i]};color:${i>=3?"#fff":"#1a1814"}`}
@@ -241,7 +253,7 @@ const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 
 function tiles(rows){
   const o=avg(rows.map(c=>c.overall));
-  const fl=rows.filter(c=>c.flag);const rev=fl.filter(c=>lsGet("cs-rev-"+c.id)).length;
+  const fl=rows.filter(c=>c.flag);const rev=fl.filter(c=>revGet(c.id)).length;
   let worst=null;STEPS.forEach(([k,l])=>{const v=avg(rows.map(c=>c.s[k]).filter(x=>x!=null));if(v!=null&&(!worst||v<worst.v))worst={k,l,v}});
   tilesEl.innerHTML=`
    <div class="tile"><div class="k">Calls scored</div><div class="v">${rows.length}</div><div class="sub">${rows.filter(c=>c.type==="intro").length} booked Intro · ${rows.filter(c=>c.type==="introU").length} unscheduled · ${rows.filter(c=>c.type==="disco").length} Discovery</div></div>
@@ -347,13 +359,13 @@ function comp(rows){
   const fl=rows.filter(c=>c.flag).sort((a,b)=>a.date<b.date?1:-1);
   if(!fl.length){compEl.innerHTML='<div class="empty">No flagged calls in this view.</div>';return}
   let h='<table class="cq"><thead><tr><th>Date</th><th>Rep</th><th>Flagged line</th><th>Status</th><th></th></tr></thead><tbody>';
-  fl.forEach(c=>{const st=lsGet("cs-rev-"+c.id)||"";
+  fl.forEach(c=>{const st=revGet(c.id);const who=REVIEW_SHARED&&REVIEW[c.id]?`<div style="font-size:10.5px;color:var(--text3);margin-top:3px">${esc((REVIEW[c.id].by||"").split("@")[0])} · ${esc((REVIEW[c.id].at||"").slice(0,10))}</div>`:"";
     h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td class="q">"${esc(c.flagQuote)}"</td>
-    <td><select class="rv" data-id="${c.id}"><option value="">Not reviewed</option><option value="issue"${st==="issue"?" selected":""}>Issue — coach</option><option value="ok"${st==="ok"?" selected":""}>Not a problem</option></select></td>
+    <td><select class="rv" data-id="${c.id}"><option value="">Not reviewed</option><option value="issue"${st==="issue"?" selected":""}>Issue — coach</option><option value="ok"${st==="ok"?" selected":""}>Not a problem</option></select>${who}</td>
     <td><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`});
-  h+='</tbody></table><p class="note">Status is saved in this browser only (v1). Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>';
+  h+=`</tbody></table><p class="note" id="revNote">${REVIEW_SHARED?"Status is shared — everyone sees it, with who set it and when.":"Status is saved in this browser only (shared storage unavailable)."} Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>`;
   compEl.innerHTML=h;
-  compEl.querySelectorAll(".rv").forEach(s=>s.onchange=()=>{lsSet("cs-rev-"+s.dataset.id,s.value);tiles(filtered())});
+  compEl.querySelectorAll(".rv").forEach(s=>s.onchange=async()=>{s.disabled=true;await revSet(s.dataset.id,s.value);s.disabled=false;tiles(filtered());comp(filtered())});
 }
 
 function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows)}
@@ -371,10 +383,15 @@ window.openGuide=()=>$("guide").classList.add("on");
 window.closeGuide=()=>$("guide").classList.remove("on");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
 
-fetch("call-scores-data.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{
+(async()=>{
+  const get=async u=>{const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(u+" "+r.status);return r.json()};
+  let j,src="Worker";
+  try{j=await get(API+"/cached-call-scores")}catch(e){src="static file";j=await get("call-scores-data.json")}
+  try{REVIEW=await get(API+"/call-scores-review");REVIEW_SHARED=true}catch(e){REVIEW_SHARED=false}
+  window.__CS_SOURCE=src;return j})().then(j=>{
   DATA=j.calls;const ds=DATA.map(c=>c.date).sort();
   fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
-  $("ts").textContent=`Data through ${j.generated} · rubric ${j.rubricVersion} · outcomes as of ${j.outcomesAsOf||j.generated}`;
+  $("ts").textContent=`${window.__CS_SOURCE==="Worker"?"":"⚠ offline copy · "}Data through ${j.generated} · rubric ${j.rubricVersion} · outcomes as of ${j.outcomesAsOf||j.generated}`;
   repOptions();render();
 }).catch(e=>{tilesEl.innerHTML=`<div class="empty">Couldn't load call-scores-data.json (${esc(e.message)}).</div>`});
 })();

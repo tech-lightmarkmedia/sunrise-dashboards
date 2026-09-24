@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Referral Activity Dashboard (v1.1)</title>
+<title>Sunrise Capital — Referral Activity Dashboard (v1.2)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -96,7 +96,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 
 <header>
   <a href="/">&larr; Hub</a>
-  <h1>Referral Activity<span class="vpill">v1.1</span></h1>
+  <h1>Referral Activity<span class="vpill">v1.2</span></h1>
   <span class="ts" id="ts"></span>
   <button class="guide-btn" onclick="event.stopPropagation();document.getElementById('guide').classList.add('on')">Guide</button>
 </header>
@@ -231,7 +231,7 @@ main{max-width:1400px;margin:0 auto;padding:24px 28px 60px}
 
 <script>
 // ── Config ───────────────────────────────────────────────────────────────────
-const WORKER_URL = 'https://sunrise-hubspot-proxy.billing-d58.workers.dev';
+const WORKER_URL = '/api';
 const PORTAL_ID  = '23126809';
 const INV_OBJ    = '2-59402465';
 const MAX_DEPTH  = 50; // hard ceiling on chain walk depth (cycle guard is separate)
