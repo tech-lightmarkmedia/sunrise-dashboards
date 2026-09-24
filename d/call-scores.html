@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.0)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.2)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -46,7 +46,7 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto}
 .section-hd h2{font-family:'DM Serif Display',serif;font-size:16px;font-weight:400}
 .section-hd .tag{font-size:11px;color:var(--text2)}
 .section-body{padding:18px 20px;overflow-x:auto}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:24px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:24px}
 @media(max-width:560px){.grid2{grid-template-columns:1fr}main{padding:16px}#bar,header{padding-left:16px;padding-right:16px}}
 
 table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -73,6 +73,7 @@ tr.detail td{background:#faf8f4;padding:14px 18px}
 .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px}
 .pill.flag{background:var(--red-bg);color:var(--red)}
 .pill.intro{background:var(--accent-bg);color:var(--accent)}
+.pill.introU{background:#f1f5f9;color:#334155;border:1px dashed #94a3b8}
 .pill.disco{background:var(--green-bg);color:var(--green)}
 .sc{display:inline-block;min-width:26px;text-align:center;border-radius:4px;padding:1px 4px;font-variant-numeric:tabular-nums;font-size:11.5px}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
@@ -105,6 +106,17 @@ a.hs:hover{text-decoration:underline}
 #guide ul{padding-left:18px}
 #guide .x{float:right;font-size:20px;background:none;border:none;cursor:pointer;color:var(--text2)}
 .empty{padding:30px;text-align:center;color:var(--text3);font-size:13px}
+.hm td.cell.click,.hm td.click{cursor:pointer}
+.hm td.cell.click:hover,.hm td.click:hover{outline:2px solid var(--text);outline-offset:-2px}
+.hm td.oc{text-align:center;font-variant-numeric:tabular-nums;font-weight:600;border:2px solid #fff;background:#f6f4ef;min-width:70px}
+.hm td.oc .sub{display:block;font-size:10px;font-weight:400;color:var(--text3)}
+.hm th.ocH{background:#f6f4ef}
+.tile.click{cursor:pointer}.tile.click:hover{border-color:var(--text2)}
+.res{font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap}
+.res.yes{background:var(--green-bg);color:var(--green)}.res.no{background:var(--surface2);color:var(--text2)}.res.pend{background:var(--amber-bg);color:var(--amber)}
+.tagl{display:flex;flex-wrap:wrap;gap:6px}.tagl span{font-size:11px;background:var(--accent-bg);color:var(--accent);border-radius:10px;padding:2px 8px}
+.drill{display:none;align-items:center;gap:8px;font-size:12px;background:var(--accent-bg);color:var(--accent);border-radius:8px;padding:6px 10px;margin-bottom:12px}
+.drill.on{display:flex}.drill button{font-family:inherit;font-size:11px;border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:6px;padding:2px 8px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -112,7 +124,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.0</span>
+    <span class="vpill">v1.2</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -122,9 +134,10 @@ a.hs:hover{text-decoration:underline}
 
 <div id="bar">
   <div class="fg"><label for="fType">Call type</label>
-    <select id="fType"><option value="all">All</option><option value="intro">Intro Calls</option><option value="disco">Discovery Calls</option></select></div>
+    <select id="fType"><option value="all">All</option><option value="allintro">All Intro Calls</option><option value="intro">Intro — booked</option><option value="introU">Intro — unscheduled</option><option value="disco">Discovery Calls</option></select></div>
   <div class="fg"><label for="fRep">Rep</label><select id="fRep"></select></div>
   <div class="fg"><label for="fFrom">From</label><input type="date" id="fFrom"><label for="fTo">to</label><input type="date" id="fTo"></div>
+  <div class="fg"><label for="fTopic">Topic</label><select id="fTopic"><option value="">Any topic</option></select></div>
   <label class="chk"><input type="checkbox" id="fFlag"> Compliance-flagged only</label>
   <div class="fg"><input type="search" id="fQ" placeholder="Search coaching / outcome…" size="22"></div>
   <button id="reset">Reset</button>
@@ -145,7 +158,7 @@ a.hs:hover{text-decoration:underline}
 
   <div class="section">
     <div class="section-hd"><h2>Calls</h2><span class="tag" id="callsTag"></span></div>
-    <div class="section-body" id="calls"></div>
+    <div class="section-body"><div class="drill" id="drill"></div><div id="calls"></div></div>
   </div>
 
   <div class="section">
@@ -162,7 +175,8 @@ a.hs:hover{text-decoration:underline}
     <h3>Which calls are included</h3>
     <ul>
       <li>Meetings typed <i>Intro Call – Setters/Main</i> or <i>Discovery Call – Setters/Main</i>, outcome Completed (or still "Scheduled" after the meeting time).</li>
-      <li>Matched to the longest call by the meeting owner to the same contact, from 2 hours before to 4 hours after the start, 3+ minutes, with a transcript.</li>
+      <li><b>Booked Intro / Discovery:</b> matched to the longest connected call by the meeting owner to the same contact, from 2 hours before to 4 hours after the start (Discovery: 3+ minutes). Meetings marked Disqualified are included.</li>
+      <li><b>Intro — unscheduled:</b> Kayla or Cierra outbound calls, outcome Connected or Connect – Scheduled, 3+ minutes, not tied to a booked Intro, and classified by Claude as a real intro conversation (callbacks, rescheduling, follow-ups and existing investors excluded).</li>
     </ul>
     <h3>Sandler steps (0–5 each)</h3>
     <ul>
@@ -177,6 +191,16 @@ a.hs:hover{text-decoration:underline}
       <li><b>Talk Control, No Premature Pitch, Sandler Techniques</b> — prospect talks more, no pitching before qualifying, use of reversing / negative reverse selling.</li>
     </ul>
     <p><b>Overall</b> = average of the scored items ÷ 5 × 100.</p>
+    <h3>Outcome columns</h3>
+    <ul>
+      <li><b>Intro rows:</b> Disco booked = a Discovery Call meeting was created for the contact after the call. Disco held = that meeting is marked Completed.</li>
+      <li><b>Discovery rows:</b> IDC booked = an Investment Decision Call was created after the call. Committed = the deal is at InvestNext Committed or later, or Closed Won in Main Sales, Fund 5 Main Sales or Sunrise Income Fund.</li>
+      <li>Recent calls haven't had time to convert — read the last two weeks with that in mind.</li>
+    </ul>
+    <h3>Clicking</h3>
+    <ul><li>Click any heatmap score to list that rep's calls lowest-first on that step; click an outcome % to list the calls behind it; click the Weakest step or Compliance tiles to drill in.</li></ul>
+    <h3>Topics</h3>
+    <ul><li>The Topic filter finds calls where a subject came up (W-2 income, depreciation, 1031, IRA, etc.). v1.2 tags are <b>keyword matches</b> — good for finding calls, but can include passing mentions. Each call's detail shows the first matching line and time.</li></ul>
     <h3>Known limits (v1)</h3>
     <ul>
       <li>Calls cut off by a bad connection score low on the end-of-call steps.</li>
@@ -190,7 +214,14 @@ a.hs:hover{text-decoration:underline}
 (function(){
 const STEPS=[["bonding_rapport","Bonding"],["upfront_contract","Up-Front Contract"],["pain","Pain"],["budget","Budget"],["decision","Decision"],["next_step_contract","Next Step"],["fulfillment","Fulfillment"],["post_sell","Post-Sell"],["talk_control","Talk Control"],["no_premature_presentation","No Premature Pitch"],["sandler_techniques","Sandler Techniques"]];
 const REPS={"Kayla Daughtrey":{c:"var(--kayla)",hex:"#2a78d6",type:"intro"},"Cierra Milao":{c:"var(--cierra)",hex:"#eb6834",type:"intro"},"Bronson Picket":{c:"var(--bronson)",hex:"#1baf7a",type:"disco"},"Kelvin Evans":{c:"var(--kelvin)",hex:"#eda100",type:"disco"}};
-const TYPE_LBL={intro:"Intro",disco:"Discovery"};
+const TYPE_LBL={intro:"Intro",introU:"Intro · unsched.",disco:"Discovery"};
+const FAM=t=>t==="disco"?"disco":"intro";
+const TOPICS={w2_high_income:"W-2 / high income",tax_depreciation:"Tax & depreciation",reps_status:"REPS / passive rules",retirement_ira:"IRA / 401k",exchange_1031:"1031 / capital gains",accreditation:"Accreditation",returns_projections:"Returns & projections",risk_safety:"Risk & safety",liquidity_lockup:"Liquidity / hold period",fund_structure:"Fund structure & fees",track_record:"Track record",spouse_advisor:"Spouse / advisor / CPA",investment_amount:"Investment amount",timing_capital_event:"Upcoming liquidity event",other_investments:"Other investments",objection_trust:"Trust / skepticism"};
+const OUT={discoBooked:"Discovery booked",discoHeld:"Discovery held",idcBooked:"Decision Call booked",committed:"Committed / Won"};
+let drill=null; /* {label, test(c)} */
+function resultHtml(c){const o=c.o||{};if(FAM(c.type)==="intro"){if(o.discoHeld)return'<span class="res yes">Disco held</span>';if(o.discoPending)return'<span class="res pend">Disco upcoming</span>';if(o.discoBooked)return'<span class="res pend">Disco booked · not held</span>';return'<span class="res no">No Disco</span>'}
+ if(o.won)return'<span class="res yes">Won</span>';if(o.committed)return'<span class="res yes">Committed</span>';if(o.idcHeld)return'<span class="res yes">IDC held</span>';if(o.idcBooked)return'<span class="res pend">IDC booked</span>';return`<span class="res no">${esc(o.stage||"No IDC")}</span>`}
+const typeOk=(sel,t)=>sel==="all"||sel===t||(sel==="allintro"&&FAM(t)==="intro");
 /* sequential blue ramp, 0 → 5 */
 const RAMP=["#cde2fb","#9ec5f4","#6da7ec","#3987e5","#256abf","#184f95"];
 const HS=id=>"https://app.hubspot.com/calls/23126809/review/"+id;
@@ -202,8 +233,8 @@ let DATA=[],sortKey="date",sortDir=-1,shown=40,openId=null;
 function cellStyle(v){if(v==null)return"";const i=Math.max(0,Math.min(5,Math.round(v)));return`background:${RAMP[i]};color:${i>=3?"#fff":"#1a1814"}`}
 
 function filtered(){
-  const t=fType.value,r=fRep.value,a=fFrom.value,b=fTo.value,fl=fFlag.checked,q=fQ.value.trim().toLowerCase();
-  return DATA.filter(c=>(t==="all"||c.type===t)&&(r==="all"||c.rep===r)&&(!a||c.date>=a)&&(!b||c.date<=b)&&(!fl||c.flag)&&
+  const t=fType.value,r=fRep.value,a=fFrom.value,b=fTo.value,fl=fFlag.checked,q=fQ.value.trim().toLowerCase(),tp=fTopic.value;
+  return DATA.filter(c=>typeOk(t,c.type)&&(r==="all"||c.rep===r)&&(!a||c.date>=a)&&(!b||c.date<=b)&&(!fl||c.flag)&&(!tp||(c.tags||[]).some(x=>x.k===tp))&&
     (!q||(c.outcome+" "+c.coaching.join(" ")+" "+c.strengths.join(" ")).toLowerCase().includes(q)));
 }
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
@@ -211,34 +242,45 @@ const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function tiles(rows){
   const o=avg(rows.map(c=>c.overall));
   const fl=rows.filter(c=>c.flag);const rev=fl.filter(c=>lsGet("cs-rev-"+c.id)).length;
-  let worst=null;STEPS.forEach(([k,l])=>{const v=avg(rows.map(c=>c.s[k]).filter(x=>x!=null));if(v!=null&&(!worst||v<worst.v))worst={l,v}});
+  let worst=null;STEPS.forEach(([k,l])=>{const v=avg(rows.map(c=>c.s[k]).filter(x=>x!=null));if(v!=null&&(!worst||v<worst.v))worst={k,l,v}});
   tilesEl.innerHTML=`
-   <div class="tile"><div class="k">Calls scored</div><div class="v">${rows.length}</div><div class="sub">${rows.filter(c=>c.type==="intro").length} Intro · ${rows.filter(c=>c.type==="disco").length} Discovery</div></div>
+   <div class="tile"><div class="k">Calls scored</div><div class="v">${rows.length}</div><div class="sub">${rows.filter(c=>c.type==="intro").length} booked Intro · ${rows.filter(c=>c.type==="introU").length} unscheduled · ${rows.filter(c=>c.type==="disco").length} Discovery</div></div>
    <div class="tile"><div class="k">Average overall</div><div class="v">${o==null?"—":Math.round(o)}</div><div class="sub">out of 100</div></div>
-   <div class="tile"><div class="k">Weakest step</div><div class="v" style="font-size:22px;margin-top:8px">${worst?esc(worst.l):"—"}</div><div class="sub">${worst?worst.v.toFixed(1)+" / 5 average":""}</div></div>
-   <div class="tile"><div class="k">Compliance flags</div><div class="v">${fl.length}</div><div class="sub">${rev} marked reviewed in this browser</div></div>`;
+   <div class="tile click" id="tWeak" title="Show the lowest-scoring calls on this step"><div class="k">Weakest step</div><div class="v" style="font-size:22px;margin-top:8px">${worst?esc(worst.l):"—"}</div><div class="sub">${worst?worst.v.toFixed(1)+" / 5 average":""}</div></div>
+   <div class="tile click" id="tFlag" title="Show flagged calls"><div class="k">Compliance flags</div><div class="v">${fl.length}</div><div class="sub">${rev} marked reviewed in this browser</div></div>`;
+  const tw=document.getElementById("tWeak");if(tw&&worst)tw.onclick=()=>{sortKey="s."+worst.k;sortDir=1;openId=null;calls(filtered());scrollCalls()};
+  const tf=document.getElementById("tFlag");if(tf)tf.onclick=()=>{fFlag.checked=true;render();scrollCalls()};
 }
 
 function heat(rows){
-  const reps=Object.keys(REPS).filter(r=>rows.some(c=>c.rep===r));
-  if(!reps.length){heatEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
-  let h='<table class="hm"><thead><tr><th>Rep</th><th>Calls</th><th>Overall</th>'+STEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
-  reps.forEach(r=>{const rc=rows.filter(c=>c.rep===r);
-    h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${REPS[r].c}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${TYPE_LBL[REPS[r].type]}</span></td><td class="num">${rc.length}</td><td class="num"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
+  const groups=[];Object.keys(REPS).forEach(r=>["intro","introU","disco"].forEach(t=>{const rc=rows.filter(c=>c.rep===r&&c.type===t);if(rc.length)groups.push({r,t,rc})}));
+  if(!groups.length){heatEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
+  let h='<table class="hm"><thead><tr><th>Rep</th><th>Calls</th><th>Overall</th><th class="ocH" title="Intro: Discovery Call booked for the contact after this call. Discovery: Investment Decision Call booked after.">Next call booked</th><th class="ocH" title="Intro: Discovery held (Completed). Discovery: deal reached InvestNext Committed or later, or Closed Won in Main Sales / Fund 5 / Sunrise Income Fund.">Held / Committed</th>'+STEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
+  groups.forEach(({r,t,rc})=>{
+    h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${REPS[r].c}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${TYPE_LBL[t]}</span></td><td class="num click" data-g="${r}|${t}" data-m="all">${rc.length}</td><td class="num click" data-g="${r}|${t}" data-m="sort:overall"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
+    const isI=FAM(t)==="intro",m1=isI?"discoBooked":"idcBooked",m2=isI?"discoHeld":"committed";
+    [[m1,isI?"Disco booked":"IDC booked"],[m2,isI?"Disco held":"Committed"]].forEach(([m,lab])=>{const n=rc.filter(c=>c.o&&c.o[m]).length;
+      h+=`<td class="oc click" data-g="${r}|${t}" data-m="o:${m}" title="${esc(r)} · ${lab}: ${n} of ${rc.length} — click to list them">${Math.round(100*n/rc.length)}%<span class="sub">${n} / ${rc.length}</span></td>`});
     STEPS.forEach(([k,l])=>{const vals=rc.map(c=>c.s[k]).filter(x=>x!=null);const v=avg(vals);
-      h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell" style="${cellStyle(v)}" title="${esc(r)} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls">${v.toFixed(1)}</td>`});
+      h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell click" data-g="${r}|${t}" data-m="sort:s.${k}" style="${cellStyle(v)}" title="${esc(r)} · ${TYPE_LBL[t]} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls — click for the lowest-scoring calls">${v.toFixed(1)}</td>`});
     h+='</tr>'});
   h+='</tbody></table><div class="legend">0<div class="ramp">'+RAMP.map(c=>`<span style="background:${c}"></span>`).join("")+'</div>5 &nbsp;·&nbsp; darker = stronger</div>';
   heatEl.innerHTML=h;
+  heatEl.querySelectorAll(".click").forEach(td=>td.onclick=()=>{const [r,t]=td.dataset.g.split("|"),m=td.dataset.m;
+    fType.value=t;repOptions();fRep.value=r;openId=null;
+    if(m.startsWith("o:")){const k=m.slice(2);drill={label:`${r} · ${TYPE_LBL[t]} · ${OUT[k]}`,test:c=>c.o&&c.o[k]};sortKey="date";sortDir=-1}
+    else{drill=null;if(m.startsWith("sort:")){sortKey=m.slice(5);sortDir=sortKey==="overall"?1:1}}
+    render();scrollCalls()});
 }
+function scrollCalls(){document.getElementById("calls").closest(".section").scrollIntoView({behavior:"smooth",block:"start"})}
 
 function weekStart(d){const x=new Date(d+"T12:00:00Z");const w=(x.getUTCDay()+6)%7;x.setUTCDate(x.getUTCDate()-w);return x.toISOString().slice(0,10)}
 function trend(rows){
   trendEl.innerHTML="";
-  [["intro","Intro Calls"],["disco","Discovery Calls"]].forEach(([t,title])=>{
+  [["intro","Intro — booked"],["introU","Intro — unscheduled"],["disco","Discovery Calls"]].forEach(([t,title])=>{
     const rr=rows.filter(c=>c.type===t);if(!rr.length)return;
     const weeks=[...new Set(rows.map(c=>weekStart(c.date)))].sort(); /* shared axis across both charts */
-    const reps=Object.keys(REPS).filter(r=>REPS[r].type===t&&rr.some(c=>c.rep===r));
+    const reps=Object.keys(REPS).filter(r=>REPS[r].type===FAM(t)&&rr.some(c=>c.rep===r));
     const series=reps.map(r=>({r,pts:weeks.map(w=>{const cs=rr.filter(c=>c.rep===r&&weekStart(c.date)===w);return cs.length?{w,v:avg(cs.map(c=>c.overall)),n:cs.length}:null})}));
     const W=560,H=220,L=34,R=86,T=12,B=28,pw=W-L-R,ph=H-T-B;
     const x=i=>L+(weeks.length===1?pw/2:i*pw/(weeks.length-1)),y=v=>T+ph-(v/100)*ph;
@@ -273,19 +315,25 @@ function trend(rows){
 }
 
 function calls(rows){
-  const cols=[["date","Date"],["rep","Rep"],["type","Type"],["min","Min"],["overall","Overall"],["outcome","Outcome"],["flag","Flag"]];
-  const sorted=[...rows].sort((a,b)=>{const A=a[sortKey],B=b[sortKey];return (A>B?1:A<B?-1:0)*sortDir||(a.id>b.id?1:-1)});
-  callsTag.textContent=`${rows.length} calls · click a row for coaching notes`;
+  if(drill)rows=rows.filter(drill.test);
+  const cols=[["date","Date"],["rep","Rep"],["type","Type"],["min","Min"],["overall","Overall"],["outcome","Outcome"],["res","Result"],["flag","Flag"]];
+  const val=(c,k)=>k.startsWith("s.")?(c.s[k.slice(2)]??99):k==="res"?resultHtml(c):c[k];
+  const sorted=[...rows].sort((a,b)=>{const A=val(a,sortKey),B=val(b,sortKey);return (A>B?1:A<B?-1:0)*sortDir||(a.id>b.id?1:-1)});
+  const stepLbl=sortKey.startsWith("s.")?(STEPS.find(x=>x[0]===sortKey.slice(2))||[])[1]:null;
+  callsTag.textContent=`${rows.length} calls · click a row for coaching notes`+(stepLbl?` · sorted by ${stepLbl}, lowest first`:"");
+  drillEl.className="drill"+(drill?" on":"");drillEl.innerHTML=drill?`Showing: <b>${esc(drill.label)}</b> <button id="clrDrill">Clear</button>`:"";
+  if(drill)document.getElementById("clrDrill").onclick=()=>{drill=null;calls(filtered())};
   if(!rows.length){callsEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
   let h='<table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
   sorted.slice(0,shown).forEach(c=>{
-    h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td><span class="pill ${c.type}">${TYPE_LBL[c.type]}</span></td><td class="num">${c.min??""}</td><td class="num"><span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span></td><td>${esc(c.outcome)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}</td></tr>`;
+    h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td><span class="pill ${c.type}">${TYPE_LBL[c.type]}</span></td><td class="num">${c.min??""}</td><td class="num"><span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span></td><td>${esc(c.outcome)}</td><td>${resultHtml(c)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}</td></tr>`;
     if(openId===c.id){
-      h+=`<tr class="detail"><td colspan="7"><div class="steps">${STEPS.map(([k,l])=>c.s[k]==null?"":`<span>${l} <b>${c.s[k]}</b></span>`).join("")}</div>
+      h+=`<tr class="detail"><td colspan="8"><div class="steps">${STEPS.map(([k,l])=>c.s[k]==null?"":`<span>${l} <b>${c.s[k]}</b></span>`).join("")}</div>
       <div class="dgrid"><div><h4>Coaching</h4><ul>${c.coaching.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
       <div><h4>Strengths</h4><ul>${c.strengths.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
       <div><h4>Best moment</h4><p>${c.best.t?`<b>${esc(c.best.t)}</b> — `:""}"${esc(c.best.q)}"</p><p style="color:var(--text2);margin-top:4px">${esc(c.best.why)}</p>
       ${c.flag?`<h4 style="margin-top:12px;color:var(--red)">Compliance flag</h4><p><i>"${esc(c.flagQuote)}"</i></p>`:""}
+      ${(c.tags||[]).length?`<h4 style="margin-top:12px">Topics discussed</h4><ul>${c.tags.map(x=>`<li><b>${esc(TOPICS[x.k]||x.k)}</b> · ${esc(x.t)} — "${esc(x.q)}"</li>`).join("")}</ul>`:""}
       <p style="margin-top:12px"><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">Open call in HubSpot ↗</a></p></div></div></td></tr>`}
   });
   h+='</tbody></table>'+(rows.length>shown?`<button class="more" id="more">Show ${Math.min(40,rows.length-shown)} more</button>`:"");
@@ -311,12 +359,13 @@ function comp(rows){
 function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows)}
 
 const $=id=>document.getElementById(id);
-const fType=$("fType"),fRep=$("fRep"),fFrom=$("fFrom"),fTo=$("fTo"),fFlag=$("fFlag"),fQ=$("fQ");
-const tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
-function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===t).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
-fType.onchange=()=>{repOptions();render()};
-[fRep,fFrom,fTo,fFlag].forEach(e=>e.onchange=render);fQ.oninput=render;
-$("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fFrom.value=fFrom.min;fTo.value=fTo.max;fFlag.checked=false;fQ.value="";render()};
+const fType=$("fType"),fRep=$("fRep"),fFrom=$("fFrom"),fTo=$("fTo"),fFlag=$("fFlag"),fQ=$("fQ"),fTopic=$("fTopic");
+fTopic.innerHTML+=Object.entries(TOPICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+const drillEl=$("drill"),tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
+function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===FAM(t==='allintro'?'intro':t)).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
+fType.onchange=()=>{drill=null;repOptions();render()};
+[fRep,fFrom,fTo,fFlag,fTopic].forEach(e=>e.onchange=()=>{drill=null;render()});fQ.oninput=render;
+$("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fFrom.value=fFrom.min;fTo.value=fTo.max;fFlag.checked=false;fQ.value="";fTopic.value="";drill=null;sortKey="date";sortDir=-1;render()};
 
 window.openGuide=()=>$("guide").classList.add("on");
 window.closeGuide=()=>$("guide").classList.remove("on");
@@ -325,7 +374,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
 fetch("call-scores-data.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{
   DATA=j.calls;const ds=DATA.map(c=>c.date).sort();
   fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
-  $("ts").textContent=`Data through ${j.generated} · rubric ${j.rubricVersion}`;
+  $("ts").textContent=`Data through ${j.generated} · rubric ${j.rubricVersion} · outcomes as of ${j.outcomesAsOf||j.generated}`;
   repOptions();render();
 }).catch(e=>{tilesEl.innerHTML=`<div class="empty">Couldn't load call-scores-data.json (${esc(e.message)}).</div>`});
 })();
