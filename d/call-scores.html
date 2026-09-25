@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.3)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.4)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -15,7 +15,7 @@
   --red:#991b1b;--red-bg:#fef2f2;
   --amber:#92400e;--amber-bg:#fef3c7;
   /* rep identity (validated categorical order) */
-  --kayla:#2a78d6;--cierra:#eb6834;--bronson:#1baf7a;--kelvin:#eda100;
+  --kayla:#2a78d6;--cierra:#eb6834;--bronson:#1baf7a;--kelvin:#eda100;--alex:#e87ba4;--daniel:#008300;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -124,7 +124,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.3</span>
+    <span class="vpill">v1.4</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -141,6 +141,7 @@ a.hs:hover{text-decoration:underline}
   <label class="chk"><input type="checkbox" id="fFlag"> Compliance-flagged only</label>
   <div class="fg"><input type="search" id="fQ" placeholder="Search coaching / outcome…" size="22"></div>
   <button id="reset">Reset</button>
+  <label id="importBtn" title="Admin: load a scored data file into the dashboard" style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text2)">Import…<input type="file" id="importFile" accept=".json,application/json" style="display:none"></label>
 </div>
 
 <main>
@@ -160,6 +161,22 @@ a.hs:hover{text-decoration:underline}
   <div class="section">
     <div class="section-hd"><h2>Calls</h2><span class="tag" id="callsTag"></span></div>
     <div class="section-body"><div class="drill" id="drill"></div><div id="calls"></div></div>
+  </div>
+
+  <div class="section" id="amSection">
+    <div class="section-hd"><h2>Account Managers</h2><span class="tag">Existing-investor calls by Alex and Daniel · scored on the AM rubric (see Guide) · date range above applies</span></div>
+    <div class="section-body">
+      <div class="fg" style="gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <label for="amType" style="font-size:11px;font-weight:600;color:var(--text2)">Call type</label>
+        <select id="amType"><option value="all">All scored</option><option value="checkup">Quarterly check-up</option><option value="sif_pitch">SIF pitch</option><option value="onboarding">Onboarding</option><option value="other">Other / admin (not scored)</option></select>
+        <label for="amRep" style="font-size:11px;font-weight:600;color:var(--text2)">AM</label>
+        <select id="amRep"><option value="all">Both</option><option>Alex Zahn</option><option>Daniel Ackerman</option></select>
+        <label class="chk"><input type="checkbox" id="amFlag"> Compliance-flagged only</label>
+      </div>
+      <div id="amHeat"></div>
+      <h3 style="font-size:13px;font-weight:600;margin:20px 0 8px" id="amCallsTag"></h3>
+      <div id="amCalls"></div>
+    </div>
   </div>
 
   <div class="section">
@@ -192,6 +209,14 @@ a.hs:hover{text-decoration:underline}
       <li><b>Talk Control, No Premature Pitch, Sandler Techniques</b> — prospect talks more, no pitching before qualifying, use of reversing / negative reverse selling.</li>
     </ul>
     <p><b>Overall</b> = average of the scored items ÷ 5 × 100.</p>
+    <h3>Account Managers (v1.4)</h3>
+    <ul>
+      <li>Every connected call by Alex Zahn and Daniel Ackerman that has a transcript. Claude sorts each into <b>Quarterly check-up</b>, <b>SIF pitch</b>, <b>Onboarding</b> or <b>Other/admin</b> (K-1s, paperwork, voicemail, too short). Other/admin calls are listed but not scored.</li>
+      <li><b>All types:</b> Bonding, Up-Front Contract, Discovery (goals, life events, liquidity, new money), Service (accurate answers, clear expectations), Next Step, Talk Control.</li>
+      <li><b>Check-up adds:</b> Retention (handled worries or redemption signals) and Opportunity (spotted reinvestment or referral without forcing it).</li>
+      <li><b>SIF pitch adds:</b> Need/Fit, Budget, Decision, Commitment. <b>Onboarding adds:</b> Clarity of next steps.</li>
+      <li><b>SIF deal after</b> = a Sunrise Income Fund deal was created for the investor after the call. Same compliance flags as the sales calls, plus a Pressure flag.</li>
+    </ul>
     <h3>Outcome columns</h3>
     <ul>
       <li><b>Intro rows:</b> Disco booked = a Discovery Call meeting was created for the contact after the call. Disco held = that meeting is marked Completed.</li>
@@ -217,7 +242,7 @@ const STEPS=[["bonding_rapport","Bonding"],["upfront_contract","Up-Front Contrac
 const REPS={"Kayla Daughtrey":{c:"var(--kayla)",hex:"#2a78d6",type:"intro"},"Cierra Milao":{c:"var(--cierra)",hex:"#eb6834",type:"intro"},"Bronson Picket":{c:"var(--bronson)",hex:"#1baf7a",type:"disco"},"Kelvin Evans":{c:"var(--kelvin)",hex:"#eda100",type:"disco"}};
 const TYPE_LBL={intro:"Intro",introU:"Intro · unsched.",disco:"Discovery"};
 const FAM=t=>t==="disco"?"disco":"intro";
-const TOPICS={w2_high_income:"W-2 / high income",tax_depreciation:"Tax & depreciation",reps_status:"REPS / passive rules",retirement_ira:"IRA / 401k",exchange_1031:"1031 / capital gains",accreditation:"Accreditation",returns_projections:"Returns & projections",risk_safety:"Risk & safety",liquidity_lockup:"Liquidity / hold period",fund_structure:"Fund structure & fees",track_record:"Track record",spouse_advisor:"Spouse / advisor / CPA",investment_amount:"Investment amount",timing_capital_event:"Upcoming liquidity event",other_investments:"Other investments",objection_trust:"Trust / skepticism"};
+const TOPICS={w2_high_income:"W-2 / high income",tax_depreciation:"Tax & depreciation",reps_status:"REPS / passive rules",retirement_ira:"IRA / 401k",exchange_1031:"1031 / capital gains",accreditation:"Accreditation",returns_projections:"Returns & projections",risk_safety:"Risk & safety",liquidity_lockup:"Liquidity / hold period",fund_structure:"Fund structure & fees",track_record:"Track record",spouse_advisor:"Spouse / advisor / CPA",investment_amount:"Investment amount",timing_capital_event:"Upcoming liquidity event",other_investments:"Other investments",objection_trust:"Trust / skepticism",distributions:"Distributions",k1_tax_docs:"K-1 / tax documents",referral:"Referrals"};
 const OUT={discoBooked:"Discovery booked",discoHeld:"Discovery held",idcBooked:"Decision Call booked",committed:"Committed / Won"};
 let drill=null; /* {label, test(c)} */
 function resultHtml(c){const o=c.o||{};if(FAM(c.type)==="intro"){if(o.discoHeld)return'<span class="res yes">Disco held</span>';if(o.discoPending)return'<span class="res pend">Disco upcoming</span>';if(o.discoBooked)return'<span class="res pend">Disco booked · not held</span>';return'<span class="res no">No Disco</span>'}
@@ -356,11 +381,12 @@ function calls(rows){
 }
 
 function comp(rows){
-  const fl=rows.filter(c=>c.flag).sort((a,b)=>a.date<b.date?1:-1);
+  const amf=AMDATA.filter(c=>c.flag&&(!fFrom.value||c.date>=fFrom.value)&&(!fTo.value||c.date<=fTo.value)&&(fRep.value==="all"||c.rep===fRep.value)&&(fType.value==="all"));
+  const fl=rows.filter(c=>c.flag).concat(amf).sort((a,b)=>a.date<b.date?1:-1);
   if(!fl.length){compEl.innerHTML='<div class="empty">No flagged calls in this view.</div>';return}
   let h='<table class="cq"><thead><tr><th>Date</th><th>Rep</th><th>Flagged line</th><th>Status</th><th></th></tr></thead><tbody>';
   fl.forEach(c=>{const st=revGet(c.id);const who=REVIEW_SHARED&&REVIEW[c.id]?`<div style="font-size:10.5px;color:var(--text3);margin-top:3px">${esc((REVIEW[c.id].by||"").split("@")[0])} · ${esc((REVIEW[c.id].at||"").slice(0,10))}</div>`:"";
-    h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td class="q">"${esc(c.flagQuote)}"</td>
+    h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${repColor(c.rep)}"></span>${esc(c.rep)}</td><td class="q">"${esc(c.flagQuote)}"</td>
     <td><select class="rv" data-id="${c.id}"><option value="">Not reviewed</option><option value="issue"${st==="issue"?" selected":""}>Issue — coach</option><option value="ok"${st==="ok"?" selected":""}>Not a problem</option></select>${who}</td>
     <td><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`});
   h+=`</tbody></table><p class="note" id="revNote">${REVIEW_SHARED?"Status is shared — everyone sees it, with who set it and when.":"Status is saved in this browser only (shared storage unavailable)."} Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>`;
@@ -368,17 +394,81 @@ function comp(rows){
   compEl.querySelectorAll(".rv").forEach(s=>s.onchange=async()=>{s.disabled=true;await revSet(s.dataset.id,s.value);s.disabled=false;tiles(filtered());comp(filtered())});
 }
 
-function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows)}
+
+/* v1.4: Account Managers */
+const AMREPS={"Alex Zahn":"var(--alex)","Daniel Ackerman":"var(--daniel)"};
+const AMTYPE_LBL={checkup:"Check-up",sif_pitch:"SIF pitch",onboarding:"Onboarding",other:"Other / admin"};
+const AMSTEPS=[["bonding","Bonding"],["upfront_contract","Up-Front Contract"],["discovery","Discovery"],["service","Service"],["next_step","Next Step"],["talk_control","Talk Control"],["retention","Retention"],["opportunity","Opportunity"],["need_fit","Need / Fit"],["budget","Budget"],["decision","Decision"],["commitment","Commitment"],["clarity","Clarity"]];
+let AMDATA=[],amOpen=null,amSort="date",amDir=-1,amShown=40,amDrill=null;
+const repColor=r=>(REPS[r]&&REPS[r].c)||AMREPS[r]||"#999";
+function amFiltered(){const a=fFrom.value,b=fTo.value,t=amTypeEl.value,r=amRepEl.value,fl=amFlagEl.checked,tp=fTopic.value,q=fQ.value.trim().toLowerCase();
+  return AMDATA.filter(c=>(!a||c.date>=a)&&(!b||c.date<=b)&&(t==="all"?c.amType!=="other":c.amType===t)&&(r==="all"||c.rep===r)&&(!fl||c.flag)&&(!tp||(c.tags||[]).some(x=>x.k===tp))&&(!q||(c.outcome+" "+c.coaching.join(" ")+" "+c.strengths.join(" ")).toLowerCase().includes(q)))}
+function amResult(c){const o=c.o||{};if(c.amType==="other")return'<span class="res no">Not scored</span>';if(o.sifStage&&/won/i.test(o.sifStage))return'<span class="res yes">SIF won</span>';if(o.sifNew)return`<span class="res ${/lost/i.test(o.sifStage||"")?"no":"yes"}">SIF deal · ${esc(o.sifStage||"")}</span>`;if(o.sifStage)return`<span class="res pend">SIF · ${esc(o.sifStage)}</span>`;return'<span class="res no">—</span>'}
+function amHeat(rows){
+  const other=AMDATA.filter(c=>c.amType==="other"&&(!fFrom.value||c.date>=fFrom.value)&&(!fTo.value||c.date<=fTo.value)&&(amRepEl.value==="all"||c.rep===amRepEl.value)).length;
+  const sc=rows.filter(c=>c.amType!=="other");const groups=[];
+  Object.keys(AMREPS).forEach(r=>["checkup","sif_pitch","onboarding"].forEach(t=>{const rc=sc.filter(c=>c.rep===r&&c.amType===t);if(rc.length)groups.push({r,t,rc})}));
+  if(!groups.length){amHeatEl.innerHTML=`<div class="empty">No scored AM calls match these filters.${other?` (${other} other/admin calls not scored)`:""}</div>`;return}
+  let h='<table class="hm"><thead><tr><th>AM</th><th>Calls</th><th>Overall</th><th class="ocH" title="A Sunrise Income Fund deal was created for the investor after this call">SIF deal after</th>'+AMSTEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
+  groups.forEach(({r,t,rc})=>{const n=rc.filter(c=>c.o&&c.o.sifNew).length;
+    h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${AMREPS[r]}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${AMTYPE_LBL[t]}</span></td><td class="num click" data-g="${r}|${t}" data-m="all">${rc.length}</td><td class="num click" data-g="${r}|${t}" data-m="sort:overall"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
+    h+=`<td class="oc click" data-g="${r}|${t}" data-m="o:sifNew" title="${n} of ${rc.length} — click to list them">${Math.round(100*n/rc.length)}%<span class="sub">${n} / ${rc.length}</span></td>`;
+    AMSTEPS.forEach(([k,l])=>{const vals=rc.map(c=>c.s&&c.s[k]).filter(x=>x!=null);const v=avg(vals);
+      h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell click" data-g="${r}|${t}" data-m="sort:s.${k}" style="${cellStyle(v)}" title="${esc(r)} · ${AMTYPE_LBL[t]} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls — click for the lowest-scoring calls">${v.toFixed(1)}</td>`});
+    h+='</tr>'});
+  h+=`</tbody></table><div class="legend">0<div class="ramp">${RAMP.map(c=>`<span style="background:${c}"></span>`).join("")}</div>5 &nbsp;·&nbsp; darker = stronger${other?` &nbsp;·&nbsp; ${other} other/admin calls not scored`:""}</div>`;
+  amHeatEl.innerHTML=h;
+  amHeatEl.querySelectorAll(".click").forEach(td=>td.onclick=()=>{const [r,t]=td.dataset.g.split("|"),m=td.dataset.m;amTypeEl.value=t;amRepEl.value=r;amOpen=null;
+    if(m.startsWith("o:")){amDrill={label:`${r} · ${AMTYPE_LBL[t]} · SIF deal after`,test:c=>c.o&&c.o.sifNew};amSort="date";amDir=-1}else{amDrill=null;if(m.startsWith("sort:")){amSort=m.slice(5);amDir=1}}
+    amRender();document.getElementById("amCallsTag").scrollIntoView({behavior:"smooth",block:"start"})});
+}
+function amCalls(rows){
+  if(amDrill)rows=rows.filter(amDrill.test);
+  const val=(c,k)=>k.startsWith("s.")?((c.s&&c.s[k.slice(2)])??99):c[k]??-1;
+  const sorted=[...rows].sort((a,b)=>{const A=val(a,amSort),B=val(b,amSort);return (A>B?1:A<B?-1:0)*amDir||(a.id>b.id?1:-1)});
+  const stepLbl=amSort.startsWith("s.")?(AMSTEPS.find(x=>x[0]===amSort.slice(2))||[])[1]:null;
+  amCallsTagEl.innerHTML=`${rows.length} AM calls`+(stepLbl?` · sorted by ${stepLbl}, lowest first`:"")+(amDrill?` · <b>${esc(amDrill.label)}</b> <button class="more" style="margin:0 0 0 6px;padding:2px 8px" id="amClr">Clear</button>`:"");
+  if(amDrill)document.getElementById("amClr").onclick=()=>{amDrill=null;amRender()};
+  if(!rows.length){amCallsEl.innerHTML='<div class="empty">No AM calls match these filters.</div>';return}
+  const cols=[["date","Date"],["rep","AM"],["amType","Type"],["min","Min"],["overall","Overall"],["outcome","Outcome"],["res","Result"],["flag","Flag"]];
+  let h='<table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${amSort===k?(amDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
+  sorted.slice(0,amShown).forEach(c=>{
+    h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${AMREPS[c.rep]}"></span>${esc(c.rep)}</td><td><span class="pill ${c.amType==="other"?"introU":"disco"}">${AMTYPE_LBL[c.amType]}</span></td><td class="num">${c.min??""}</td><td class="num">${c.overall==null?"—":`<span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span>`}</td><td>${esc(c.outcome)}</td><td>${amResult(c)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}${c.pressure?' <span class="pill flag">Pressure</span>':""}</td></tr>`;
+    if(amOpen===c.id){h+=`<tr class="detail"><td colspan="8">${c.s?`<div class="steps">${AMSTEPS.map(([k,l])=>c.s[k]==null?"":`<span>${l} <b>${c.s[k]}</b></span>`).join("")}</div>`:""}
+      <div class="dgrid"><div><h4>Coaching</h4><ul>${(c.coaching||[]).map(x=>`<li>${esc(x)}</li>`).join("")||"<li>—</li>"}</ul></div>
+      <div><h4>Strengths</h4><ul>${(c.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join("")||"<li>—</li>"}</ul></div>
+      <div>${c.best&&c.best.q?`<h4>Best moment</h4><p>${c.best.t?`<b>${esc(c.best.t)}</b> — `:""}"${esc(c.best.q)}"</p><p style="color:var(--text2);margin-top:4px">${esc(c.best.why)}</p>`:""}
+      ${c.flag?`<h4 style="margin-top:12px;color:var(--red)">Compliance flag</h4><p><i>"${esc(c.flagQuote)}"</i></p>`:""}
+      ${(c.tags||[]).length?`<h4 style="margin-top:12px">Topics discussed</h4><ul>${c.tags.map(x=>`<li><b>${esc(TOPICS[x.k]||x.k)}</b> · ${esc(x.t||"")} — "${esc(x.q||"")}"</li>`).join("")}</ul>`:""}
+      <p style="margin-top:12px"><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">Open call in HubSpot ↗</a></p></div></div></td></tr>`}});
+  h+='</tbody></table>'+(rows.length>amShown?`<button class="more" id="amMore">Show ${Math.min(40,rows.length-amShown)} more</button>`:"");
+  amCallsEl.innerHTML=h;
+  amCallsEl.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(amSort===k)amDir*=-1;else{amSort=k;amDir=["date","overall","min","flag"].includes(k)?-1:1}amRender()});
+  amCallsEl.querySelectorAll("tr.call").forEach(tr=>tr.onclick=()=>{amOpen=amOpen===tr.dataset.id?null:tr.dataset.id;amCalls(amFiltered())});
+  const m=document.getElementById("amMore");if(m)m.onclick=()=>{amShown+=40;amCalls(amFiltered())};
+}
+function amRender(){if(!AMDATA.length){document.getElementById("amSection").style.display="none";return}document.getElementById("amSection").style.display="";const r=amFiltered();amHeat(r);amCalls(r)}
+function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows);amRender()}
 
 const $=id=>document.getElementById(id);
 const fType=$("fType"),fRep=$("fRep"),fFrom=$("fFrom"),fTo=$("fTo"),fFlag=$("fFlag"),fQ=$("fQ"),fTopic=$("fTopic");
 fTopic.innerHTML+=Object.entries(TOPICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+const amTypeEl=$("amType"),amRepEl=$("amRep"),amFlagEl=$("amFlag"),amHeatEl=$("amHeat"),amCallsEl=$("amCalls"),amCallsTagEl=$("amCallsTag");
+[amTypeEl,amRepEl,amFlagEl].forEach(e=>e.onchange=()=>{amDrill=null;amOpen=null;amSort="date";amDir=-1;amRender()});
 const drillEl=$("drill"),tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
 function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===FAM(t==='allintro'?'intro':t)).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
 fType.onchange=()=>{drill=null;repOptions();render()};
 [fRep,fFrom,fTo,fFlag,fTopic].forEach(e=>e.onchange=()=>{drill=null;render()});fQ.oninput=render;
 $("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fFrom.value=fFrom.min;fTo.value=fTo.max;fFlag.checked=false;fQ.value="";fTopic.value="";drill=null;sortKey="date";sortDir=-1;render()};
 
+$("importFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());
+    if(!j||!Array.isArray(j.calls)||!j.calls.length||(j.am&&!Array.isArray(j.am)))throw new Error("not a Call Scores data file");
+    const bad=j.calls.concat(j.am||[]).find(c=>!c||!c.id||!c.date||!c.rep);if(bad)throw new Error("a call is missing id/date/rep");
+    if(!confirm(`Replace the dashboard data with this file?\n\n${j.calls.length} sales calls, ${(j.am||[]).length} AM calls.\nThe Worker keeps a dated backup of every upload.`))return;
+    const r=await fetch(API+"/cached-call-scores",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(j)});const t=await r.json();
+    if(!r.ok||!t.ok)throw new Error(t.error||r.status);alert(`Saved: ${t.calls} sales calls. Reloading.`);location.reload()}
+  catch(err){alert("Import failed: "+err.message)}};
 window.openGuide=()=>$("guide").classList.add("on");
 window.closeGuide=()=>$("guide").classList.remove("on");
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
@@ -389,7 +479,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
   try{j=await get(API+"/cached-call-scores")}catch(e){src="static file";j=await get("call-scores-data.json")}
   try{REVIEW=await get(API+"/call-scores-review");REVIEW_SHARED=true}catch(e){REVIEW_SHARED=false}
   window.__CS_SOURCE=src;return j})().then(j=>{
-  DATA=j.calls;const ds=DATA.map(c=>c.date).sort();
+  DATA=j.calls;AMDATA=j.am||[];const ds=DATA.concat(AMDATA).map(c=>c.date).sort();
   fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
   $("ts").textContent=`${window.__CS_SOURCE==="Worker"?"":"⚠ offline copy · "}Data through ${j.generated} · rubric ${j.rubricVersion} · outcomes as of ${j.outcomesAsOf||j.generated}`;
   repOptions();render();
