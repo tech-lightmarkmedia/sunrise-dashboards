@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.4)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.5)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -51,6 +51,10 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto}
 
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;padding:8px 10px;color:var(--text2);font-weight:600;font-size:11px;border-bottom:2px solid var(--border);white-space:nowrap}
+.tscroll{max-height:72vh;overflow:auto;border-bottom:1px solid var(--border)}
+.tscroll thead th{position:sticky;top:0;z-index:3;background:#fff;box-shadow:0 2px 0 var(--border)}
+.tscroll .hm thead th.ocH{background:#f6f4ef}
+.tscroll td:first-child,.tscroll th:first-child{padding-left:4px}
 th.sort{cursor:pointer;user-select:none}
 th.sort:hover{color:var(--text)}
 td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
@@ -70,7 +74,7 @@ td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top}
 tr.call{cursor:pointer}
 tr.call:hover td{background:#faf8f4}
 tr.detail td{background:#faf8f4;padding:14px 18px}
-.pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px}
+.pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .pill.flag{background:var(--red-bg);color:var(--red)}
 .pill.intro{background:var(--accent-bg);color:var(--accent)}
 .pill.introU{background:#f1f5f9;color:#334155;border:1px dashed #94a3b8}
@@ -124,7 +128,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.4</span>
+    <span class="vpill">v1.5</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -181,7 +185,14 @@ a.hs:hover{text-decoration:underline}
 
   <div class="section">
     <div class="section-hd"><h2>Compliance review queue</h2><span class="tag">AI-flagged lines that may promise returns or imply no risk — a person must review each</span></div>
-    <div class="section-body" id="comp"></div>
+    <div class="section-body">
+      <div class="fg" style="gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <label for="cAgent" style="font-size:11px;font-weight:600;color:var(--text2)">Agent</label><select id="cAgent"><option value="all">All agents</option></select>
+        <label for="cStatus" style="font-size:11px;font-weight:600;color:var(--text2)">Status</label><select id="cStatus"><option value="all">All</option><option value="">Not reviewed</option><option value="issue">Issue — coach</option><option value="ok">Not a problem</option></select>
+        <span id="cCount" style="font-size:11.5px;color:var(--text2)"></span>
+      </div>
+      <div id="comp"></div>
+    </div>
   </div>
 </main>
 
@@ -292,7 +303,7 @@ function tiles(rows){
 function heat(rows){
   const groups=[];Object.keys(REPS).forEach(r=>["intro","introU","disco"].forEach(t=>{const rc=rows.filter(c=>c.rep===r&&c.type===t);if(rc.length)groups.push({r,t,rc})}));
   if(!groups.length){heatEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
-  let h='<table class="hm"><thead><tr><th>Rep</th><th>Calls</th><th>Overall</th><th class="ocH" title="Intro: Discovery Call booked for the contact after this call. Discovery: Investment Decision Call booked after.">Next call booked</th><th class="ocH" title="Intro: Discovery held (Completed). Discovery: deal reached InvestNext Committed or later, or Closed Won in Main Sales / Fund 5 / Sunrise Income Fund.">Held / Committed</th>'+STEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
+  let h='<div class="tscroll"><table class="hm"><thead><tr><th>Rep</th><th>Calls</th><th>Overall</th><th class="ocH" title="Intro: Discovery Call booked for the contact after this call. Discovery: Investment Decision Call booked after.">Next call booked</th><th class="ocH" title="Intro: Discovery held (Completed). Discovery: deal reached InvestNext Committed or later, or Closed Won in Main Sales / Fund 5 / Sunrise Income Fund.">Held / Committed</th>'+STEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
   groups.forEach(({r,t,rc})=>{
     h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${REPS[r].c}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${TYPE_LBL[t]}</span></td><td class="num click" data-g="${r}|${t}" data-m="all">${rc.length}</td><td class="num click" data-g="${r}|${t}" data-m="sort:overall"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
     const isI=FAM(t)==="intro",m1=isI?"discoBooked":"idcBooked",m2=isI?"discoHeld":"committed";
@@ -301,7 +312,7 @@ function heat(rows){
     STEPS.forEach(([k,l])=>{const vals=rc.map(c=>c.s[k]).filter(x=>x!=null);const v=avg(vals);
       h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell click" data-g="${r}|${t}" data-m="sort:s.${k}" style="${cellStyle(v)}" title="${esc(r)} · ${TYPE_LBL[t]} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls — click for the lowest-scoring calls">${v.toFixed(1)}</td>`});
     h+='</tr>'});
-  h+='</tbody></table><div class="legend">0<div class="ramp">'+RAMP.map(c=>`<span style="background:${c}"></span>`).join("")+'</div>5 &nbsp;·&nbsp; darker = stronger</div>';
+  h+='</tbody></table></div><div class="legend">0<div class="ramp">'+RAMP.map(c=>`<span style="background:${c}"></span>`).join("")+'</div>5 &nbsp;·&nbsp; darker = stronger</div>';
   heatEl.innerHTML=h;
   heatEl.querySelectorAll(".click").forEach(td=>td.onclick=()=>{const [r,t]=td.dataset.g.split("|"),m=td.dataset.m;
     fType.value=t;repOptions();fRep.value=r;openId=null;
@@ -361,7 +372,7 @@ function calls(rows){
   drillEl.className="drill"+(drill?" on":"");drillEl.innerHTML=drill?`Showing: <b>${esc(drill.label)}</b> <button id="clrDrill">Clear</button>`:"";
   if(drill)document.getElementById("clrDrill").onclick=()=>{drill=null;calls(filtered())};
   if(!rows.length){callsEl.innerHTML='<div class="empty">No calls match these filters.</div>';return}
-  let h='<table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
+  let h='<div class="tscroll"><table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${sortKey===k?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
   sorted.slice(0,shown).forEach(c=>{
     h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${REPS[c.rep].c}"></span>${esc(c.rep)}</td><td><span class="pill ${c.type}">${TYPE_LBL[c.type]}</span></td><td class="num">${c.min??""}</td><td class="num"><span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span></td><td>${esc(c.outcome)}</td><td>${resultHtml(c)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}</td></tr>`;
     if(openId===c.id){
@@ -373,25 +384,29 @@ function calls(rows){
       ${(c.tags||[]).length?`<h4 style="margin-top:12px">Topics discussed</h4><ul>${c.tags.map(x=>`<li><b>${esc(TOPICS[x.k]||x.k)}</b> · ${esc(x.t)} — "${esc(x.q)}"</li>`).join("")}</ul>`:""}
       <p style="margin-top:12px"><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">Open call in HubSpot ↗</a></p></div></div></td></tr>`}
   });
-  h+='</tbody></table>'+(rows.length>shown?`<button class="more" id="more">Show ${Math.min(40,rows.length-shown)} more</button>`:"");
+  h+='</tbody></table></div>'+(rows.length>shown?`<button class="more" id="more">Show ${Math.min(40,rows.length-shown)} more</button>`:"");
   callsEl.innerHTML=h;
   callsEl.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=["date","overall","min","flag"].includes(k)?-1:1}render()});
   callsEl.querySelectorAll("tr.call").forEach(tr=>tr.onclick=()=>{openId=openId===tr.dataset.id?null:tr.dataset.id;calls(filtered())});
   const m=document.getElementById("more");if(m)m.onclick=()=>{shown+=40;calls(filtered())};
 }
 
-function comp(rows){
-  const amf=AMDATA.filter(c=>c.flag&&(!fFrom.value||c.date>=fFrom.value)&&(!fTo.value||c.date<=fTo.value)&&(fRep.value==="all"||c.rep===fRep.value)&&(fType.value==="all"));
-  const fl=rows.filter(c=>c.flag).concat(amf).sort((a,b)=>a.date<b.date?1:-1);
-  if(!fl.length){compEl.innerHTML='<div class="empty">No flagged calls in this view.</div>';return}
-  let h='<table class="cq"><thead><tr><th>Date</th><th>Rep</th><th>Flagged line</th><th>Status</th><th></th></tr></thead><tbody>';
+function comp(){
+  /* v1.5: the queue has its own Agent and Status filters; only the date range above applies. */
+  const A=cAgentEl.value,S=cStatusEl.value;
+  const all=DATA.concat(AMDATA).filter(c=>c.flag&&(!fFrom.value||c.date>=fFrom.value)&&(!fTo.value||c.date<=fTo.value));
+  const fl=all.filter(c=>(A==="all"||c.rep===A)&&(S==="all"||revGet(c.id)===S)).sort((a,b)=>a.date<b.date?1:-1);
+  const open=all.filter(c=>(A==="all"||c.rep===A)&&!revGet(c.id)).length;
+  cCountEl.textContent=`${fl.length} shown · ${open} not yet reviewed${A==="all"?"":" for "+A}`;
+  if(!fl.length){compEl.innerHTML='<div class="empty">No flagged calls match these filters.</div>';return}
+  let h='<div class="tscroll"><table class="cq"><thead><tr><th>Date</th><th>Agent</th><th>Type</th><th>Flagged line</th><th>Status</th><th></th></tr></thead><tbody>';
   fl.forEach(c=>{const st=revGet(c.id);const who=REVIEW_SHARED&&REVIEW[c.id]?`<div style="font-size:10.5px;color:var(--text3);margin-top:3px">${esc((REVIEW[c.id].by||"").split("@")[0])} · ${esc((REVIEW[c.id].at||"").slice(0,10))}</div>`:"";
-    h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${repColor(c.rep)}"></span>${esc(c.rep)}</td><td class="q">"${esc(c.flagQuote)}"</td>
+    h+=`<tr><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${repColor(c.rep)}"></span>${esc(c.rep)}</td><td style="white-space:nowrap;font-size:11.5px;color:var(--text2)">${c.type==="am"?AMTYPE_LBL[c.amType]:TYPE_LBL[c.type]}</td><td class="q">"${esc(c.flagQuote)}"</td>
     <td><select class="rv" data-id="${c.id}"><option value="">Not reviewed</option><option value="issue"${st==="issue"?" selected":""}>Issue — coach</option><option value="ok"${st==="ok"?" selected":""}>Not a problem</option></select>${who}</td>
     <td><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">HubSpot ↗</a></td></tr>`});
-  h+=`</tbody></table><p class="note" id="revNote">${REVIEW_SHARED?"Status is shared — everyone sees it, with who set it and when.":"Status is saved in this browser only (shared storage unavailable)."} Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>`;
+  h+=`</tbody></table></div><p class="note" id="revNote">${REVIEW_SHARED?"Status is shared — everyone sees it, with who set it and when.":"Status is saved in this browser only (shared storage unavailable)."} Flags are AI judgment calls; projections clearly framed as projections should be marked "Not a problem".</p>`;
   compEl.innerHTML=h;
-  compEl.querySelectorAll(".rv").forEach(s=>s.onchange=async()=>{s.disabled=true;await revSet(s.dataset.id,s.value);s.disabled=false;tiles(filtered());comp(filtered())});
+  compEl.querySelectorAll(".rv").forEach(s=>s.onchange=async()=>{s.disabled=true;await revSet(s.dataset.id,s.value);s.disabled=false;tiles(filtered());comp()});
 }
 
 
@@ -409,14 +424,14 @@ function amHeat(rows){
   const sc=rows.filter(c=>c.amType!=="other");const groups=[];
   Object.keys(AMREPS).forEach(r=>["checkup","sif_pitch","onboarding"].forEach(t=>{const rc=sc.filter(c=>c.rep===r&&c.amType===t);if(rc.length)groups.push({r,t,rc})}));
   if(!groups.length){amHeatEl.innerHTML=`<div class="empty">No scored AM calls match these filters.${other?` (${other} other/admin calls not scored)`:""}</div>`;return}
-  let h='<table class="hm"><thead><tr><th>AM</th><th>Calls</th><th>Overall</th><th class="ocH" title="A Sunrise Income Fund deal was created for the investor after this call">SIF deal after</th>'+AMSTEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
+  let h='<div class="tscroll"><table class="hm"><thead><tr><th>AM</th><th>Calls</th><th>Overall</th><th class="ocH" title="A Sunrise Income Fund deal was created for the investor after this call">SIF deal after</th>'+AMSTEPS.map(s=>`<th>${s[1]}</th>`).join("")+'</tr></thead><tbody>';
   groups.forEach(({r,t,rc})=>{const n=rc.filter(c=>c.o&&c.o.sifNew).length;
     h+=`<tr><td style="white-space:nowrap"><span class="dot" style="background:${AMREPS[r]}"></span>${esc(r)} <span style="color:var(--text3);font-size:11px">${AMTYPE_LBL[t]}</span></td><td class="num click" data-g="${r}|${t}" data-m="all">${rc.length}</td><td class="num click" data-g="${r}|${t}" data-m="sort:overall"><b>${Math.round(avg(rc.map(c=>c.overall)))}</b></td>`;
     h+=`<td class="oc click" data-g="${r}|${t}" data-m="o:sifNew" title="${n} of ${rc.length} — click to list them">${Math.round(100*n/rc.length)}%<span class="sub">${n} / ${rc.length}</span></td>`;
     AMSTEPS.forEach(([k,l])=>{const vals=rc.map(c=>c.s&&c.s[k]).filter(x=>x!=null);const v=avg(vals);
       h+=v==null?'<td class="cell na" title="Not scored for this call type">n/a</td>':`<td class="cell click" data-g="${r}|${t}" data-m="sort:s.${k}" style="${cellStyle(v)}" title="${esc(r)} · ${AMTYPE_LBL[t]} · ${l}: ${v.toFixed(2)} avg over ${vals.length} calls — click for the lowest-scoring calls">${v.toFixed(1)}</td>`});
     h+='</tr>'});
-  h+=`</tbody></table><div class="legend">0<div class="ramp">${RAMP.map(c=>`<span style="background:${c}"></span>`).join("")}</div>5 &nbsp;·&nbsp; darker = stronger${other?` &nbsp;·&nbsp; ${other} other/admin calls not scored`:""}</div>`;
+  h+=`</tbody></table></div><div class="legend">0<div class="ramp">${RAMP.map(c=>`<span style="background:${c}"></span>`).join("")}</div>5 &nbsp;·&nbsp; darker = stronger${other?` &nbsp;·&nbsp; ${other} other/admin calls not scored`:""}</div>`;
   amHeatEl.innerHTML=h;
   amHeatEl.querySelectorAll(".click").forEach(td=>td.onclick=()=>{const [r,t]=td.dataset.g.split("|"),m=td.dataset.m;amTypeEl.value=t;amRepEl.value=r;amOpen=null;
     if(m.startsWith("o:")){amDrill={label:`${r} · ${AMTYPE_LBL[t]} · SIF deal after`,test:c=>c.o&&c.o.sifNew};amSort="date";amDir=-1}else{amDrill=null;if(m.startsWith("sort:")){amSort=m.slice(5);amDir=1}}
@@ -431,7 +446,7 @@ function amCalls(rows){
   if(amDrill)document.getElementById("amClr").onclick=()=>{amDrill=null;amRender()};
   if(!rows.length){amCallsEl.innerHTML='<div class="empty">No AM calls match these filters.</div>';return}
   const cols=[["date","Date"],["rep","AM"],["amType","Type"],["min","Min"],["overall","Overall"],["outcome","Outcome"],["res","Result"],["flag","Flag"]];
-  let h='<table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${amSort===k?(amDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
+  let h='<div class="tscroll"><table><thead><tr>'+cols.map(([k,l])=>`<th class="sort${["min","overall"].includes(k)?" num":""}" data-k="${k}">${l}${amSort===k?(amDir>0?" ▲":" ▼"):""}</th>`).join("")+'</tr></thead><tbody>';
   sorted.slice(0,amShown).forEach(c=>{
     h+=`<tr class="call" data-id="${c.id}"><td style="white-space:nowrap">${c.date}</td><td style="white-space:nowrap"><span class="dot" style="background:${AMREPS[c.rep]}"></span>${esc(c.rep)}</td><td><span class="pill ${c.amType==="other"?"introU":"disco"}">${AMTYPE_LBL[c.amType]}</span></td><td class="num">${c.min??""}</td><td class="num">${c.overall==null?"—":`<span class="sc" style="${cellStyle(c.overall/20)}">${c.overall}</span>`}</td><td>${esc(c.outcome)}</td><td>${amResult(c)}</td><td>${c.flag?'<span class="pill flag">Review</span>':""}${c.pressure?' <span class="pill flag">Pressure</span>':""}</td></tr>`;
     if(amOpen===c.id){h+=`<tr class="detail"><td colspan="8">${c.s?`<div class="steps">${AMSTEPS.map(([k,l])=>c.s[k]==null?"":`<span>${l} <b>${c.s[k]}</b></span>`).join("")}</div>`:""}
@@ -441,20 +456,21 @@ function amCalls(rows){
       ${c.flag?`<h4 style="margin-top:12px;color:var(--red)">Compliance flag</h4><p><i>"${esc(c.flagQuote)}"</i></p>`:""}
       ${(c.tags||[]).length?`<h4 style="margin-top:12px">Topics discussed</h4><ul>${c.tags.map(x=>`<li><b>${esc(TOPICS[x.k]||x.k)}</b> · ${esc(x.t||"")} — "${esc(x.q||"")}"</li>`).join("")}</ul>`:""}
       <p style="margin-top:12px"><a class="hs" href="${HS(c.id)}" target="_blank" rel="noopener">Open call in HubSpot ↗</a></p></div></div></td></tr>`}});
-  h+='</tbody></table>'+(rows.length>amShown?`<button class="more" id="amMore">Show ${Math.min(40,rows.length-amShown)} more</button>`:"");
+  h+='</tbody></table></div>'+(rows.length>amShown?`<button class="more" id="amMore">Show ${Math.min(40,rows.length-amShown)} more</button>`:"");
   amCallsEl.innerHTML=h;
   amCallsEl.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(amSort===k)amDir*=-1;else{amSort=k;amDir=["date","overall","min","flag"].includes(k)?-1:1}amRender()});
   amCallsEl.querySelectorAll("tr.call").forEach(tr=>tr.onclick=()=>{amOpen=amOpen===tr.dataset.id?null:tr.dataset.id;amCalls(amFiltered())});
   const m=document.getElementById("amMore");if(m)m.onclick=()=>{amShown+=40;amCalls(amFiltered())};
 }
 function amRender(){if(!AMDATA.length){document.getElementById("amSection").style.display="none";return}document.getElementById("amSection").style.display="";const r=amFiltered();amHeat(r);amCalls(r)}
-function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp(rows);amRender()}
+function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp();amRender()}
 
 const $=id=>document.getElementById(id);
 const fType=$("fType"),fRep=$("fRep"),fFrom=$("fFrom"),fTo=$("fTo"),fFlag=$("fFlag"),fQ=$("fQ"),fTopic=$("fTopic");
 fTopic.innerHTML+=Object.entries(TOPICS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
 const amTypeEl=$("amType"),amRepEl=$("amRep"),amFlagEl=$("amFlag"),amHeatEl=$("amHeat"),amCallsEl=$("amCalls"),amCallsTagEl=$("amCallsTag");
 [amTypeEl,amRepEl,amFlagEl].forEach(e=>e.onchange=()=>{amDrill=null;amOpen=null;amSort="date";amDir=-1;amRender()});
+const cAgentEl=$("cAgent"),cStatusEl=$("cStatus"),cCountEl=$("cCount");[cAgentEl,cStatusEl].forEach(e=>e.onchange=()=>comp());
 const drillEl=$("drill"),tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
 function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===FAM(t==='allintro'?'intro':t)).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
 fType.onchange=()=>{drill=null;repOptions();render()};
@@ -479,7 +495,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
   try{j=await get(API+"/cached-call-scores")}catch(e){src="static file";j=await get("call-scores-data.json")}
   try{REVIEW=await get(API+"/call-scores-review");REVIEW_SHARED=true}catch(e){REVIEW_SHARED=false}
   window.__CS_SOURCE=src;return j})().then(j=>{
-  DATA=j.calls;AMDATA=j.am||[];const ds=DATA.concat(AMDATA).map(c=>c.date).sort();
+  DATA=j.calls;AMDATA=j.am||[];[...new Set(DATA.concat(AMDATA).filter(c=>c.flag).map(c=>c.rep))].sort().forEach(r=>{const o=document.createElement("option");o.textContent=r;cAgentEl.appendChild(o)});const ds=DATA.concat(AMDATA).map(c=>c.date).sort();
   fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
   $("ts").textContent=`${window.__CS_SOURCE==="Worker"?"":"⚠ offline copy · "}Data through ${j.generated} · rubric ${j.rubricVersion} · outcomes as of ${j.outcomesAsOf||j.generated}`;
   repOptions();render();
