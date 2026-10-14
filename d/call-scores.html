@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.8)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.9)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -122,6 +122,23 @@ a.hs:hover{text-decoration:underline}
 .tagl{display:flex;flex-wrap:wrap;gap:6px}.tagl span{font-size:11px;background:var(--accent-bg);color:var(--accent);border-radius:10px;padding:2px 8px}
 .drill{display:none;align-items:center;gap:8px;font-size:12px;background:var(--accent-bg);color:var(--accent);border-radius:8px;padding:6px 10px;margin-bottom:12px}
 .drill.on{display:flex}.drill button{font-family:inherit;font-size:11px;border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:6px;padding:2px 8px;cursor:pointer}
+
+/* v1.9 weekly synopsis */
+#weekSyn summary{list-style:none;cursor:pointer}
+#weekSyn summary::-webkit-details-marker{display:none}
+#weekSyn summary .chev{font-size:11px;color:var(--text3);margin-left:auto}
+#weekSyn[open] summary .chev::after{content:"Hide ▴"}#weekSyn:not([open]) summary .chev::after{content:"Show ▾"}
+.syn-ai{background:var(--accent-bg);border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:16px}
+.syn-ai .lbl{display:block;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.syn-ai .meta{display:block;font-size:11px;color:var(--text3);margin-top:6px}
+.syn-team{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px}
+.syn-team div{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.55}
+.syn-team b{color:var(--text);font-size:12.5px}
+.syn-low{color:var(--text3);font-size:10.5px}
+.syn-pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.syn-pick button{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;text-align:left;color:var(--text)}
+.syn-pick button:hover{border-color:var(--accent)}
+.syn-btn{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--text2)}
 </style>
 </head>
 <body>
@@ -129,7 +146,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.8</span>
+    <span class="vpill">v1.9</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -152,6 +169,10 @@ a.hs:hover{text-decoration:underline}
 <main>
   <div id="rangeNote" role="status" style="display:none;background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px"></div>
   <div id="saveMsg" style="display:none;background:var(--red-bg);color:var(--red);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px"></div>
+  <details class="section" id="weekSyn" open style="display:none">
+    <summary class="section-hd"><h2>Last week</h2><span class="tag" id="synTag"></span><button class="syn-btn" id="synView" type="button">View this week</button><span class="chev"></span></summary>
+    <div class="section-body" id="synBody"></div>
+  </details>
   <div class="tiles" id="tiles"></div>
 
   <div class="section">
@@ -216,6 +237,14 @@ a.hs:hover{text-decoration:underline}
       <li>The <b>Range</b> menu has the same presets as the ad dashboards (Today, This/Last Week, Last 7/14/30/90 Days, This/Last Month, Quarter and Year, Last 12 Months, All Time) plus <b>Custom…</b> for exact dates. It opens on <b>Last 30 Days</b>.</li>
       <li>Weeks run Monday–Sunday, and "today" is the current date in Eastern time.</li>
       <li>Call scoring starts on <b>Aug 25, 2026</b> (the first scored call). If a range reaches back before that, an amber note says so and how many of its days actually have data — read totals and averages for those ranges with that in mind.</li>
+    </ul>
+    <h3>Last week synopsis (v1.9)</h3>
+    <ul>
+      <li>The card at the top always covers the <b>last complete Monday–Sunday week</b> (Eastern time), whatever the filters are set to. <b>View this week</b> sets the page's range to that week.</li>
+      <li>Each figure is shown next to the <b>prior week</b>, the <b>30 days before that week</b> and <b>all-time</b>. Single weeks are noisy — numbers resting on fewer than 3 calls are marked "few".</li>
+      <li><b>Outcome rate:</b> Intro = booked a Discovery Call after the call; Discovery = booked an Investment Decision Call; AM = a new Sunrise Income Fund deal. Recent calls haven't had time to convert.</li>
+      <li>The blue <b>AI-written summary</b> is generated by the nightly job on the first run after the week ends, from these statistics only (no transcripts). It states what each number is compared with and flags small samples.</li>
+      <li><b>Calls worth a listen</b> picks the lowest and highest-scoring sales calls of the week plus an unreviewed compliance flag; clicking one opens it in the call list.</li>
     </ul>
     <h3>Reading the rep markers (v1.8)</h3>
     <ul>
@@ -535,6 +564,106 @@ function rangeNote(){
   }
   el.textContent=msg?"⚠ "+msg:"";el.style.display=msg?"block":"none";
 }
+// Weekly synopsis statistics. Shared verbatim by the worker (v2.5.53+) and
+// call-scores.html (v1.9+) so the numbers on the page and the numbers Claude
+// summarises are computed the same way. Pure function, no I/O.
+// "Last week" = the most recent complete Mon–Sun week in America/New_York.
+function csWeekStats(calls, am, todayET) {
+  const dAdd = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const dow = (new Date(todayET + "T12:00:00Z").getUTCDay() + 6) % 7;
+  const thisMon = dAdd(todayET, -dow);
+  const from = dAdd(thisMon, -7), to = dAdd(thisMon, -1);
+  const pFrom = dAdd(from, -7), pTo = dAdd(from, -1);
+  const b30From = dAdd(from, -30), b30To = pTo;
+  const all = (calls || []).concat(am || []);
+  const firstDate = all.map((c) => c.date).filter(Boolean).sort()[0] || from;
+  const SALES = ["bonding_rapport", "upfront_contract", "pain", "budget", "decision", "next_step_contract", "fulfillment", "post_sell", "talk_control", "no_premature_presentation", "sandler_techniques"];
+  const AMS = ["bonding", "upfront_contract", "discovery", "service", "next_step", "talk_control", "retention", "opportunity", "need_fit", "budget", "decision", "commitment", "clarity"];
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const r1 = (v) => (v == null ? null : Math.round(v * 10) / 10);
+  const pct = (num, den) => (den ? Math.round((num / den) * 100) : null);
+  const fam = (c) => (c.type === "am" ? "am" : c.type === "disco" ? "disco" : "intro");
+  const scored = all.filter((c) => !(c.type === "am" && (c.amType === "other" || c.overall == null)));
+  const outcomeKey = { intro: "discoBooked", disco: "idcBooked", am: "sifNew" };
+  const win = (recs, a, b, steps, f) => {
+    const rs = recs.filter((c) => c.date >= a && c.date <= b);
+    const ok = rs.filter((c) => c.o && outcomeKey[f] in c.o);
+    return {
+      n: rs.length,
+      overall: r1(avg(rs.map((c) => c.overall).filter((v) => typeof v === "number"))),
+      steps: Object.fromEntries(steps.map((k) => [k, r1(avg(rs.map((c) => c.s && c.s[k]).filter((v) => typeof v === "number")))])),
+      outcomeRate: pct(ok.filter((c) => c.o[outcomeKey[f]]).length, ok.length),
+      flags: rs.filter((c) => c.flag).length,
+    };
+  };
+  const windows = (recs, f) => {
+    const steps = f === "am" ? AMS : SALES;
+    return { week: win(recs, from, to, steps, f), priorWeek: win(recs, pFrom, pTo, steps, f), prior30: win(recs, b30From, b30To, steps, f), allTime: win(recs, firstDate, to, steps, f) };
+  };
+  const families = {};
+  for (const f of ["intro", "disco", "am"]) {
+    const recs = scored.filter((c) => fam(c) === f);
+    if (!recs.length) continue;
+    const w = windows(recs, f);
+    const wk = Object.entries(w.week.steps).filter(([, v]) => v != null).sort((a, b) => a[1] - b[1]);
+    families[f] = { ...w, weakestStep: wk.length ? { step: wk[0][0], week: wk[0][1], prior30: w.prior30.steps[wk[0][0]], allTime: w.allTime.steps[wk[0][0]] } : null };
+  }
+  const reps = [];
+  const keys = [...new Set(scored.map((c) => c.rep + "|" + fam(c)))].sort();
+  for (const k of keys) {
+    const [rep, f] = k.split("|");
+    const recs = scored.filter((c) => c.rep === rep && fam(c) === f);
+    const w = windows(recs, f);
+    if (!w.week.n && !w.prior30.n) continue;
+    reps.push({ rep, family: f, week: { n: w.week.n, overall: w.week.overall, outcomeRate: w.week.outcomeRate, flags: w.week.flags }, priorWeek: { n: w.priorWeek.n, overall: w.priorWeek.overall }, prior30: { n: w.prior30.n, overall: w.prior30.overall, outcomeRate: w.prior30.outcomeRate }, allTime: { n: w.allTime.n, overall: w.allTime.overall } });
+  }
+  const wkCalls = scored.filter((c) => c.date >= from && c.date <= to);
+  return {
+    week: { from, to }, priorWeek: { from: pFrom, to: pTo }, prior30: { from: b30From, to: b30To }, allTime: { from: firstDate, to },
+    outcomeMeaning: { intro: "share of intro calls followed by a booked Discovery Call", disco: "share of discovery calls followed by a booked Investment Decision Call", am: "share of AM calls followed by a new Sunrise Income Fund deal" },
+    families, reps,
+    weekCallCount: wkCalls.length, weekFlags: wkCalls.filter((c) => c.flag).length,
+  };
+}
+
+// ── v1.9 weekly synopsis card ─────────────────────────────────────────────
+// Always the last complete Mon–Sun ET week, independent of the filters.
+// Numbers come from csWeekStats (same function the worker feeds to Claude).
+let SYN=null;
+const FAM_LBL={intro:"Intro calls (setters)",disco:"Discovery calls (closers)",am:"Account Manager calls"};
+const STEP_LBL=Object.fromEntries(STEPS.concat(typeof AMSTEPS!=="undefined"?AMSTEPS:[]));
+const fmt1=v=>v==null?"—":String(Math.round(v));
+const delta=(a,b)=>a==null||b==null?"":`<span style="color:var(--text2);font-size:11px">${a>=b?"▲":"▼"} ${Math.abs(Math.round(a-b))}</span>`;
+function renderSynopsis(j){
+  const st=csWeekStats(DATA,AMDATA,ET_TODAY());SYN=st;
+  if(!st.weekCallCount){$("weekSyn").style.display="none";return}
+  $("weekSyn").style.display="";
+  $("synTag").textContent=`${dNice(st.week.from)} – ${dNice(st.week.to)} · compared with the prior week, the 30 days before it (${dNice(st.prior30.from)} – ${dNice(st.prior30.to)}) and all-time`;
+  const ws=j.weeklySynopsis;let h="";
+  if(ws&&ws.week&&ws.week.from===st.week.from&&ws.text)h+=`<div class="syn-ai"><span class="lbl">AI-written summary of the numbers below</span>${esc(ws.text)}<span class="meta">Written ${esc(new Date(ws.generatedAt).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))} ET from the scores only · scores are an AI first pass — use them to pick calls to review</span></div>`;
+  else h+=`<div class="syn-ai" style="background:var(--surface2);border-color:var(--border)"><span class="lbl" style="color:var(--text2)">Written summary</span>Not generated yet for this week — it's written by the next nightly run.</div>`;
+  h+='<div class="syn-team">'+["intro","disco","am"].filter(f=>st.families[f]).map(f=>{const F=st.families[f],w=F.weakestStep;const om={intro:"booked a Discovery",disco:"booked an IDC",am:"new SIF deal"}[f];
+    return `<div><b>${FAM_LBL[f]}</b><br>${F.week.n} calls · avg <b>${fmt1(F.week.overall)}</b> ${delta(F.week.overall,F.prior30.overall)}${F.prior30.overall==null?"":' <span class="syn-low">vs 30-day</span>'}<br>prior week ${F.priorWeek.n?fmt1(F.priorWeek.overall):"—"} · 30-day ${fmt1(F.prior30.overall)} · all-time ${fmt1(F.allTime.overall)}${F.week.n<3?' <span class="syn-low">· few calls</span>':""}<br>${F.week.outcomeRate==null?"":`${om}: ${F.week.outcomeRate}% (30-day ${F.prior30.outcomeRate==null?"—":F.prior30.outcomeRate+"%"})<br>`}${w?`Weakest step: <b>${esc(STEP_LBL[w.step]||w.step)}</b> ${w.week.toFixed(1)} (30-day ${w.prior30==null?"—":w.prior30.toFixed(1)})`:""}</div>`}).join("")+'</div>';
+  const famOrder={intro:0,disco:1,am:2};
+  h+=`<div style="overflow-x:auto"><table><thead><tr><th>Rep</th><th class="num">Calls</th><th class="num">Avg</th><th class="num">vs prior week</th><th class="num">Prior 30 days</th><th class="num">All-time</th><th class="num">Outcome rate</th></tr></thead><tbody>`+
+    st.reps.slice().sort((a,b)=>famOrder[a.family]-famOrder[b.family]||a.rep.localeCompare(b.rep)).map(r=>`<tr><td style="white-space:nowrap">${ini(r.rep)}${esc(r.rep)} <span style="color:var(--text3);font-size:11px">${{intro:"Intro",disco:"Discovery",am:"AM"}[r.family]}</span></td><td class="num">${r.week.n}${r.week.n&&r.week.n<3?' <span class="syn-low">few</span>':""}</td><td class="num"><b>${fmt1(r.week.overall)}</b></td><td class="num">${r.priorWeek.n?fmt1(r.priorWeek.overall)+" "+delta(r.week.overall,r.priorWeek.overall):"—"}</td><td class="num">${fmt1(r.prior30.overall)} <span class="syn-low">(${r.prior30.n})</span></td><td class="num">${fmt1(r.allTime.overall)}</td><td class="num">${r.week.outcomeRate==null?"—":r.week.outcomeRate+"%"} <span class="syn-low">30-day ${r.prior30.outcomeRate==null?"—":r.prior30.outcomeRate+"%"}</span></td></tr>`).join("")+`</tbody></table></div>`;
+  const wk=DATA.concat(AMDATA).filter(c=>c.date>=st.week.from&&c.date<=st.week.to&&!(c.type==="am"&&c.amType==="other"));
+  const flagged=wk.filter(c=>c.flag),unrev=flagged.filter(c=>!revGet(c.id));
+  h+=`<p style="font-size:12.5px;margin-top:12px">${flagged.length} compliance flag${flagged.length===1?"":"s"} last week · <b>${unrev.length}</b> not yet reviewed.</p>`;
+  const sales=wk.filter(c=>c.type!=="am"&&typeof c.overall==="number").sort((a,b)=>a.overall-b.overall);
+  const picks=[];if(sales.length){picks.push(["Lowest score",sales[0]]);if(sales.length>1)picks.push(["Highest score",sales[sales.length-1]])}
+  const fp=(unrev[0]||flagged[0]);if(fp&&!picks.some(p=>p[1].id===fp.id))picks.push(["Compliance flag",fp]);
+  if(picks.length)h+=`<div style="font-size:11px;font-weight:600;color:var(--text2);margin-top:8px">Calls worth a listen</div><div class="syn-pick">${picks.map(([l,c])=>`<button type="button" data-id="${c.id}" data-am="${c.type==="am"?1:""}"><span class="syn-low">${l}</span><br>${ini(c.rep)}${esc(c.rep)} · ${c.type==="am"?(AMTYPE_LBL[c.amType]||"AM"):TYPE_LBL[c.type]} · <b>${fmt1(c.overall)}</b> · ${c.date}</button>`).join("")}</div>`;
+  $("synBody").innerHTML=h;
+  $("synBody").querySelectorAll(".syn-pick button").forEach(b=>b.onclick=()=>openFromSynopsis(b.dataset.id,!!b.dataset.am));
+}
+function viewSynWeek(){if(!SYN)return;fRange.value="custom";fFrom.value=SYN.week.from;fTo.value=SYN.week.to;applyRange();drill=null}
+function openFromSynopsis(id,isAm){
+  viewSynWeek();fType.value="all";repOptions();fRep.value="all";fFlag.checked=false;fQ.value="";fTopic.value="";
+  if(isAm){amTypeEl.value="all";amRepEl.value="all";amFlagEl.checked=false;amOpen=id;amShown=Math.max(amShown,400)}else{openId=id;shown=Math.max(shown,400)}
+  render();
+  const row=(isAm?amCallsEl:callsEl).querySelector(`tr.call[data-id="${id}"]`);if(row)row.scrollIntoView({behavior:"smooth",block:"center"});
+}
 function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp();amRender()}
 
 const $=id=>document.getElementById(id);
@@ -551,6 +680,7 @@ fType.onchange=()=>{drill=null;repOptions();render()};
 const fRange=$("fRange");
 [fFrom,fTo].forEach(e=>e.onchange=()=>{fRange.value="custom";applyRange();drill=null;render()});
 fRange.onchange=()=>{applyRange();drill=null;render()};
+$("synView").onclick=e=>{e.preventDefault();e.stopPropagation();viewSynWeek();render()};
 $("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fRange.value="last_30";applyRange();fFlag.checked=false;fQ.value="";fTopic.value="";drill=null;sortKey="date";sortDir=-1;render()};
 
 $("importFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
@@ -572,7 +702,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
   try{REVIEW=await get(API+"/call-scores-review");REVIEW_SHARED=true}catch(e){REVIEW_SHARED=false}
   window.__CS_SOURCE=src;return j})().then(j=>{
   DATA=j.calls;AMDATA=j.am||[];[...new Set(DATA.concat(AMDATA).filter(c=>c.flag).map(c=>c.rep))].sort().forEach(r=>{const o=document.createElement("option");o.textContent=r;cAgentEl.appendChild(o)});const ds=DATA.concat(AMDATA).map(c=>c.date).sort();
-  DMIN=ds[0];fFrom.max=fTo.max=ET_TODAY();applyRange();
+  DMIN=ds[0];fFrom.max=fTo.max=ET_TODAY();applyRange();renderSynopsis(j);
   // v1.6: show when the data was last refreshed (nightly Worker job or a manual run).
   const lr=j.lastRun||{};const lrAt=lr.at?new Date(lr.at).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET":j.generated;
   const lrWarn=(lr.errors&&lr.errors.length)||lr.failed?` · ⚠ last run: ${lr.failed||0} failed${lr.errors&&lr.errors.length?", "+lr.errors.length+" error(s)":""}`:"";
