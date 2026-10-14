@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Sunrise Capital — Call Scores · Sandler (v1.6)</title>
+<title>Sunrise Capital — Call Scores · Sandler (v1.7)</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -128,7 +128,7 @@ a.hs:hover{text-decoration:underline}
 <header>
   <div class="hdr">
     <h1>Call Scores · Sandler</h1>
-    <span class="vpill">v1.6</span>
+    <span class="vpill">v1.7</span>
   </div>
   <div class="hdr">
     <span id="ts"></span>
@@ -140,7 +140,7 @@ a.hs:hover{text-decoration:underline}
   <div class="fg"><label for="fType">Call type</label>
     <select id="fType"><option value="all">All</option><option value="allintro">All Intro Calls</option><option value="intro">Intro — booked</option><option value="introU">Intro — unscheduled</option><option value="disco">Discovery Calls</option></select></div>
   <div class="fg"><label for="fRep">Rep</label><select id="fRep"></select></div>
-  <div class="fg"><label for="fFrom">From</label><input type="date" id="fFrom"><label for="fTo">to</label><input type="date" id="fTo"></div>
+  <div class="fg"><label for="fRange">Range</label><select id="fRange"><option value="today">Today</option><option value="this_week">This Week</option><option value="last_week">Last Week</option><option value="last_7">Last 7 Days</option><option value="last_14">Last 14 Days</option><option value="this_month">This Month</option><option value="last_month">Last Month</option><option value="last_30" selected>Last 30 Days</option><option value="last_90">Last 90 Days</option><option value="this_quarter">This Quarter</option><option value="last_quarter">Last Quarter</option><option value="this_year">This Year</option><option value="last_year">Last Year</option><option value="last_12">Last 12 Months</option><option value="all_time">All Time</option><option value="custom">Custom…</option></select><span id="cdates" style="display:none;align-items:center;gap:6px"><input type="date" id="fFrom" aria-label="From"><span style="font-size:11px;color:var(--text2)">→</span><input type="date" id="fTo" aria-label="To"></span><span id="rangeLbl" style="font-size:11px;color:var(--text2);white-space:nowrap"></span></div>
   <div class="fg"><label for="fTopic">Topic</label><select id="fTopic"><option value="">Any topic</option></select></div>
   <label class="chk"><input type="checkbox" id="fFlag"> Compliance-flagged only</label>
   <div class="fg"><input type="search" id="fQ" placeholder="Search coaching / outcome…" size="22"></div>
@@ -149,6 +149,7 @@ a.hs:hover{text-decoration:underline}
 </div>
 
 <main>
+  <div id="rangeNote" role="status" style="display:none;background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px"></div>
   <div id="saveMsg" style="display:none;background:var(--red-bg);color:var(--red);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px"></div>
   <div class="tiles" id="tiles"></div>
 
@@ -208,6 +209,12 @@ a.hs:hover{text-decoration:underline}
       <li>A call whose transcript hasn't arrived yet is picked up on a later night. Up to 60 calls are scored per night; any extra wait for the next run.</li>
       <li>The header shows when the data was last updated; hover it for the last run's counts. A ⚠ means some calls failed to score — they are retried the next night.</li>
       <li>Aloware transcripts have no timestamps, so newer calls show the Best moment and Topics quotes without a time.</li>
+    </ul>
+    <h3>Date range (v1.7)</h3>
+    <ul>
+      <li>The <b>Range</b> menu has the same presets as the ad dashboards (Today, This/Last Week, Last 7/14/30/90 Days, This/Last Month, Quarter and Year, Last 12 Months, All Time) plus <b>Custom…</b> for exact dates. It opens on <b>Last 30 Days</b>.</li>
+      <li>Weeks run Monday–Sunday, and "today" is the current date in Eastern time.</li>
+      <li>Call scoring starts on <b>Aug 25, 2026</b> (the first scored call). If a range reaches back before that, an amber note says so and how many of its days actually have data — read totals and averages for those ranges with that in mind.</li>
     </ul>
     <h3>Which calls are included</h3>
     <ul>
@@ -471,6 +478,54 @@ function amCalls(rows){
   const m=document.getElementById("amMore");if(m)m.onclick=()=>{amShown+=40;amCalls(amFiltered())};
 }
 function amRender(){if(!AMDATA.length){document.getElementById("amSection").style.display="none";return}document.getElementById("amSection").style.display="";const r=amFiltered();amHeat(r);amCalls(r)}
+// ── v1.7 date range ────────────────────────────────────────────────────────
+// Call dates are YYYY-MM-DD strings; "today" and week/month/quarter edges are
+// taken in America/New_York so every viewer sees the same window.
+let DMIN=null; // first date with a scored call
+const ET_TODAY=()=>new Date().toLocaleDateString("en-CA",{timeZone:"America/New_York"});
+const dAdd=(d,n)=>{const x=new Date(d+"T12:00:00Z");x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10)};
+const dNice=d=>new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric",timeZone:"UTC"});
+const dDays=(a,b)=>Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/864e5)+1;
+function resolveRange(k){
+  const t=ET_TODAY(),y=+t.slice(0,4),m=+t.slice(5,7),mm=n=>String(n).padStart(2,"0");
+  const sow=dAdd(t,-((new Date(t+"T12:00:00Z").getUTCDay()+6)%7)); // Monday
+  const som=`${y}-${mm(m)}-01`, soq=`${y}-${mm(Math.floor((m-1)/3)*3+1)}-01`;
+  switch(k){
+    case"today":return[t,t];
+    case"this_week":return[sow,t];
+    case"last_week":return[dAdd(sow,-7),dAdd(sow,-1)];
+    case"last_7":return[dAdd(t,-6),t];
+    case"last_14":return[dAdd(t,-13),t];
+    case"this_month":return[som,t];
+    case"last_month":{const e=dAdd(som,-1);return[e.slice(0,8)+"01",e]}
+    case"last_30":return[dAdd(t,-29),t];
+    case"last_90":return[dAdd(t,-89),t];
+    case"this_quarter":return[soq,t];
+    case"last_quarter":{const e=dAdd(soq,-1),em=+e.slice(5,7);return[`${e.slice(0,4)}-${mm(Math.floor((em-1)/3)*3+1)}-01`,e]}
+    case"this_year":return[`${y}-01-01`,t];
+    case"last_year":return[`${y-1}-01-01`,`${y-1}-12-31`];
+    case"last_12":return[dAdd(t,-364),t];
+    case"all_time":return[DMIN||t,t];
+  }
+  return null;
+}
+function applyRange(){
+  const k=fRange.value,custom=k==="custom";
+  $("cdates").style.display=custom?"inline-flex":"none";
+  if(!custom){const r=resolveRange(k);if(r){fFrom.value=r[0];fTo.value=r[1]}}
+  $("rangeLbl").textContent=custom||!fFrom.value?"":(fFrom.value===fTo.value?dNice(fFrom.value):`${dNice(fFrom.value)} – ${dNice(fTo.value)}`);
+  rangeNote();
+}
+// Tell the viewer when the window reaches back before the first scored call.
+function rangeNote(){
+  const el=$("rangeNote"),a=fFrom.value,b=fTo.value||ET_TODAY();let msg="";
+  if(DMIN){
+    if(b<DMIN)msg=`No scored calls in this range. Call scoring starts ${dNice(DMIN)} — nothing before that date has been scored.`;
+    else if(fRange.value==="all_time")msg=`All Time starts ${dNice(DMIN)}, the first scored call. Nothing before that date has been scored.`;
+    else if(a&&a<DMIN)msg=`This range starts ${dNice(a)}, but call scoring starts ${dNice(DMIN)}. Only ${dDays(DMIN,b)} of its ${dDays(a,b)} days have scored calls — every number below covers ${dNice(DMIN)} – ${dNice(b)}.`;
+  }
+  el.textContent=msg?"⚠ "+msg:"";el.style.display=msg?"block":"none";
+}
 function render(){const rows=filtered();shown=Math.max(shown,40);tiles(rows);heat(rows);trend(rows);calls(rows);comp();amRender()}
 
 const $=id=>document.getElementById(id);
@@ -482,8 +537,12 @@ const cAgentEl=$("cAgent"),cStatusEl=$("cStatus"),cCountEl=$("cCount");[cAgentEl
 const drillEl=$("drill"),tilesEl=$("tiles"),heatEl=$("heat"),trendEl=$("trend"),callsEl=$("calls"),compEl=$("comp"),callsTag=$("callsTag");
 function repOptions(){const t=fType.value,cur=fRep.value;fRep.innerHTML='<option value="all">All reps</option>'+Object.keys(REPS).filter(r=>t==="all"||REPS[r].type===FAM(t==='allintro'?'intro':t)).map(r=>`<option${r===cur?" selected":""}>${r}</option>`).join("")}
 fType.onchange=()=>{drill=null;repOptions();render()};
-[fRep,fFrom,fTo,fFlag,fTopic].forEach(e=>e.onchange=()=>{drill=null;render()});fQ.oninput=render;
-$("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fFrom.value=fFrom.min;fTo.value=fTo.max;fFlag.checked=false;fQ.value="";fTopic.value="";drill=null;sortKey="date";sortDir=-1;render()};
+[fRep,fFlag,fTopic].forEach(e=>e.onchange=()=>{drill=null;render()});fQ.oninput=render;
+// v1.7: preset range picker (same options as the ad dashboards), dates pinned to Eastern time.
+const fRange=$("fRange");
+[fFrom,fTo].forEach(e=>e.onchange=()=>{fRange.value="custom";applyRange();drill=null;render()});
+fRange.onchange=()=>{applyRange();drill=null;render()};
+$("reset").onclick=()=>{fType.value="all";repOptions();fRep.value="all";fRange.value="last_30";applyRange();fFlag.checked=false;fQ.value="";fTopic.value="";drill=null;sortKey="date";sortDir=-1;render()};
 
 $("importFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   try{const j=JSON.parse(await f.text());
@@ -504,7 +563,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeGuide()});
   try{REVIEW=await get(API+"/call-scores-review");REVIEW_SHARED=true}catch(e){REVIEW_SHARED=false}
   window.__CS_SOURCE=src;return j})().then(j=>{
   DATA=j.calls;AMDATA=j.am||[];[...new Set(DATA.concat(AMDATA).filter(c=>c.flag).map(c=>c.rep))].sort().forEach(r=>{const o=document.createElement("option");o.textContent=r;cAgentEl.appendChild(o)});const ds=DATA.concat(AMDATA).map(c=>c.date).sort();
-  fFrom.min=fTo.min=fFrom.value=ds[0];fFrom.max=fTo.max=fTo.value=ds[ds.length-1];
+  DMIN=ds[0];fFrom.max=fTo.max=ET_TODAY();applyRange();
   // v1.6: show when the data was last refreshed (nightly Worker job or a manual run).
   const lr=j.lastRun||{};const lrAt=lr.at?new Date(lr.at).toLocaleString("en-US",{timeZone:"America/New_York",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" ET":j.generated;
   const lrWarn=(lr.errors&&lr.errors.length)||lr.failed?` · ⚠ last run: ${lr.failed||0} failed${lr.errors&&lr.errors.length?", "+lr.errors.length+" error(s)":""}`:"";
